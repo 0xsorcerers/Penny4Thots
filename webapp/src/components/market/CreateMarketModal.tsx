@@ -97,14 +97,15 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit }: CreateMarketMod
             className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm"
           />
 
-          {/* Modal */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className="fixed left-1/2 top-1/2 z-50 w-full max-w-lg -translate-x-1/2 -translate-y-1/2 px-4"
-          >
+          {/* Modal - Properly centered */}
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              className="w-full max-w-lg"
+            >
             <div className="relative overflow-hidden rounded-2xl border border-border/50 bg-card shadow-2xl">
               {/* Header */}
               <div className="flex items-center justify-between border-b border-border/50 p-6">
@@ -267,7 +268,8 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit }: CreateMarketMod
                 </Button>
               </div>
             </div>
-          </motion.div>
+            </motion.div>
+          </div>
         </>
       )}
     </AnimatePresence>
