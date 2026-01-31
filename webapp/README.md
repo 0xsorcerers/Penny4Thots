@@ -34,3 +34,4 @@ Using Zustand with persistence - markets and app state are saved to localStorage
 
 - **Fonts**: Syne (headings), Outfit (body), Space Mono (code/tags)
 - **Colors**: Dark background with gold primary, teal accent, green for YES, red for NO
+# ThotsDapp
