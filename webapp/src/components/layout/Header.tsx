@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
-import { Wallet } from "lucide-react";
+import { Wallet, Sun, Moon } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useTheme } from "@/hooks/useTheme";
 
 interface HeaderProps {
   onConnect?: () => void;
@@ -8,6 +9,8 @@ interface HeaderProps {
 }
 
 export function Header({ onConnect, isConnected = false }: HeaderProps) {
+  const { theme, toggleTheme } = useTheme();
+
   return (
     <motion.header
       initial={{ opacity: 0, y: -20 }}
@@ -24,33 +27,50 @@ export function Header({ onConnect, isConnected = false }: HeaderProps) {
         >
           <div className="relative">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-accent">
-              <span className="font-syne text-lg font-bold text-primary-foreground">P</span>
+              <span className="font-syne text-lg font-bold text-primary-foreground">M</span>
             </div>
             <div className="absolute -inset-1 -z-10 rounded-xl bg-gradient-to-br from-primary/50 to-accent/50 opacity-50 blur-sm" />
           </div>
           <span className="font-syne text-xl font-bold tracking-tight text-foreground">
-            Predictify
+            Market of Thots
           </span>
         </motion.div>
 
-        {/* Connect Button */}
-        <Button
-          onClick={onConnect}
-          variant={isConnected ? "secondary" : "default"}
-          className="group relative overflow-hidden rounded-full font-outfit"
-        >
-          <span className="relative z-10 flex items-center gap-2">
-            <Wallet className="h-4 w-4" />
-            {isConnected ? "Connected" : "Connect"}
-          </span>
-          {!isConnected && (
-            <motion.div
-              className="absolute inset-0 bg-gradient-to-r from-primary via-accent to-primary opacity-0 transition-opacity group-hover:opacity-30"
-              animate={{ x: ["-100%", "100%"] }}
-              transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-            />
-          )}
-        </Button>
+        {/* Right side buttons */}
+        <div className="flex items-center gap-3">
+          {/* Theme Toggle */}
+          <Button
+            onClick={toggleTheme}
+            variant="ghost"
+            size="icon"
+            className="rounded-full"
+          >
+            {theme === "dark" ? (
+              <Sun className="h-5 w-5" />
+            ) : (
+              <Moon className="h-5 w-5" />
+            )}
+          </Button>
+
+          {/* Connect Button */}
+          <Button
+            onClick={onConnect}
+            variant={isConnected ? "secondary" : "default"}
+            className="group relative overflow-hidden rounded-full font-outfit"
+          >
+            <span className="relative z-10 flex items-center gap-2">
+              <Wallet className="h-4 w-4" />
+              {isConnected ? "Connected" : "Connect"}
+            </span>
+            {!isConnected && (
+              <motion.div
+                className="absolute inset-0 bg-gradient-to-r from-primary via-accent to-primary opacity-0 transition-opacity group-hover:opacity-30"
+                animate={{ x: ["-100%", "100%"] }}
+                transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+              />
+            )}
+          </Button>
+        </div>
       </div>
     </motion.header>
   );

@@ -106,7 +106,7 @@ export function GetStartedPage({ onGetStarted }: GetStartedPageProps) {
           transition={{ duration: 0.8, delay: 0.4 }}
           className="mb-6 text-center font-syne text-5xl font-bold leading-tight tracking-tight sm:text-6xl md:text-7xl lg:text-8xl"
         >
-          <span className="block text-foreground">Predict</span>
+          <span className="block text-foreground">Market of</span>
           <span
             className="block animate-shimmer-sweep bg-clip-text text-transparent"
             style={{
@@ -117,7 +117,7 @@ export function GetStartedPage({ onGetStarted }: GetStartedPageProps) {
               backgroundClip: "text",
             }}
           >
-            Everything
+            Thots
           </span>
         </motion.h1>
 

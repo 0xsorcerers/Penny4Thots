@@ -12,58 +12,58 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    --background: 220 20% 3%;
-    --foreground: 60 10% 95%;
+    --background: 40 30% 96%;
+    --foreground: 220 20% 10%;
 
-    --card: 220 15% 8%;
-    --card-foreground: 60 10% 95%;
+    --card: 40 25% 98%;
+    --card-foreground: 220 20% 10%;
 
-    --popover: 220 15% 10%;
-    --popover-foreground: 60 10% 95%;
+    --popover: 40 25% 98%;
+    --popover-foreground: 220 20% 10%;
 
-    --primary: 45 100% 55%;
+    --primary: 45 100% 45%;
     --primary-foreground: 220 20% 3%;
 
-    --secondary: 220 15% 15%;
-    --secondary-foreground: 60 10% 95%;
+    --secondary: 40 20% 90%;
+    --secondary-foreground: 220 20% 10%;
 
-    --muted: 220 15% 12%;
-    --muted-foreground: 220 10% 50%;
+    --muted: 40 15% 92%;
+    --muted-foreground: 220 10% 40%;
 
-    --accent: 160 70% 45%;
+    --accent: 160 70% 40%;
     --accent-foreground: 220 20% 3%;
 
-    --destructive: 0 75% 55%;
+    --destructive: 0 75% 50%;
     --destructive-foreground: 60 10% 95%;
 
-    --success: 145 70% 45%;
+    --success: 145 70% 40%;
     --success-foreground: 220 20% 3%;
 
-    --border: 220 15% 18%;
-    --input: 220 15% 12%;
-    --ring: 45 100% 55%;
+    --border: 40 20% 85%;
+    --input: 40 20% 90%;
+    --ring: 45 100% 45%;
 
     --radius: 1rem;
 
     /* Custom prediction market colors */
-    --yes: 145 80% 42%;
-    --yes-foreground: 220 20% 3%;
-    --no: 0 80% 55%;
+    --yes: 145 80% 35%;
+    --yes-foreground: 60 10% 95%;
+    --no: 0 80% 50%;
     --no-foreground: 60 10% 95%;
 
     /* Gradient colors for shimmer effect */
-    --shimmer-start: 45 100% 55%;
-    --shimmer-mid: 160 70% 45%;
-    --shimmer-end: 200 80% 50%;
+    --shimmer-start: 45 100% 45%;
+    --shimmer-mid: 160 70% 40%;
+    --shimmer-end: 200 80% 45%;
 
-    --sidebar-background: 220 15% 6%;
-    --sidebar-foreground: 60 10% 95%;
-    --sidebar-primary: 45 100% 55%;
+    --sidebar-background: 40 25% 94%;
+    --sidebar-foreground: 220 20% 10%;
+    --sidebar-primary: 45 100% 45%;
     --sidebar-primary-foreground: 220 20% 3%;
-    --sidebar-accent: 220 15% 12%;
-    --sidebar-accent-foreground: 60 10% 95%;
-    --sidebar-border: 220 15% 18%;
-    --sidebar-ring: 45 100% 55%;
+    --sidebar-accent: 40 20% 88%;
+    --sidebar-accent-foreground: 220 20% 10%;
+    --sidebar-border: 40 20% 85%;
+    --sidebar-ring: 45 100% 45%;
   }
 
   .dark {
