@@ -6,8 +6,11 @@
     "module": "ESNext",
     "skipLibCheck": true,
 
-    /* Bundler mode */
-    "moduleResolution": "bundler",
+    /* Changed from Bundler to Node mode */
+    "allowJs": true,             // <-- Allow importing JS files
+    "checkJs": false,            // <-- Do not type-check JS files
+    "esModuleInterop": true,  
+    "moduleResolution": "node",
     "allowImportingTsExtensions": true,
     "isolatedModules": true,
     "moduleDetection": "force",

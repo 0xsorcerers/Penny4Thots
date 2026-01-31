@@ -1,7 +1,9 @@
+"use client";
 import { motion } from "framer-motion";
-import { Wallet, Sun, Moon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "@/hooks/useTheme";
+import { Sun, Moon } from "lucide-react";
+import { Connector } from "../../tools/utils";
 
 interface HeaderProps {
   onConnect?: () => void;
@@ -53,7 +55,7 @@ export function Header({ onConnect, isConnected = false }: HeaderProps) {
           </Button>
 
           {/* Connect Button */}
-          <Button
+          {/* <Button
             onClick={onConnect}
             variant={isConnected ? "secondary" : "default"}
             className="group relative overflow-hidden rounded-full font-outfit"
@@ -69,7 +71,8 @@ export function Header({ onConnect, isConnected = false }: HeaderProps) {
                 transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
               />
             )}
-          </Button>
+          </Button> */}
+          <Connector />
         </div>
       </div>
     </motion.header>
