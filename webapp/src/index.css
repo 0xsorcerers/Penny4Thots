@@ -1,0 +1,125 @@
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here.
+All colors MUST be HSL.
+*/
+
+@layer base {
+  :root {
+    --background: 220 20% 3%;
+    --foreground: 60 10% 95%;
+
+    --card: 220 15% 8%;
+    --card-foreground: 60 10% 95%;
+
+    --popover: 220 15% 10%;
+    --popover-foreground: 60 10% 95%;
+
+    --primary: 45 100% 55%;
+    --primary-foreground: 220 20% 3%;
+
+    --secondary: 220 15% 15%;
+    --secondary-foreground: 60 10% 95%;
+
+    --muted: 220 15% 12%;
+    --muted-foreground: 220 10% 50%;
+
+    --accent: 160 70% 45%;
+    --accent-foreground: 220 20% 3%;
+
+    --destructive: 0 75% 55%;
+    --destructive-foreground: 60 10% 95%;
+
+    --success: 145 70% 45%;
+    --success-foreground: 220 20% 3%;
+
+    --border: 220 15% 18%;
+    --input: 220 15% 12%;
+    --ring: 45 100% 55%;
+
+    --radius: 1rem;
+
+    /* Custom prediction market colors */
+    --yes: 145 80% 42%;
+    --yes-foreground: 220 20% 3%;
+    --no: 0 80% 55%;
+    --no-foreground: 60 10% 95%;
+
+    /* Gradient colors for shimmer effect */
+    --shimmer-start: 45 100% 55%;
+    --shimmer-mid: 160 70% 45%;
+    --shimmer-end: 200 80% 50%;
+
+    --sidebar-background: 220 15% 6%;
+    --sidebar-foreground: 60 10% 95%;
+    --sidebar-primary: 45 100% 55%;
+    --sidebar-primary-foreground: 220 20% 3%;
+    --sidebar-accent: 220 15% 12%;
+    --sidebar-accent-foreground: 60 10% 95%;
+    --sidebar-border: 220 15% 18%;
+    --sidebar-ring: 45 100% 55%;
+  }
+
+  .dark {
+    --background: 220 20% 3%;
+    --foreground: 60 10% 95%;
+
+    --card: 220 15% 8%;
+    --card-foreground: 60 10% 95%;
+
+    --popover: 220 15% 10%;
+    --popover-foreground: 60 10% 95%;
+
+    --primary: 45 100% 55%;
+    --primary-foreground: 220 20% 3%;
+
+    --secondary: 220 15% 15%;
+    --secondary-foreground: 60 10% 95%;
+
+    --muted: 220 15% 12%;
+    --muted-foreground: 220 10% 50%;
+
+    --accent: 160 70% 45%;
+    --accent-foreground: 220 20% 3%;
+
+    --destructive: 0 75% 55%;
+    --destructive-foreground: 60 10% 95%;
+
+    --success: 145 70% 45%;
+    --success-foreground: 220 20% 3%;
+
+    --border: 220 15% 18%;
+    --input: 220 15% 12%;
+    --ring: 45 100% 55%;
+
+    --yes: 145 80% 42%;
+    --yes-foreground: 220 20% 3%;
+    --no: 0 80% 55%;
+    --no-foreground: 60 10% 95%;
+
+    --sidebar-background: 220 15% 6%;
+    --sidebar-foreground: 60 10% 95%;
+    --sidebar-primary: 45 100% 55%;
+    --sidebar-primary-foreground: 220 20% 3%;
+    --sidebar-accent: 220 15% 12%;
+    --sidebar-accent-foreground: 60 10% 95%;
+    --sidebar-border: 220 15% 18%;
+    --sidebar-ring: 45 100% 55%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+}
