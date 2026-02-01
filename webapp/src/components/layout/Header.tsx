@@ -30,7 +30,7 @@ export function Header({ onConnect, isConnected = false }: HeaderProps) {
           <div className="relative">
             <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-primary/20 to-accent/20 p-1">
               <img
-                src="/white-on-background.png"
+                src="/logo-white-no-bkg.png"
                 alt="Penny4Thots Logo"
                 className="h-full w-full object-contain"
               />
