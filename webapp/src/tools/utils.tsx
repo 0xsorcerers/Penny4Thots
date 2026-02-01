@@ -5,6 +5,7 @@ import { defineChain } from "thirdweb/chains";
 import { ethers, JsonRpcProvider } from "ethers";
 import { getContract } from "thirdweb";
 import { env } from "process";
+import { ReactElement } from "react";
 
 //Thirdweb wallet connect
 // Global Constants ***************************************************************************************************************
@@ -71,8 +72,8 @@ export const blockchain = {
 
 export const base = defineChain({ id: blockchain.chainId, rpc: blockchain.rpc});
 
-  export function Connector () {
-    return (
+export function Connector(): ReactElement {
+  return (
       <ConnectButton
         client={client}
         chain={base}
@@ -124,12 +125,12 @@ export const base = defineChain({ id: blockchain.chainId, rpc: blockchain.rpc});
   }
 
 // Shuffle implementation
-export const randomShuffle = (max) => {
+export const randomShuffle = (max: number): number => {
   return Math.floor(Math.random() * max);
 };
 
 // Fisher-Yates shuffle implementation
-export function fisherYatesShuffle(array) {
+export function fisherYatesShuffle<T>(array: T[]): T[] {
   for (let i = array.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1)); // Random index from 0 to i
       [array[i], array[j]] = [array[j], array[i]]; // Swap elements
@@ -137,12 +138,12 @@ export function fisherYatesShuffle(array) {
   return array;
 }
 
-export const copyClipboard = async(text) => {
+export const copyClipboard = async(text: string): Promise<void> => {
   await navigator.clipboard.writeText(text);
 }
   
 //export esthetics
-export const truncateAddress = (address) => {
+export const truncateAddress = (address: string | null | undefined): string => {
   if (!address) return "No Account";
   const match = address.match(
     /^(0x[a-zA-Z0-9]{4})[a-zA-Z0-9]+([a-zA-Z0-9]{4})$/
@@ -151,7 +152,7 @@ export const truncateAddress = (address) => {
   return `${match[1]} ... ${match[2]}`;
 };
 
-export const formatNumber = (number) => {
+export const formatNumber = (number: number | null | undefined): string => {
   if (!number) return "0";
   const formatter = new Intl.NumberFormat("en-US", {
     minimumFractionDigits: 0,
@@ -160,13 +161,13 @@ export const formatNumber = (number) => {
   return formatter.format(number);
 };
 
-export const removeThousands = (value) => {
+export const removeThousands = (value: string): string => {
   const cleanedValue = value.replace(/,/g, '');
   const integerPart = cleanedValue.split('.')[0];
   return integerPart;
 };
 
-export function normalizeNumberString(n) {
+export function normalizeNumberString(n: string | number): string {
   // convert scientific to decimal string manually
   return Number(n).toLocaleString('en-US', {
     minimumFractionDigits: 18,
