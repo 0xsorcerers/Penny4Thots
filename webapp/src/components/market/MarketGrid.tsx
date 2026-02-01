@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Search, X, Sparkles } from "lucide-react";
+import { Plus, Search, X, Sparkles, Loader2 } from "lucide-react";
 import type { Market } from "@/types/market";
 import { MarketCard } from "./MarketCard";
 import { Button } from "@/components/ui/button";
@@ -9,9 +9,10 @@ import { Input } from "@/components/ui/input";
 interface MarketGridProps {
   markets: Market[];
   onCreateMarket: () => void;
+  isLoading?: boolean;
 }
 
-export function MarketGrid({ markets, onCreateMarket }: MarketGridProps) {
+export function MarketGrid({ markets, onCreateMarket, isLoading = false }: MarketGridProps) {
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -136,7 +137,18 @@ export function MarketGrid({ markets, onCreateMarket }: MarketGridProps) {
 
         {/* Markets Grid or Empty State */}
         <AnimatePresence mode="wait">
-          {filteredMarkets.length > 0 ? (
+          {isLoading ? (
+            <motion.div
+              key="loading"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border/50 bg-card/50 py-20"
+            >
+              <Loader2 className="h-10 w-10 animate-spin text-primary mb-4" />
+              <p className="font-outfit text-muted-foreground">Loading markets from blockchain...</p>
+            </motion.div>
+          ) : filteredMarkets.length > 0 ? (
             <motion.div
               key="grid"
               initial={{ opacity: 0 }}

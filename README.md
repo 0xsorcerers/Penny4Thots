@@ -7,6 +7,21 @@ Structure:
 - `webapp/` — React frontend (Thirdweb wallet integration, Tailwind)
 - `backend/` — API and server code (if present)
 
+## Blockchain Integration
+
+### Market Data Format
+- **Tags**: Stored on-chain as comma-delimited strings (e.g., "crypto,bitcoin,prediction"). Max 7 tags.
+- **Market Fetching**: App fetches up to 50 most recent markets from blockchain in descending order (newest first)
+- **Contract**: Deployed on Sepolia testnet at `0x0217dFf6d795F4BaE2ed7DCEcb922cA65e84a417`
+
+### Key Functions (webapp/src/tools/utils.tsx)
+- `parseTags(string)` - Converts comma-delimited blockchain string to array
+- `serializeTags(array)` - Converts array to comma-delimited string for storage
+- `fetchMarketsFromBlockchain()` - Fetches up to 50 most recent markets
+- `readMarketCount()` - Gets total market count from contract
+- `readMarket(ids[])` - Reads specific market data by IDs
+- `useWriteMarket()` - Hook for creating new markets on-chain
+
 Setup
 
 1. Frontend

@@ -32,7 +32,7 @@ export interface MarketInfoFormatted {
   subtitle: string;
   description: string;
   image: string;
-  tags: string;
+  tags: string[];
   status: boolean;
   marketBalance: string;
 }
@@ -164,7 +164,7 @@ export const readMarket = async (ids: number[]): Promise<MarketInfoFormatted[]> 
     subtitle: market.subtitle,
     description: market.description,
     image: market.image,
-    tags: market.tags,
+    tags: parseTags(market.tags),
     status: market.status,
     marketBalance: formatEther(market.marketBalance),
   }));
@@ -188,6 +188,39 @@ export const readFee = async (): Promise<bigint> => {
   }) as bigint;
 
   return result;
+};
+
+// Range limit for fetching markets from blockchain
+const MARKET_FETCH_LIMIT = 50;
+
+/**
+ * Fetch markets from blockchain with a limit of 50 most recent markets
+ * Markets are fetched in descending order (newest first)
+ * Excludes market index 0
+ */
+export const fetchMarketsFromBlockchain = async (): Promise<MarketInfoFormatted[]> => {
+  const marketCount = await readMarketCount();
+
+  if (marketCount === 0) {
+    return [];
+  }
+
+  // Create array of market IDs in descending order (newest first)
+  // Exclude 0 and limit to MARKET_FETCH_LIMIT
+  const startIndex = marketCount;
+  const endIndex = Math.max(1, marketCount - MARKET_FETCH_LIMIT + 1);
+
+  const marketIds: number[] = [];
+  for (let i = startIndex; i >= endIndex; i--) {
+    marketIds.push(i);
+  }
+
+  if (marketIds.length === 0) {
+    return [];
+  }
+
+  const markets = await readMarket(marketIds);
+  return markets;
 };
 
 // ============================================================================
@@ -227,6 +260,23 @@ export const useWriteMarket = () => {
 // ============================================================================
 // Utility Functions
 // ============================================================================
+
+/**
+ * Parse comma-delimited tags string from blockchain into array
+ * Tags are stored on-chain as "tag1,tag2,tag3" and need to be split
+ */
+export const parseTags = (tagsString: string): string[] => {
+  if (!tagsString || tagsString.trim() === '') return [];
+  return tagsString.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0);
+};
+
+/**
+ * Serialize tags array to comma-delimited string for blockchain storage
+ * Max 7 tags allowed
+ */
+export const serializeTags = (tags: string[]): string => {
+  return tags.slice(0, 7).join(',');
+};
 
 export const randomShuffle = (max: number): number => {
   return Math.floor(Math.random() * max);

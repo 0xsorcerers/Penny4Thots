@@ -1,21 +1,41 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { GetStartedPage } from "@/components/landing/GetStartedPage";
 import { Header } from "@/components/layout/Header";
 import { MarketGrid } from "@/components/market/MarketGrid";
 import { CreateMarketModal } from "@/components/market/CreateMarketModal";
 import { useMarketStore } from "@/store/marketStore";
 import { useActiveAccount } from "thirdweb/react";
-import { useWriteMarket, parseEther, readFee } from "@/tools/utils";
+import { useWriteMarket, parseEther, readFee, fetchMarketsFromBlockchain } from "@/tools/utils";
 import type { CreateMarketData } from "@/types/market";
 import { toast } from "sonner";
 
 export default function Index() {
-  const { markets, addMarket } = useMarketStore();
+  const { markets, setMarketsFromBlockchain, isLoadingFromBlockchain, setIsLoadingFromBlockchain } = useMarketStore();
   const [isConnected, setIsConnected] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const account = useActiveAccount();
   const { writeMarket, isPending, error } = useWriteMarket();
+
+  // Fetch markets from blockchain on mount
+  const loadMarketsFromBlockchain = useCallback(async () => {
+    setIsLoadingFromBlockchain(true);
+    try {
+      const blockchainMarkets = await fetchMarketsFromBlockchain();
+      setMarketsFromBlockchain(blockchainMarkets);
+    } catch (err) {
+      console.error("Failed to load markets from blockchain:", err);
+      toast.error("Failed to load markets from blockchain");
+    } finally {
+      setIsLoadingFromBlockchain(false);
+    }
+  }, [setMarketsFromBlockchain, setIsLoadingFromBlockchain]);
+
+  useEffect(() => {
+    if (account) {
+      loadMarketsFromBlockchain();
+    }
+  }, [account, loadMarketsFromBlockchain]);
 
   const handleConnect = () => {
     setIsConnected(!isConnected);
@@ -24,7 +44,7 @@ export default function Index() {
   const handleCreateMarket = async (data: CreateMarketData & { marketBalance: string; initialVote: "YES" | "NO" }) => {
     if (!account) {
       toast.error("Please connect your wallet first");
-      return;
+      throw new Error("Wallet not connected");
     }
 
     setIsSubmitting(true);
@@ -43,13 +63,24 @@ export default function Index() {
         fee: fee,
       });
 
-      // Add to local store on success
-      addMarket(data);
+      // Reload markets from blockchain on success
+      await loadMarketsFromBlockchain();
       toast.success("Market created successfully!");
       setIsCreateModalOpen(false);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error("Failed to create market:", err);
-      toast.error(err instanceof Error ? err.message : "Failed to create market");
+      // Check if user rejected/cancelled the transaction
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      if (errorMessage.toLowerCase().includes("reject") ||
+          errorMessage.toLowerCase().includes("denied") ||
+          errorMessage.toLowerCase().includes("cancel") ||
+          errorMessage.toLowerCase().includes("user refused")) {
+        toast.error("Transaction cancelled");
+      } else {
+        toast.error(errorMessage || "Failed to create market");
+      }
+      // Re-throw so modal knows submission failed and doesn't reset form
+      throw err;
     } finally {
       setIsSubmitting(false);
     }
@@ -63,7 +94,11 @@ export default function Index() {
   return (
     <div className="min-h-screen bg-background">
       <Header onConnect={handleConnect} isConnected={isConnected} />
-      <MarketGrid markets={markets} onCreateMarket={() => setIsCreateModalOpen(true)} />
+      <MarketGrid
+        markets={markets}
+        onCreateMarket={() => setIsCreateModalOpen(true)}
+        isLoading={isLoadingFromBlockchain}
+      />
       <CreateMarketModal
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
