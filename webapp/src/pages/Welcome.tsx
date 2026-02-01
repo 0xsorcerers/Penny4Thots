@@ -217,7 +217,7 @@ export default function Welcome() {
               />
               {/* Logo */}
               <img
-                src="/white-on-background.png"
+                src="/logo-white-no-bkg.png"
                 alt="Penny4Thots Logo"
                 className="h-full w-full object-contain drop-shadow-lg"
                 style={{ transform: "translateZ(20px)" }}
@@ -330,7 +330,7 @@ export default function Welcome() {
           className="relative"
         >
           {/* Glow behind button */}
-          <div className="absolute -inset-4 rounded-full bg-primary/20 blur-xl" />
+          <div className="pointer-events-none absolute -inset-4 rounded-full bg-primary/20 blur-xl" />
           <Connector />
         </motion.div>
 

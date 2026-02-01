@@ -38,15 +38,9 @@ export const wallets = [
 
 export const blockchain = {
   // mainnet
-  // name: 'Jesse',
-  // symbol: 'JESSE',
-  // partner1: 'Moth',
-  // partner1_symbol: 'MOTH',
-  // address: '0x683046277b72c02B3Ac266761B02d3eaA0C25c9a',
-  chainId: 8453,
-  rpc: 'https://gateway.tenderly.co/public/base', // https://base.public.blockpi.network/v1/rpc/public
-  blockExplorer: 'https://basescan.org',
-  // jesse_contract_address: "0x50F88fe97f72CD3E75b9Eb4f747F59BcEBA80d59",
+  chainId: 56,
+  rpc: 'https://bsc-dataseed.bnbchain.org', 
+  blockExplorer: 'https://bscscan.com',
   decimals: 18,
   // pyth_contract_address: "0x8250f4aF4B972684F7b336503E2D6dFeDeB1487a",
   // legend_contract_address: "0x5AD10b04Ac3F02471D41ae5143e35eE5493F10df",
@@ -70,13 +64,13 @@ export const blockchain = {
   // base_price_id: "0xf490b178d0c85683b7a0f2388b40af2e6f7c90cbe0f96b31f315f08d0e5a2d6d", // Base/USD
 };
 
-export const base = defineChain({ id: blockchain.chainId, rpc: blockchain.rpc});
+export const bsc = defineChain({ id: blockchain.chainId, rpc: blockchain.rpc});
 
 export function Connector(): ReactElement {
   return (
       <ConnectButton
         client={client}
-        chain={base}
+        chain={bsc}
         wallets={wallets}
         theme={darkTheme({
           colors: {
@@ -108,13 +102,13 @@ export function Connector(): ReactElement {
             size: "wide",
             title: "Connect to Penny4Thots",
             titleIcon:
-              "/white-on-background.png",
+              "/logo-white-no-bkg.png",
             welcomeScreen: {
               title: "Penny4Thots Prediction Markets",
               subtitle:
                 "...if you can think it, it's important.",
               img: {
-                src: '/white-on-background.png',
+                src: '/logo-white-no-bkg.png',
                 width: 200,
                 height: 200,
               },

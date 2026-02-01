@@ -1,12 +1,28 @@
 import { motion } from "framer-motion";
 import { ArrowRight, Sparkles, TrendingUp, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Connector } from "@/tools/utils";
+import { useActiveAccount } from "thirdweb/react";
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 
 interface GetStartedPageProps {
-  onGetStarted: () => void;
+  onGetStarted?: () => void;
 }
 
 export function GetStartedPage({ onGetStarted }: GetStartedPageProps) {
+  const account = useActiveAccount();
+  const navigate = useNavigate();
+
+  // Redirect to main app when connected
+  useEffect(() => {
+    if (account) {
+      if (onGetStarted) {
+        onGetStarted();
+      }
+      navigate("/app");
+    }
+  }, [account, navigate, onGetStarted]);
   return (
     <div className="relative min-h-screen overflow-hidden bg-background">
       {/* Animated background elements */}
@@ -108,7 +124,7 @@ export function GetStartedPage({ onGetStarted }: GetStartedPageProps) {
         >
           <div className="relative mx-auto h-24 w-24 sm:h-32 sm:w-32">
             <img
-              src="/white-on-background.png"
+              src="/logo-white-no-bkg.png"
               alt="Penny4Thots Logo"
               className="h-full w-full object-contain drop-shadow-lg"
             />
@@ -178,30 +194,28 @@ export function GetStartedPage({ onGetStarted }: GetStartedPageProps) {
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.5, delay: 1.2 }}
+          className="relative"
         >
-          <Button
-            onClick={onGetStarted}
-            size="lg"
-            className="group relative overflow-hidden rounded-full bg-primary px-10 py-7 font-syne text-lg font-semibold text-primary-foreground transition-all duration-300 hover:scale-105 hover:shadow-[0_0_40px_rgba(var(--primary),0.4)]"
-          >
-            <span className="relative z-10 flex items-center gap-2">
-              Get Started
-              <ArrowRight className="h-5 w-5 transition-transform duration-300 group-hover:translate-x-1" />
-            </span>
-            <motion.div
-              className="absolute inset-0 bg-gradient-to-r from-primary via-accent to-primary"
-              animate={{ x: ["-100%", "100%"] }}
-              transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-              style={{ opacity: 0.3 }}
-            />
-          </Button>
+          {/* Glow behind button */}
+          <div className="pointer-events-none absolute -inset-4 rounded-full bg-primary/20 blur-xl" />
+          <Connector />
         </motion.div>
 
-        {/* Bottom decorative line */}
+        {/* Bottom text */}
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1.4, duration: 0.5 }}
+          className="mt-8 text-center text-sm text-muted-foreground"
+        >
+          Connect your wallet to get started
+        </motion.p>
+
+        {/* Decorative bottom line */}
         <motion.div
           initial={{ scaleX: 0 }}
           animate={{ scaleX: 1 }}
-          transition={{ duration: 1, delay: 1.5 }}
+          transition={{ duration: 1, delay: 1.6 }}
           className="absolute bottom-12 h-px w-48 bg-gradient-to-r from-transparent via-primary/50 to-transparent"
         />
       </div>
