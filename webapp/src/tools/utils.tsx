@@ -1,11 +1,12 @@
 import { createWallet, walletConnect, inAppWallet } from "thirdweb/wallets";
 import { createThirdwebClient } from "thirdweb";
 import { ConnectButton, darkTheme } from "thirdweb/react";
-import { defineChain } from "thirdweb/chains";
+import { defineChain, sepolia } from "thirdweb/chains";
 import { ethers, JsonRpcProvider } from "ethers";
 import { getContract } from "thirdweb";
 import { env } from "process";
 import { ReactElement } from "react";
+import penny4thots from "../abi/penny4thots.json";
 
 //Thirdweb wallet connect
 // Global Constants ***************************************************************************************************************
@@ -38,39 +39,39 @@ export const wallets = [
 
 export const blockchain = {
   // mainnet
-  chainId: 56,
-  rpc: 'https://bsc-dataseed.bnbchain.org', 
-  blockExplorer: 'https://bscscan.com',
-  decimals: 18,
-  // pyth_contract_address: "0x8250f4aF4B972684F7b336503E2D6dFeDeB1487a",
-  // legend_contract_address: "0x5AD10b04Ac3F02471D41ae5143e35eE5493F10df",
-  // partner1_contract_address: "0xB87BE8c350d600290D9EcCBAA8cA73cf969a41A4", 
-  // base_price_id: "0xff61491a931112ddf1bd8147cd1b641375f79f5825126d665480874634fd0ace", // Base/USD 
+  // chainId: 56,
+  // rpc: 'https://bsc-dataseed.bnbchain.org', 
+  // blockExplorer: 'https://bscscan.com',
+  // decimals: 18,
+  // contract_address: '0x0217dFf6d795F4BaE2ed7DCEcb922cA65e84a417',
+  // contractABI: penny4thots.abi,
 
   // testnet
   // name: 'Jesse',
   // symbol: 'JESSE',
   // // partner1: 'Moth',
   // // partner1_symbol: 'MOTH',
-  // address: '0x683046277b72c02B3Ac266761B02d3eaA0C25c9a',
-  // chainId: 8453,
-  // rpc: 'https://developer-access-mainnet.base.org',
-  // blockExplorer: 'https://basescan.org',
+  chainId: 11155111,
+  rpc: 'https://rpc2.sepolia.orgwss://ethereum-sepolia-rpc.publicnode.com',
+  blockExplorer: 'https://sepolia.etherscan.io',
   // jesse_contract_address: "0x50F88fe97f72CD3E75b9Eb4f747F59BcEBA80d59",
-  // decimals: 18,
+  decimals: 18,
+  contract_address: '0x0217dFf6d795F4BaE2ed7DCEcb922cA65e84a417',
+  contractABI: penny4thots.abi,
   // pyth_contract_address: "0x2880ab155794e7179c9ee2e38200202908c17b43",
   // legend_contract_address: "0xE153921AF05bB17bA83c236a9C43d8d268716342",
   // // partner1_contract_address: "0xB87BE8c350d600290D9EcCBAA8cA73cf969a41A4", 
   // base_price_id: "0xf490b178d0c85683b7a0f2388b40af2e6f7c90cbe0f96b31f315f08d0e5a2d6d", // Base/USD
 };
 
-export const bsc = defineChain({ id: blockchain.chainId, rpc: blockchain.rpc});
+export const network = defineChain({ id: blockchain.chainId, rpc: blockchain.rpc});
 
+// Connector Component
 export function Connector(): ReactElement {
   return (
       <ConnectButton
         client={client}
-        chain={bsc}
+        chain={sepolia}
         wallets={wallets}
         theme={darkTheme({
           colors: {
@@ -117,6 +118,47 @@ export function Connector(): ReactElement {
         />     
     );
   }
+
+// Read Calls
+
+export const readMarket = async (address: string, ids: number[]): Promise<any[]> => {
+  // create provider (fallback to default sepolia provider if RPC is malformed)
+  let provider: JsonRpcProvider | ethers.providers.BaseProvider;
+  try {
+    provider = new JsonRpcProvider(blockchain.rpc as string);
+  } catch (e) {
+    provider = ethers.getDefaultProvider('sepolia');
+  }
+
+  const contract = new ethers.Contract(
+    blockchain.contract_address,
+    blockchain.contractABI,
+    provider
+  );
+
+  const raw = await contract.readMarket(address, ids);
+
+  const normalize = (val: any): any => {
+    if (Array.isArray(val)) return val.map(normalize);
+    if (ethers.BigNumber && ethers.BigNumber.isBigNumber && ethers.BigNumber.isBigNumber(val)) {
+      return val.toString();
+    }
+    if (val && typeof val === 'object') {
+      const out: Record<string, any> = {};
+      for (const k of Object.keys(val)) {
+        // Skip numeric keys on ethers returned array-like objects (they will be handled by Array.isArray above)
+        if (/^\d+$/.test(k)) continue;
+        out[k] = normalize(val[k]);
+      }
+      return out;
+    }
+    return val;
+  };
+
+  return normalize(raw) as any[];
+};
+
+// Write Calls
 
 // Shuffle implementation
 export const randomShuffle = (max: number): number => {
