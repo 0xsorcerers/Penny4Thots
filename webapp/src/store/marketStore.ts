@@ -1,11 +1,15 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { Market, CreateMarketData } from "@/types/market";
+import type { MarketInfoFormatted } from "@/tools/utils";
 
 interface MarketStore {
   markets: Market[];
   hasStarted: boolean;
+  isLoadingFromBlockchain: boolean;
   setHasStarted: (value: boolean) => void;
+  setMarketsFromBlockchain: (blockchainMarkets: MarketInfoFormatted[]) => void;
+  setIsLoadingFromBlockchain: (value: boolean) => void;
   addMarket: (data: CreateMarketData) => Market;
   getMarket: (id: string) => Market | undefined;
   voteYes: (id: string) => void;
@@ -18,8 +22,31 @@ export const useMarketStore = create<MarketStore>()(
     (set, get) => ({
       markets: [],
       hasStarted: false,
+      isLoadingFromBlockchain: false,
 
       setHasStarted: (value) => set({ hasStarted: value }),
+
+      setIsLoadingFromBlockchain: (value) => set({ isLoadingFromBlockchain: value }),
+
+      setMarketsFromBlockchain: (blockchainMarkets) => {
+        const markets: Market[] = blockchainMarkets.map((bm) => ({
+          id: `blockchain-${bm.indexer}`,
+          indexer: bm.indexer,
+          creator: bm.creator,
+          title: bm.title,
+          subtitle: bm.subtitle,
+          description: bm.description,
+          posterImage: bm.image,
+          tags: bm.tags,
+          tradeOptions: bm.status,
+          yesVotes: 0,
+          noVotes: 0,
+          createdAt: new Date().toISOString(),
+          marketBalance: bm.marketBalance,
+          status: bm.status,
+        }));
+        set({ markets });
+      },
 
       addMarket: (data) => {
         const newMarket: Market = {

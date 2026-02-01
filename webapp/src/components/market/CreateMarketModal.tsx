@@ -77,29 +77,34 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
       formData.posterImage ||
       PLACEHOLDER_IMAGES[Math.floor(Math.random() * PLACEHOLDER_IMAGES.length)];
 
-    await onSubmit({
-      title: formData.title,
-      subtitle: formData.subtitle,
-      description: formData.description,
-      posterImage,
-      tags: formData.tags,
-      marketBalance,
-      initialVote,
-    });
+    try {
+      await onSubmit({
+        title: formData.title,
+        subtitle: formData.subtitle,
+        description: formData.description,
+        posterImage,
+        tags: formData.tags,
+        marketBalance,
+        initialVote,
+      });
 
-    // Reset form
-    setFormData({
-      title: "",
-      subtitle: "",
-      description: "",
-      posterImage: "",
-      tagInput: "",
-      tags: [],
-    });
-    setMarketBalance("");
-    setInitialVote(null);
-    setStep("details");
-    onClose();
+      // Only reset form on successful submission
+      // The parent component (Index.tsx) will call onClose() on success
+      setFormData({
+        title: "",
+        subtitle: "",
+        description: "",
+        posterImage: "",
+        tagInput: "",
+        tags: [],
+      });
+      setMarketBalance("");
+      setInitialVote(null);
+      setStep("details");
+    } catch {
+      // Don't reset form or close modal on error
+      // User can retry the transaction or manually close
+    }
   };
 
   const handleClose = () => {
