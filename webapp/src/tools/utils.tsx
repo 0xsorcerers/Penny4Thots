@@ -15,9 +15,9 @@ export const client = createThirdwebClient({
 });
 
 export const wallets = [
-  // createWallet("com.coinbase.wallet"),
-  // walletConnect(),
-  // createWallet("io.metamask"),
+  createWallet("com.binance.wallet"),
+  createWallet("com.coinbase.wallet"),
+  walletConnect(),
   inAppWallet({
     auth: {
       // mode: "redirect",
