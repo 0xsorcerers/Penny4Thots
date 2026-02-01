@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Plus, Image as ImageIcon, Sparkles, ThumbsUp, ThumbsDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { readFee, formatEther } from "@/tools/utils";
 import type { CreateMarketData } from "@/types/market";
 
 interface CreateMarketModalProps {
@@ -24,6 +25,7 @@ const PLACEHOLDER_IMAGES = [
 
 export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false }: CreateMarketModalProps) {
   const [step, setStep] = useState<"details" | "confirm">("details");
+  const [fee, setFee] = useState<string>("0");
   const [formData, setFormData] = useState({
     title: "",
     subtitle: "",
@@ -34,6 +36,22 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
   });
   const [marketBalance, setMarketBalance] = useState("");
   const [initialVote, setInitialVote] = useState<"YES" | "NO" | null>(null);
+
+  // Fetch fee when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      const fetchFee = async () => {
+        try {
+          const feeBigInt = await readFee();
+          setFee(formatEther(feeBigInt));
+        } catch (err) {
+          console.error("Failed to fetch fee:", err);
+          setFee("0");
+        }
+      };
+      fetchFee();
+    }
+  }, [isOpen]);
 
   const handleAddTag = () => {
     const tag = formData.tagInput.trim();
@@ -334,6 +352,9 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
                           />
                           <p className="text-xs text-muted-foreground">
                             Amount of ETH to fund this market with
+                          </p>
+                          <p className="text-xs text-muted-foreground opacity-75 pt-1">
+                            Contract fee: {fee} ETH (will be deducted)
                           </p>
                         </div>
 
