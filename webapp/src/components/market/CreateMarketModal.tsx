@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Plus, Image as ImageIcon, Sparkles } from "lucide-react";
+import { X, Plus, Image as ImageIcon, Sparkles, ThumbsUp, ThumbsDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -10,7 +10,8 @@ import type { CreateMarketData } from "@/types/market";
 interface CreateMarketModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (data: CreateMarketData) => void;
+  onSubmit: (data: CreateMarketData & { marketBalance: string; initialVote: "YES" | "NO" }) => Promise<void>;
+  isLoading?: boolean;
 }
 
 const PLACEHOLDER_IMAGES = [
@@ -21,7 +22,8 @@ const PLACEHOLDER_IMAGES = [
   "https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=800&q=80",
 ];
 
-export function CreateMarketModal({ isOpen, onClose, onSubmit }: CreateMarketModalProps) {
+export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false }: CreateMarketModalProps) {
+  const [step, setStep] = useState<"details" | "confirm">("details");
   const [formData, setFormData] = useState({
     title: "",
     subtitle: "",
@@ -30,6 +32,8 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit }: CreateMarketMod
     tagInput: "",
     tags: [] as string[],
   });
+  const [marketBalance, setMarketBalance] = useState("");
+  const [initialVote, setInitialVote] = useState<"YES" | "NO" | null>(null);
 
   const handleAddTag = () => {
     const tag = formData.tagInput.trim();
@@ -56,18 +60,31 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit }: CreateMarketMod
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const isDetailsValid = formData.title.trim() && formData.subtitle.trim() && formData.description.trim();
+
+  const handleNextStep = (e: React.FormEvent) => {
     e.preventDefault();
+    if (isDetailsValid) {
+      setStep("confirm");
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!marketBalance || !initialVote) return;
+
     const posterImage =
       formData.posterImage ||
       PLACEHOLDER_IMAGES[Math.floor(Math.random() * PLACEHOLDER_IMAGES.length)];
 
-    onSubmit({
+    await onSubmit({
       title: formData.title,
       subtitle: formData.subtitle,
       description: formData.description,
       posterImage,
       tags: formData.tags,
+      marketBalance,
+      initialVote,
     });
 
     // Reset form
@@ -79,10 +96,18 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit }: CreateMarketMod
       tagInput: "",
       tags: [],
     });
+    setMarketBalance("");
+    setInitialVote(null);
+    setStep("details");
     onClose();
   };
 
-  const isValid = formData.title.trim() && formData.subtitle.trim() && formData.description.trim();
+  const handleClose = () => {
+    setStep("details");
+    setMarketBalance("");
+    setInitialVote(null);
+    onClose();
+  };
 
   return (
     <AnimatePresence>
@@ -93,11 +118,11 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit }: CreateMarketMod
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            onClick={onClose}
+            onClick={handleClose}
             className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm"
           />
 
-          {/* Modal - Properly centered */}
+          {/* Modal */}
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
@@ -106,168 +131,292 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit }: CreateMarketMod
               transition={{ type: "spring", damping: 25, stiffness: 300 }}
               className="w-full max-w-lg"
             >
-            <div className="relative overflow-hidden rounded-2xl border border-border/50 bg-card shadow-2xl">
-              {/* Header */}
-              <div className="flex items-center justify-between border-b border-border/50 p-6">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
-                    <Sparkles className="h-5 w-5 text-primary" />
-                  </div>
-                  <div>
-                    <h2 className="font-syne text-xl font-bold text-foreground">Create Market</h2>
-                    <p className="font-outfit text-sm text-muted-foreground">
-                      Start a new prediction
-                    </p>
-                  </div>
-                </div>
-                <button
-                  onClick={onClose}
-                  className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                >
-                  <X className="h-5 w-5" />
-                </button>
-              </div>
-
-              {/* Form */}
-              <form onSubmit={handleSubmit} className="max-h-[60vh] overflow-y-auto p-6">
-                <div className="space-y-5">
-                  {/* Title */}
-                  <div className="space-y-2">
-                    <Label htmlFor="title" className="font-outfit text-foreground">
-                      Title *
-                    </Label>
-                    <Input
-                      id="title"
-                      value={formData.title}
-                      onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                      placeholder="Will Bitcoin reach $100k?"
-                      className="rounded-xl border-border/50 bg-background font-outfit"
-                      required
-                    />
-                  </div>
-
-                  {/* Subtitle */}
-                  <div className="space-y-2">
-                    <Label htmlFor="subtitle" className="font-outfit text-foreground">
-                      Subtitle *
-                    </Label>
-                    <Input
-                      id="subtitle"
-                      value={formData.subtitle}
-                      onChange={(e) => setFormData({ ...formData, subtitle: e.target.value })}
-                      placeholder="Crypto price prediction for 2025"
-                      className="rounded-xl border-border/50 bg-background font-outfit"
-                      required
-                    />
-                  </div>
-
-                  {/* Description */}
-                  <div className="space-y-2">
-                    <Label htmlFor="description" className="font-outfit text-foreground">
-                      Description *
-                    </Label>
-                    <Textarea
-                      id="description"
-                      value={formData.description}
-                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                      placeholder="Provide more context about this prediction market..."
-                      rows={3}
-                      className="resize-none rounded-xl border-border/50 bg-background font-outfit"
-                      required
-                    />
-                  </div>
-
-                  {/* Poster Image URL */}
-                  <div className="space-y-2">
-                    <Label htmlFor="posterImage" className="font-outfit text-foreground">
-                      <span className="flex items-center gap-2">
-                        <ImageIcon className="h-4 w-4" />
-                        Poster Image URL (optional)
-                      </span>
-                    </Label>
-                    <Input
-                      id="posterImage"
-                      value={formData.posterImage}
-                      onChange={(e) => setFormData({ ...formData, posterImage: e.target.value })}
-                      placeholder="https://example.com/image.jpg"
-                      className="rounded-xl border-border/50 bg-background font-outfit"
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      Leave empty for a random image
-                    </p>
-                  </div>
-
-                  {/* Tags */}
-                  <div className="space-y-2">
-                    <Label className="font-outfit text-foreground">
-                      Tags ({formData.tags.length}/7)
-                    </Label>
-                    <div className="flex gap-2">
-                      <Input
-                        value={formData.tagInput}
-                        onChange={(e) => setFormData({ ...formData, tagInput: e.target.value })}
-                        onKeyDown={handleKeyDown}
-                        placeholder="Add a tag..."
-                        disabled={formData.tags.length >= 7}
-                        className="rounded-xl border-border/50 bg-background font-outfit"
-                      />
-                      <Button
-                        type="button"
-                        onClick={handleAddTag}
-                        disabled={!formData.tagInput.trim() || formData.tags.length >= 7}
-                        variant="secondary"
-                        className="rounded-xl"
-                      >
-                        <Plus className="h-4 w-4" />
-                      </Button>
+              <div className="relative overflow-hidden rounded-2xl border border-border/50 bg-card shadow-2xl">
+                {/* Header */}
+                <div className="flex items-center justify-between border-b border-border/50 p-6">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
+                      <Sparkles className="h-5 w-5 text-primary" />
                     </div>
-
-                    {/* Tag list */}
-                    {formData.tags.length > 0 && (
-                      <div className="flex flex-wrap gap-2 pt-2">
-                        {formData.tags.map((tag) => (
-                          <motion.span
-                            key={tag}
-                            initial={{ scale: 0 }}
-                            animate={{ scale: 1 }}
-                            exit={{ scale: 0 }}
-                            className="flex items-center gap-1 rounded-full bg-primary/10 px-3 py-1 font-mono text-xs text-primary"
-                          >
-                            {tag}
-                            <button
-                              type="button"
-                              onClick={() => handleRemoveTag(tag)}
-                              className="ml-1 rounded-full p-0.5 hover:bg-primary/20"
-                            >
-                              <X className="h-3 w-3" />
-                            </button>
-                          </motion.span>
-                        ))}
-                      </div>
-                    )}
+                    <div>
+                      <h2 className="font-syne text-xl font-bold text-foreground">
+                        {step === "details" ? "Create Market" : "Confirm & Fund"}
+                      </h2>
+                      <p className="font-outfit text-sm text-muted-foreground">
+                        {step === "details"
+                          ? "Start a new prediction"
+                          : "Set your initial position and vote"}
+                      </p>
+                    </div>
                   </div>
+                  <button
+                    onClick={handleClose}
+                    className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                  >
+                    <X className="h-5 w-5" />
+                  </button>
                 </div>
-              </form>
 
-              {/* Footer */}
-              <div className="flex items-center justify-end gap-3 border-t border-border/50 p-6">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  onClick={onClose}
-                  className="rounded-xl font-outfit"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  onClick={handleSubmit}
-                  disabled={!isValid}
-                  className="rounded-xl bg-primary font-outfit font-semibold"
-                >
-                  Create Market
-                </Button>
+                {/* Form Content */}
+                <form onSubmit={step === "details" ? handleNextStep : handleSubmit}>
+                  {step === "details" ? (
+                    // Step 1: Market Details
+                    <div className="max-h-[60vh] overflow-y-auto p-6">
+                      <div className="space-y-5">
+                        {/* Title */}
+                        <div className="space-y-2">
+                          <Label htmlFor="title" className="font-outfit text-foreground">
+                            Title *
+                          </Label>
+                          <Input
+                            id="title"
+                            value={formData.title}
+                            onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                            placeholder="Will Bitcoin reach $100k?"
+                            className="rounded-xl border-border/50 bg-background font-outfit"
+                            required
+                          />
+                        </div>
+
+                        {/* Subtitle */}
+                        <div className="space-y-2">
+                          <Label htmlFor="subtitle" className="font-outfit text-foreground">
+                            Subtitle *
+                          </Label>
+                          <Input
+                            id="subtitle"
+                            value={formData.subtitle}
+                            onChange={(e) => setFormData({ ...formData, subtitle: e.target.value })}
+                            placeholder="Crypto price prediction for 2025"
+                            className="rounded-xl border-border/50 bg-background font-outfit"
+                            required
+                          />
+                        </div>
+
+                        {/* Description */}
+                        <div className="space-y-2">
+                          <Label htmlFor="description" className="font-outfit text-foreground">
+                            Description *
+                          </Label>
+                          <Textarea
+                            id="description"
+                            value={formData.description}
+                            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                            placeholder="Provide more context about this prediction market..."
+                            rows={3}
+                            className="resize-none rounded-xl border-border/50 bg-background font-outfit"
+                            required
+                          />
+                        </div>
+
+                        {/* Poster Image URL */}
+                        <div className="space-y-2">
+                          <Label htmlFor="posterImage" className="font-outfit text-foreground">
+                            <span className="flex items-center gap-2">
+                              <ImageIcon className="h-4 w-4" />
+                              Poster Image URL (optional)
+                            </span>
+                          </Label>
+                          <Input
+                            id="posterImage"
+                            value={formData.posterImage}
+                            onChange={(e) => setFormData({ ...formData, posterImage: e.target.value })}
+                            placeholder="https://example.com/image.jpg"
+                            className="rounded-xl border-border/50 bg-background font-outfit"
+                          />
+                          <p className="text-xs text-muted-foreground">
+                            Leave empty for a random image
+                          </p>
+                        </div>
+
+                        {/* Tags */}
+                        <div className="space-y-2">
+                          <Label className="font-outfit text-foreground">
+                            Tags ({formData.tags.length}/7)
+                          </Label>
+                          <div className="flex gap-2">
+                            <Input
+                              value={formData.tagInput}
+                              onChange={(e) => setFormData({ ...formData, tagInput: e.target.value })}
+                              onKeyDown={handleKeyDown}
+                              placeholder="Add a tag..."
+                              disabled={formData.tags.length >= 7}
+                              className="rounded-xl border-border/50 bg-background font-outfit"
+                            />
+                            <Button
+                              type="button"
+                              onClick={handleAddTag}
+                              disabled={!formData.tagInput.trim() || formData.tags.length >= 7}
+                              variant="secondary"
+                              className="rounded-xl"
+                            >
+                              <Plus className="h-4 w-4" />
+                            </Button>
+                          </div>
+
+                          {/* Tag list */}
+                          {formData.tags.length > 0 && (
+                            <div className="flex flex-wrap gap-2 pt-2">
+                              {formData.tags.map((tag) => (
+                                <motion.span
+                                  key={tag}
+                                  initial={{ scale: 0 }}
+                                  animate={{ scale: 1 }}
+                                  exit={{ scale: 0 }}
+                                  className="flex items-center gap-1 rounded-full bg-primary/10 px-3 py-1 font-mono text-xs text-primary"
+                                >
+                                  {tag}
+                                  <button
+                                    type="button"
+                                    onClick={() => handleRemoveTag(tag)}
+                                    className="ml-1 rounded-full p-0.5 hover:bg-primary/20"
+                                  >
+                                    <X className="h-3 w-3" />
+                                  </button>
+                                </motion.span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    // Step 2: Confirm & Fund
+                    <div className="max-h-[60vh] overflow-y-auto p-6">
+                      <div className="space-y-6">
+                        {/* Market Summary */}
+                        <div className="rounded-xl bg-muted/50 p-4 space-y-3">
+                          <div>
+                            <p className="text-xs text-muted-foreground">Title</p>
+                            <p className="font-outfit font-semibold text-foreground">{formData.title}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-muted-foreground">Subtitle</p>
+                            <p className="font-outfit text-sm text-foreground">{formData.subtitle}</p>
+                          </div>
+                          {formData.tags.length > 0 && (
+                            <div>
+                              <p className="text-xs text-muted-foreground mb-2">Tags</p>
+                              <div className="flex flex-wrap gap-1">
+                                {formData.tags.map((tag) => (
+                                  <span
+                                    key={tag}
+                                    className="text-xs rounded-full bg-primary/10 px-2 py-1 text-primary"
+                                  >
+                                    {tag}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Market Balance */}
+                        <div className="space-y-2">
+                          <Label htmlFor="balance" className="font-outfit text-foreground">
+                            Initial Market Balance (ETH) *
+                          </Label>
+                          <Input
+                            id="balance"
+                            type="number"
+                            step="0.001"
+                            min="0"
+                            value={marketBalance}
+                            onChange={(e) => setMarketBalance(e.target.value)}
+                            placeholder="0.1"
+                            className="rounded-xl border-border/50 bg-background font-outfit"
+                            required
+                          />
+                          <p className="text-xs text-muted-foreground">
+                            Amount of ETH to fund this market with
+                          </p>
+                        </div>
+
+                        {/* Initial Vote */}
+                        <div className="space-y-2">
+                          <Label className="font-outfit text-foreground">
+                            Your Initial Vote *
+                          </Label>
+                          <div className="grid grid-cols-2 gap-3">
+                            <motion.button
+                              type="button"
+                              onClick={() => setInitialVote("YES")}
+                              whileHover={{ scale: 1.02 }}
+                              whileTap={{ scale: 0.98 }}
+                              className={`relative rounded-xl border-2 p-4 transition-colors ${
+                                initialVote === "YES"
+                                  ? "border-primary bg-primary/10"
+                                  : "border-border/50 bg-muted/50 hover:border-primary/50"
+                              }`}
+                            >
+                              <div className="flex flex-col items-center gap-2">
+                                <ThumbsUp
+                                  className={`h-5 w-5 ${
+                                    initialVote === "YES" ? "text-primary" : "text-muted-foreground"
+                                  }`}
+                                />
+                                <span className="font-outfit font-semibold text-foreground">YES</span>
+                              </div>
+                            </motion.button>
+
+                            <motion.button
+                              type="button"
+                              onClick={() => setInitialVote("NO")}
+                              whileHover={{ scale: 1.02 }}
+                              whileTap={{ scale: 0.98 }}
+                              className={`relative rounded-xl border-2 p-4 transition-colors ${
+                                initialVote === "NO"
+                                  ? "border-destructive bg-destructive/10"
+                                  : "border-border/50 bg-muted/50 hover:border-destructive/50"
+                              }`}
+                            >
+                              <div className="flex flex-col items-center gap-2">
+                                <ThumbsDown
+                                  className={`h-5 w-5 ${
+                                    initialVote === "NO" ? "text-destructive" : "text-muted-foreground"
+                                  }`}
+                                />
+                                <span className="font-outfit font-semibold text-foreground">NO</span>
+                              </div>
+                            </motion.button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Footer */}
+                  <div className="flex items-center justify-end gap-3 border-t border-border/50 p-6">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      onClick={step === "confirm" ? () => setStep("details") : handleClose}
+                      disabled={isLoading}
+                      className="rounded-xl font-outfit"
+                    >
+                      {step === "confirm" ? "Back" : "Cancel"}
+                    </Button>
+                    <Button
+                      type="submit"
+                      disabled={
+                        isLoading ||
+                        (step === "details"
+                          ? !isDetailsValid
+                          : !marketBalance || !initialVote)
+                      }
+                      className="rounded-xl bg-primary font-outfit font-semibold"
+                    >
+                      {isLoading
+                        ? step === "confirm"
+                          ? "Creating..."
+                          : "Next"
+                        : step === "details"
+                        ? "Next"
+                        : "Create Market"}
+                    </Button>
+                  </div>
+                </form>
               </div>
-            </div>
             </motion.div>
           </div>
         </>
