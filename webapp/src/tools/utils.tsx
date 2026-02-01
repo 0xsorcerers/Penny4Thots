@@ -103,20 +103,20 @@ export function Connector(): ReactElement {
           //   // }
           // ]
           // }}
-          connectButton={{ label: "Login" }}
+          connectButton={{ label: "Get Started" }}
           connectModal={{
             size: "wide",
-            title: "Socials or Wallet",
+            title: "Connect to Penny4Thots",
             titleIcon:
-              "https://cybernauts.fun/assets/images/logo512.webp",
+              "/white-on-background.png",
             welcomeScreen: {
-              title: "Thots Prediction Markets!",
+              title: "Penny4Thots Prediction Markets",
               subtitle:
                 "...if you can think it, it's important.",
               img: {
-                src: 'https://cybernauts.fun/assets/images/logo512.webp',
-                width: 250,
-                height: 250,
+                src: '/white-on-background.png',
+                width: 200,
+                height: 200,
               },
             },
           }}
