@@ -86,6 +86,7 @@ export const blockchain = {
   blockExplorer: 'https://sepolia.etherscan.io',
   decimals: 18,
   contract_address: '0x0217dFf6d795F4BaE2ed7DCEcb922cA65e84a417' as Address,
+  symbol: 'ETH',
 };
 
 export const network = defineChain({ id: blockchain.chainId, rpc: blockchain.rpc });
