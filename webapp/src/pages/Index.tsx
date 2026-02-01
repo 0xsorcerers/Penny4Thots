@@ -5,7 +5,7 @@ import { MarketGrid } from "@/components/market/MarketGrid";
 import { CreateMarketModal } from "@/components/market/CreateMarketModal";
 import { useMarketStore } from "@/store/marketStore";
 import { useActiveAccount } from "thirdweb/react";
-import { useWriteMarket, parseEther, readFee, fetchMarketsFromBlockchain } from "@/tools/utils";
+import { useWriteMarket, readFee, fetchMarketsFromBlockchain, toWei } from "@/tools/utils";
 import type { CreateMarketData } from "@/types/market";
 import { toast } from "sonner";
 
@@ -50,7 +50,7 @@ export default function Index() {
     setIsSubmitting(true);
     try {
       const fee = await readFee();
-      const marketBalanceBigInt = parseEther(data.marketBalance);
+      const marketBalanceBigInt = toWei(data.marketBalance);
 
       // Call blockchain
       await writeMarket({
