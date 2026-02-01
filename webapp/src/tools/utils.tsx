@@ -208,7 +208,7 @@ export const fetchMarketsFromBlockchain = async (): Promise<MarketInfoFormatted[
   // Create array of market IDs in descending order (newest first)
   // Exclude 0 and limit to MARKET_FETCH_LIMIT
   const startIndex = marketCount;
-  const endIndex = Math.max(1, marketCount - MARKET_FETCH_LIMIT + 1);
+  const endIndex = Math.max(0, marketCount - MARKET_FETCH_LIMIT + 1);
 
   const marketIds: number[] = [];
   for (let i = startIndex; i >= endIndex; i--) {
@@ -236,11 +236,13 @@ export const prepareWriteMarket = (params: WriteMarketParams) => {
     params.tags,
   ];
 
+  const fee = parseEther(params.fee.toString());
+
   return prepareContractCall({
     contract: penny4thotsContract,
     method: "function writeMarket(string[] calldata _info, uint256 _marketBalance) external payable",
     params: [infoArray, params.marketBalance],
-    value: params.fee,
+    value: fee,
   });
 };
 
