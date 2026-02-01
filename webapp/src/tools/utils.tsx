@@ -43,8 +43,8 @@ export interface WriteMarketParams {
   description: string;
   image: string;
   tags: string;
-  marketBalance: bigint;
-  fee: bigint;
+  marketBalance: string;
+  fee: string;
 }
 
 // ============================================================================
@@ -237,8 +237,8 @@ export const prepareWriteMarket = (params: WriteMarketParams) => {
   return prepareContractCall({
     contract: penny4thotsContract,
     method: "function writeMarket(string[] calldata _info, uint256 _marketBalance) external payable",
-    params: [infoArray, params.marketBalance],
-    value: params.fee,
+    params: [infoArray, toWei(params.marketBalance)],
+    value: toWei(params.fee),
   });
 };
 
