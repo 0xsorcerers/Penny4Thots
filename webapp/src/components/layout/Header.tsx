@@ -28,13 +28,17 @@ export function Header({ onConnect, isConnected = false }: HeaderProps) {
           transition={{ type: "spring", stiffness: 400, damping: 17 }}
         >
           <div className="relative">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-accent">
-              <span className="font-syne text-lg font-bold text-primary-foreground">M</span>
+            <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-primary/20 to-accent/20 p-1">
+              <img
+                src="/white-on-background.png"
+                alt="Penny4Thots Logo"
+                className="h-full w-full object-contain"
+              />
             </div>
             <div className="absolute -inset-1 -z-10 rounded-xl bg-gradient-to-br from-primary/50 to-accent/50 opacity-50 blur-sm" />
           </div>
           <span className="font-syne text-xl font-bold tracking-tight text-foreground">
-            Market of Thots
+            Penny4Thots
           </span>
         </motion.div>
 

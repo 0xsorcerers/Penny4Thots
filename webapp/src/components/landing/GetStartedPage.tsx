@@ -99,6 +99,23 @@ export function GetStartedPage({ onGetStarted }: GetStartedPageProps) {
           </div>
         </motion.div>
 
+        {/* Logo */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.6, delay: 0.3 }}
+          className="mb-6"
+        >
+          <div className="relative mx-auto h-24 w-24 sm:h-32 sm:w-32">
+            <img
+              src="/white-on-background.png"
+              alt="Penny4Thots Logo"
+              className="h-full w-full object-contain drop-shadow-lg"
+            />
+            <div className="absolute -inset-4 -z-10 rounded-full bg-primary/20 blur-2xl" />
+          </div>
+        </motion.div>
+
         {/* Main heading */}
         <motion.h1
           initial={{ opacity: 0, y: 30 }}
@@ -106,7 +123,7 @@ export function GetStartedPage({ onGetStarted }: GetStartedPageProps) {
           transition={{ duration: 0.8, delay: 0.4 }}
           className="mb-6 text-center font-syne text-5xl font-bold leading-tight tracking-tight sm:text-6xl md:text-7xl lg:text-8xl"
         >
-          <span className="block text-foreground">Market of</span>
+          <span className="block text-foreground">Penny4</span>
           <span
             className="block animate-shimmer-sweep bg-clip-text text-transparent"
             style={{
