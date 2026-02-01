@@ -196,32 +196,30 @@ const MARKET_FETCH_LIMIT = 50;
 /**
  * Fetch markets from blockchain with a limit of 50 most recent markets
  * Markets are fetched in descending order (newest first)
- * Excludes market index 0
  */
-export const fetchMarketsFromBlockchain = async (): Promise<MarketInfoFormatted[]> => {
+export const fetchMarketsFromBlockchain = async (): Promise<MarketInfoFormatted[]> => { 
   const marketCount = await readMarketCount();
 
+  // No markets
   if (marketCount === 0) {
     return [];
   }
 
-  // Create array of market IDs in descending order (newest first)
-  // Exclude 0 and limit to MARKET_FETCH_LIMIT
-  const startIndex = marketCount;
-  const endIndex = Math.max(0, marketCount - MARKET_FETCH_LIMIT + 1);
+  // Highest valid ID
+  const startIndex = marketCount - 1;
+
+  // Lower bound, respecting limit
+  const endIndex = Math.max(0, startIndex - MARKET_FETCH_LIMIT + 1);
 
   const marketIds: number[] = [];
   for (let i = startIndex; i >= endIndex; i--) {
     marketIds.push(i);
   }
 
-  if (marketIds.length === 0) {
-    return [];
-  }
-
   const markets = await readMarket(marketIds);
   return markets;
 };
+
 
 // ============================================================================
 // Write Calls (using thirdweb)
@@ -236,13 +234,11 @@ export const prepareWriteMarket = (params: WriteMarketParams) => {
     params.tags,
   ];
 
-  const fee = parseEther(params.fee.toString());
-
   return prepareContractCall({
     contract: penny4thotsContract,
     method: "function writeMarket(string[] calldata _info, uint256 _marketBalance) external payable",
     params: [infoArray, params.marketBalance],
-    value: fee,
+    value: params.fee,
   });
 };
 
@@ -278,6 +274,16 @@ export const parseTags = (tagsString: string): string[] => {
  */
 export const serializeTags = (tags: string[]): string => {
   return tags.slice(0, 7).join(',');
+};
+
+/**
+ * Convert any ETH amount (string or number) to wei (bigint)
+ * Handles both decimal and whole numbers
+ * @param amount - ETH amount as string or number (e.g., "0.01", 1, "1.5")
+ * @returns bigint in wei
+ */
+export const toWei = (amount: string | number): bigint => {
+  return parseEther(String(amount));
 };
 
 export const randomShuffle = (max: number): number => {
