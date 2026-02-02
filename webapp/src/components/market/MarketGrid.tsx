@@ -7,6 +7,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
+// Fisher-Yates shuffle algorithm
+const shuffleArray = <T,>(array: T[]): T[] => {
+  const shuffled = [...array];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+};
+
 interface MarketGridProps {
   markets: Market[];
   onCreateMarket: () => void;
@@ -18,13 +28,14 @@ export function MarketGrid({ markets, onCreateMarket, isLoading = false }: Marke
   const [searchQuery, setSearchQuery] = useState("");
   const [showAllTags, setShowAllTags] = useState(false);
 
-  // Extract all unique tags
+  // Extract all unique tags and shuffle them
   const allTags = useMemo(() => {
     const tagSet = new Set<string>();
     markets.forEach((market) => {
       market.tags.forEach((tag) => tagSet.add(tag));
     });
-    return Array.from(tagSet).sort();
+    const sortedTags = Array.from(tagSet).sort();
+    return shuffleArray(sortedTags);
   }, [markets]);
 
   // Filter and sort markets
