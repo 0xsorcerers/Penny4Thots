@@ -30,7 +30,7 @@ export const useMarketStore = create<MarketStore>()(
 
       setMarketsFromBlockchain: (blockchainMarkets) => {
         const markets: Market[] = blockchainMarkets.map((bm) => ({
-          id: `blockchain-${bm.indexer}`,
+          id: `penny4thot-${bm.indexer}`,
           indexer: bm.indexer,
           creator: bm.creator,
           title: bm.title,
