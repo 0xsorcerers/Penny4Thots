@@ -4,6 +4,7 @@ import { TrendingUp, TrendingDown, BarChart3 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import type { Market } from "@/types/market";
 import { cn } from "@/lib/utils";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 interface MarketCardProps {
   market: Market;
@@ -13,6 +14,7 @@ export function MarketCard({ market }: MarketCardProps) {
   const navigate = useNavigate();
   const [isHovered, setIsHovered] = useState(false);
   const [tradeMode, setTradeMode] = useState<"idle" | "active">("idle");
+  const [showAllTags, setShowAllTags] = useState(false);
 
   const totalVotes = market.yesVotes + market.noVotes;
   const yesPercentage = totalVotes > 0 ? (market.yesVotes / totalVotes) * 100 : 50;
@@ -32,6 +34,11 @@ export function MarketCard({ market }: MarketCardProps) {
     e.stopPropagation();
     console.log(`${action} action for market:`, market.id);
     setTradeMode("idle");
+  };
+
+  const handleShowMoreTags = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setShowAllTags(true);
   };
 
   return (
@@ -69,9 +76,12 @@ export function MarketCard({ market }: MarketCardProps) {
             </span>
           ))}
           {market.tags.length > 3 && (
-            <span className="rounded-full bg-muted px-2.5 py-0.5 font-mono text-xs text-muted-foreground">
-              +{market.tags.length - 3}
-            </span>
+            <button
+              onClick={handleShowMoreTags}
+              className="rounded-full bg-muted px-2.5 py-0.5 font-mono text-xs text-muted-foreground transition-colors hover:bg-muted/80 hover:text-foreground"
+            >
+              +{market.tags.length - 3} tags
+            </button>
           )}
         </div>
 
@@ -164,6 +174,28 @@ export function MarketCard({ market }: MarketCardProps) {
           />
         )}
       </AnimatePresence>
+
+      {/* Tags Modal */}
+      <Dialog open={showAllTags} onOpenChange={setShowAllTags}>
+        <DialogContent className="max-w-md bg-card/95 backdrop-blur-sm border-border/50">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold">{market.title}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">All tags for this market</p>
+            <div className="flex flex-wrap gap-2">
+              {market.tags.map((tag) => (
+                <span
+                  key={tag}
+                  className="rounded-full bg-primary/10 px-3 py-1.5 font-mono text-sm text-primary"
+                >
+                  {tag}
+                </span>
+              ))}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </motion.div>
   );
 }
