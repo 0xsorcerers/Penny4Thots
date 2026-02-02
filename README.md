@@ -41,6 +41,10 @@ Structure:
 - Users can select a tag to filter the market list
 - Modal has translucent background for a clean, unobtrusive appearance
 
+## Theme
+
+The application uses dark mode as the default theme for all new users. Users can switch between light and dark mode at any time using the theme toggle button in the header.
+
 Setup
 
 1. Frontend
