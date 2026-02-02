@@ -8,10 +8,11 @@ Structure:
 - `backend/` — API and server code (if present)
 
 ### Market Card Button Flow
-- **Initial state**: Shows YES/NO vote buttons prominently
-- **After voting**: Shows Trade button to access Buy/Sell options
-- **Trade expanded**: Shows Buy/Sell buttons for trading functionality
-- This prioritizes voting while keeping trading accessible after voting
+- **Initial state**: Shows "Vote" button as the primary action
+- **Vote expanded**: Clicking Vote shows YES/NO buttons for voting
+- **After voting**: Transitions to Trade button for Buy/Sell options
+- **Trade expanded**: Clicking Trade shows Buy/Sell buttons for trading
+- This flow guides users: Vote → Trade, with expandable options at each step
 
 ### Market Data Format
 - **Tags**: Stored on-chain as comma-delimited strings (e.g., "crypto,bitcoin,prediction"). Max 7 tags.

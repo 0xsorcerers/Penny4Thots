@@ -13,6 +13,7 @@ interface MarketCardProps {
 export function MarketCard({ market }: MarketCardProps) {
   const navigate = useNavigate();
   const [isHovered, setIsHovered] = useState(false);
+  const [voteMode, setVoteMode] = useState<"idle" | "active">("idle");
   const [hasVoted, setHasVoted] = useState(false);
   const [tradeMode, setTradeMode] = useState<"idle" | "active">("idle");
   const [showAllTags, setShowAllTags] = useState(false);
@@ -46,6 +47,12 @@ export function MarketCard({ market }: MarketCardProps) {
     e.stopPropagation();
     console.log(`Voted ${choice} on market:`, market.id);
     setHasVoted(true);
+    setVoteMode("idle");
+  };
+
+  const handleVoteClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setVoteMode(voteMode === "idle" ? "active" : "idle");
   };
 
   return (
@@ -127,9 +134,20 @@ export function MarketCard({ market }: MarketCardProps) {
 
         {/* Vote/Trade Buttons */}
         <AnimatePresence mode="wait">
-          {!hasVoted ? (
-            <motion.div
+          {!hasVoted && voteMode === "idle" ? (
+            <motion.button
               key="vote"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={handleVoteClick}
+              className="flex w-full items-center justify-center gap-2 rounded-xl py-2.5 font-outfit text-sm font-medium transition-all bg-primary/10 text-primary hover:bg-primary/20"
+            >
+              Vote
+            </motion.button>
+          ) : !hasVoted && voteMode === "active" ? (
+            <motion.div
+              key="yes-no"
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
