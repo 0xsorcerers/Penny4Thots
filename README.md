@@ -22,6 +22,12 @@ Structure:
 - `readMarket(ids[])` - Reads specific market data by IDs
 - `useWriteMarket()` - Hook for creating new markets on-chain
 
+### Tag Display
+- Markets display first 3 tags directly on the card
+- If more than 3 tags exist, a "+N tags" button appears
+- Clicking this button opens a modal with all tags for the market
+- Modal has translucent background (`bg-card/95 backdrop-blur-sm`) for visibility through the overlay
+
 Setup
 
 1. Frontend
