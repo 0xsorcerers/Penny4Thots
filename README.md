@@ -7,7 +7,11 @@ Structure:
 - `webapp/` — React frontend (Thirdweb wallet integration, Tailwind)
 - `backend/` — API and server code (if present)
 
-## Blockchain Integration
+### Market Card Button Flow
+- **Initial state**: Shows YES/NO vote buttons prominently
+- **After voting**: Shows Trade button to access Buy/Sell options
+- **Trade expanded**: Shows Buy/Sell buttons for trading functionality
+- This prioritizes voting while keeping trading accessible after voting
 
 ### Market Data Format
 - **Tags**: Stored on-chain as comma-delimited strings (e.g., "crypto,bitcoin,prediction"). Max 7 tags.

@@ -13,6 +13,7 @@ interface MarketCardProps {
 export function MarketCard({ market }: MarketCardProps) {
   const navigate = useNavigate();
   const [isHovered, setIsHovered] = useState(false);
+  const [hasVoted, setHasVoted] = useState(false);
   const [tradeMode, setTradeMode] = useState<"idle" | "active">("idle");
   const [showAllTags, setShowAllTags] = useState(false);
 
@@ -39,6 +40,12 @@ export function MarketCard({ market }: MarketCardProps) {
   const handleShowMoreTags = (e: React.MouseEvent) => {
     e.stopPropagation();
     setShowAllTags(true);
+  };
+
+  const handleVote = (e: React.MouseEvent, choice: "yes" | "no") => {
+    e.stopPropagation();
+    console.log(`Voted ${choice} on market:`, market.id);
+    setHasVoted(true);
   };
 
   return (
@@ -118,9 +125,30 @@ export function MarketCard({ market }: MarketCardProps) {
           </div>
         </div>
 
-        {/* Trade Button */}
+        {/* Vote/Trade Buttons */}
         <AnimatePresence mode="wait">
-          {tradeMode === "idle" ? (
+          {!hasVoted ? (
+            <motion.div
+              key="vote"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="flex gap-2"
+            >
+              <button
+                onClick={(e) => handleVote(e, "yes")}
+                className="flex-1 rounded-xl bg-yes py-2.5 font-outfit text-sm font-semibold text-yes-foreground transition-all hover:bg-yes/90 hover:shadow-[0_0_20px_rgba(var(--yes),0.3)]"
+              >
+                YES
+              </button>
+              <button
+                onClick={(e) => handleVote(e, "no")}
+                className="flex-1 rounded-xl bg-no py-2.5 font-outfit text-sm font-semibold text-no-foreground transition-all hover:bg-no/90 hover:shadow-[0_0_20px_rgba(var(--no),0.3)]"
+              >
+                NO
+              </button>
+            </motion.div>
+          ) : tradeMode === "idle" ? (
             <motion.button
               key="trade"
               initial={{ opacity: 0 }}
