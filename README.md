@@ -14,6 +14,11 @@ Structure:
 - **Trade expanded**: Clicking Trade shows Buy/Sell buttons for trading
 - This flow guides users: Vote → Trade, with expandable options at each step
 
+### Market Page Behavior
+- When a user opens a market page, the view automatically scrolls to the top
+- This ensures users see the full market details without having to scroll
+- Prevents the disorientation of landing on the bottom of the page
+
 ### Market Data Format
 - **Tags**: Stored on-chain as comma-delimited strings (e.g., "crypto,bitcoin,prediction"). Max 7 tags.
 - **Market Fetching**: App fetches up to 50 most recent markets from blockchain in descending order (newest first)
