@@ -5,31 +5,53 @@ import { MarketGrid } from "@/components/market/MarketGrid";
 import { CreateMarketModal } from "@/components/market/CreateMarketModal";
 import { useMarketStore } from "@/store/marketStore";
 import { useActiveAccount } from "thirdweb/react";
-import { useWriteMarket, readFee, fetchMarketsFromBlockchain, toWei } from "@/tools/utils";
+import { useWriteMarket, readFee, fetchMarketsFromBlockchain, fetchMarketDataFromBlockchain, readMarketCount, toWei } from "@/tools/utils";
 import type { CreateMarketData } from "@/types/market";
 import { toast } from "sonner";
 
 export default function Index() {
-  const { markets, setMarketsFromBlockchain, isLoadingFromBlockchain, setIsLoadingFromBlockchain } = useMarketStore();
+  const { markets, setMarketsFromBlockchain, updateMarketData, marketInfos, isLoadingFromBlockchain, setIsLoadingFromBlockchain } = useMarketStore();
   const [isConnected, setIsConnected] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [lastFetchedCount, setLastFetchedCount] = useState(0);
   const account = useActiveAccount();
   const { writeMarket, isPending, error } = useWriteMarket();
 
-  // Fetch markets from blockchain on mount
+  // Smart fetch that only loads new markets not already in localStorage
   const loadMarketsFromBlockchain = useCallback(async () => {
     setIsLoadingFromBlockchain(true);
     try {
-      const blockchainMarkets = await fetchMarketsFromBlockchain();
-      setMarketsFromBlockchain(blockchainMarkets);
+      const currentMarketCount = await readMarketCount();
+
+      // If no new markets, just refresh market data
+      if (currentMarketCount === lastFetchedCount && marketInfos.length > 0) {
+        const marketDataMap = await fetchMarketDataFromBlockchain(
+          marketInfos.map(m => m.indexer)
+        );
+        const dataMap = new Map(
+          marketDataMap.map((data, idx) => [marketInfos[idx].indexer, data])
+        );
+        updateMarketData(dataMap);
+      } else {
+        // Fetch all market info and data
+        const blockchainInfos = await fetchMarketsFromBlockchain();
+        const marketDataMap = await fetchMarketDataFromBlockchain(
+          blockchainInfos.map(m => m.indexer)
+        );
+        const dataMap = new Map(
+          marketDataMap.map((data, idx) => [blockchainInfos[idx].indexer, data])
+        );
+        setMarketsFromBlockchain(blockchainInfos, dataMap);
+        setLastFetchedCount(currentMarketCount);
+      }
     } catch (err) {
       console.error("Failed to load markets from blockchain:", err);
       toast.error("Failed to load markets from blockchain");
     } finally {
       setIsLoadingFromBlockchain(false);
     }
-  }, [setMarketsFromBlockchain, setIsLoadingFromBlockchain]);
+  }, [lastFetchedCount, marketInfos, setMarketsFromBlockchain, updateMarketData, setIsLoadingFromBlockchain]);
 
   useEffect(() => {
     if (account) {
