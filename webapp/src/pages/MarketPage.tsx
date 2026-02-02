@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -22,6 +22,11 @@ export default function MarketPage() {
 
   const [hasVoted, setHasVoted] = useState<"yes" | "no" | null>(null);
   const [tradeMode, setTradeMode] = useState<"idle" | "active">("idle");
+
+  // Scroll to top when market page loads
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [id]);
 
   if (!market) {
     return (
