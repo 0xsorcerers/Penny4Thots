@@ -30,7 +30,7 @@ Structure:
 
 ### Filter Tags
 - Filter bar displays all available tags
-- "More" button only appears when tags exceed 95% of the container width
+- "More" button appears when there are more than 12 tags
 - Clicking the button opens a modal showing all tags for filtering
 - Users can select a tag to filter the market list
 - Modal has translucent background for a clean, unobtrusive appearance
