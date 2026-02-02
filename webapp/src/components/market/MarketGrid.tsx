@@ -5,6 +5,7 @@ import type { Market } from "@/types/market";
 import { MarketCard } from "./MarketCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 interface MarketGridProps {
   markets: Market[];
@@ -15,6 +16,7 @@ interface MarketGridProps {
 export function MarketGrid({ markets, onCreateMarket, isLoading = false }: MarketGridProps) {
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [showAllTags, setShowAllTags] = useState(false);
 
   // Extract all unique tags
   const allTags = useMemo(() => {
@@ -118,7 +120,7 @@ export function MarketGrid({ markets, onCreateMarket, isLoading = false }: Marke
               >
                 All
               </button>
-              {allTags.map((tag) => (
+              {allTags.slice(0, 5).map((tag) => (
                 <button
                   key={tag}
                   onClick={() => setSelectedTag(selectedTag === tag ? null : tag)}
@@ -131,8 +133,59 @@ export function MarketGrid({ markets, onCreateMarket, isLoading = false }: Marke
                   {tag}
                 </button>
               ))}
+              {allTags.length > 5 && (
+                <button
+                  onClick={() => setShowAllTags(true)}
+                  className="rounded-full px-3 py-1.5 font-mono text-xs bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground transition-all"
+                >
+                  +{allTags.length - 5} more
+                </button>
+              )}
             </div>
           )}
+
+          {/* All Tags Modal */}
+          <Dialog open={showAllTags} onOpenChange={setShowAllTags}>
+            <DialogContent className="max-w-md bg-card/95 backdrop-blur-sm border-border/50">
+              <DialogHeader>
+                <DialogTitle className="text-xl font-bold">Filter by Tag</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <p className="text-sm text-muted-foreground">Select a tag to filter markets</p>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    onClick={() => {
+                      setSelectedTag(null);
+                      setShowAllTags(false);
+                    }}
+                    className={`rounded-full px-3 py-1.5 font-mono text-xs transition-all ${
+                      selectedTag === null
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground"
+                    }`}
+                  >
+                    All
+                  </button>
+                  {allTags.map((tag) => (
+                    <button
+                      key={tag}
+                      onClick={() => {
+                        setSelectedTag(selectedTag === tag ? null : tag);
+                        setShowAllTags(false);
+                      }}
+                      className={`rounded-full px-3 py-1.5 font-mono text-xs transition-all ${
+                        selectedTag === tag
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground"
+                      }`}
+                    >
+                      {tag}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
         </motion.div>
 
         {/* Markets Grid or Empty State */}
