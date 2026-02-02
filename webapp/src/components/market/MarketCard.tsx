@@ -58,9 +58,9 @@ export function MarketCard({ market }: MarketCardProps) {
         <img
           src={market.posterImage}
           alt=""
-          className="h-full w-full object-cover opacity-20 transition-opacity duration-500 group-hover:opacity-30"
+          className="h-full w-full object-cover opacity-40 transition-opacity duration-500 group-hover:opacity-50"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-card via-card/95 to-card/70" />
+        <div className="absolute inset-0 bg-gradient-to-t from-card via-card/80 to-card/50" />
       </div>
 
       {/* Content */}
