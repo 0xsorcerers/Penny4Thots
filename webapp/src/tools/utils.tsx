@@ -1,5 +1,5 @@
 import { createWallet, walletConnect, inAppWallet } from "thirdweb/wallets";
-import { createThirdwebClient, getContract, prepareContractCall } from "thirdweb";
+import { createThirdwebClient, getContract, prepareContractCall, waitForReceipt } from "thirdweb";
 import { ConnectButton, darkTheme, useSendTransaction } from "thirdweb/react";
 import { defineChain, sepolia } from "thirdweb/chains";
 import { createPublicClient, http, formatEther, parseEther, type Address, type Abi } from "viem";
@@ -249,6 +249,15 @@ export const useWriteMarket = () => {
   const writeMarket = async (params: WriteMarketParams) => {
     const transaction = prepareWriteMarket(params);
     const result = await sendTx(transaction);
+
+    // Wait for transaction to be mined/confirmed before returning
+    // This ensures the new market is written to the blockchain before we fetch updated data
+    await waitForReceipt({
+      client,
+      chain: sepolia,
+      transactionHash: result.transactionHash,
+    });
+
     return result;
   };
 
