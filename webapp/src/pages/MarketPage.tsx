@@ -76,9 +76,9 @@ export default function MarketPage() {
         <img
           src={market.posterImage}
           alt=""
-          className="h-full w-full object-cover opacity-10"
+          className="h-full w-full object-cover opacity-25"
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-background/50 via-background/90 to-background" />
+        <div className="absolute inset-0 bg-gradient-to-b from-background/40 via-background/70 to-background" />
       </div>
 
       {/* Content */}
