@@ -24,9 +24,16 @@ Structure:
 
 ### Tag Display
 - Markets display first 3 tags directly on the card
-- If more than 3 tags exist, a "+N tags" button appears
+- If more than 3 tags exist, a "+N tags" button appears on the card
 - Clicking this button opens a modal with all tags for the market
 - Modal has translucent background (`bg-card/95 backdrop-blur-sm`) for visibility through the overlay
+
+### Filter Tags
+- Filter bar below search input displays first 5 tags
+- If more than 5 tags exist, a "+N more" button appears
+- Clicking the button opens a modal showing all available tags for filtering
+- Users can select a tag to filter the market list
+- Modal has translucent background for a clean, unobtrusive appearance
 
 Setup
 
