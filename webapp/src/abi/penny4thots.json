@@ -167,9 +167,9 @@
 				"type": "uint256"
 			},
 			{
-				"internalType": "uint256[]",
+				"internalType": "uint8[]",
 				"name": "_taxes",
-				"type": "uint256[]"
+				"type": "uint8[]"
 			}
 		],
 		"name": "setValues",
@@ -193,6 +193,40 @@
 		"name": "writeMarket",
 		"outputs": [],
 		"stateMutability": "payable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"name": "allMarketData",
+		"outputs": [
+			{
+				"internalType": "address",
+				"name": "creator",
+				"type": "address"
+			},
+			{
+				"internalType": "bool",
+				"name": "status",
+				"type": "bool"
+			},
+			{
+				"internalType": "uint256",
+				"name": "marketBalance",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "activity",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
 		"type": "function"
 	},
 	{
@@ -384,6 +418,24 @@
 	},
 	{
 		"inputs": [],
+		"name": "fetchData",
+		"outputs": [
+			{
+				"internalType": "uint256[]",
+				"name": "result",
+				"type": "uint256[]"
+			},
+			{
+				"internalType": "bool[]",
+				"name": "result2",
+				"type": "bool[]"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
 		"name": "lasttax",
 		"outputs": [
 			{
@@ -400,9 +452,9 @@
 		"name": "marketCount",
 		"outputs": [
 			{
-				"internalType": "uint8",
+				"internalType": "uint256",
 				"name": "",
-				"type": "uint8"
+				"type": "uint256"
 			}
 		],
 		"stateMutability": "view",
@@ -495,9 +547,9 @@
 	{
 		"inputs": [
 			{
-				"internalType": "uint8[]",
+				"internalType": "uint256[]",
 				"name": "_ids",
-				"type": "uint8[]"
+				"type": "uint256[]"
 			}
 		],
 		"name": "readMarket",
@@ -505,14 +557,9 @@
 			{
 				"components": [
 					{
-						"internalType": "uint8",
+						"internalType": "uint256",
 						"name": "indexer",
-						"type": "uint8"
-					},
-					{
-						"internalType": "address",
-						"name": "creator",
-						"type": "address"
+						"type": "uint256"
 					},
 					{
 						"internalType": "string",
@@ -538,6 +585,18 @@
 						"internalType": "string",
 						"name": "tags",
 						"type": "string"
+					}
+				],
+				"internalType": "struct Penny4Thots.MarketInfo[]",
+				"name": "",
+				"type": "tuple[]"
+			},
+			{
+				"components": [
+					{
+						"internalType": "address",
+						"name": "creator",
+						"type": "address"
 					},
 					{
 						"internalType": "bool",
@@ -548,9 +607,14 @@
 						"internalType": "uint256",
 						"name": "marketBalance",
 						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "activity",
+						"type": "uint256"
 					}
 				],
-				"internalType": "struct Penny4Thots.MarketInfo[]",
+				"internalType": "struct Penny4Thots.MarketData[]",
 				"name": "",
 				"type": "tuple[]"
 			}
