@@ -15,14 +15,18 @@ const contractABI = penny4thots.abi as Abi;
 
 export interface MarketInfo {
   indexer: number;
-  creator: Address;
   title: string;
   subtitle: string;
   description: string;
   image: string;
   tags: string;
+}
+
+export interface MarketData {
+  creator: Address;
   status: boolean;
   marketBalance: bigint;
+  activity: bigint;
 }
 
 export interface MarketInfoFormatted {
@@ -155,19 +159,25 @@ export const readMarket = async (ids: number[]): Promise<MarketInfoFormatted[]> 
     abi: contractABI,
     functionName: 'readMarket',
     args: [uint8Ids],
-  }) as MarketInfo[];
+  });
 
-  return result.map((market) => ({
-    indexer: Number(market.indexer),
-    creator: market.creator,
-    title: market.title,
-    subtitle: market.subtitle,
-    description: market.description,
-    image: market.image,
-    tags: parseTags(market.tags),
-    status: market.status,
-    marketBalance: formatEther(market.marketBalance),
-  }));
+  const marketInfoArray = (result as unknown[])[0] as MarketInfo[];
+  const marketDataArray = (result as unknown[])[1] as MarketData[];
+
+  return marketInfoArray.map((marketInfo, index) => {
+    const marketData = marketDataArray[index];
+    return {
+      indexer: Number(marketInfo.indexer),
+      creator: marketData.creator,
+      title: marketInfo.title,
+      subtitle: marketInfo.subtitle,
+      description: marketInfo.description,
+      image: marketInfo.image,
+      tags: parseTags(marketInfo.tags),
+      status: marketData.status,
+      marketBalance: formatEther(marketData.marketBalance),
+    };
+  });
 };
 
 export const readMarketCount = async (): Promise<number> => {
