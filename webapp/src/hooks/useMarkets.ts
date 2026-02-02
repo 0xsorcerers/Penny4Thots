@@ -1,35 +1,51 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
-  readMarket,
+  readMarketInfo,
+  readMarketData,
   readMarketCount,
   readFee,
-  type MarketInfoFormatted
+  type MarketInfoFormatted,
+  type MarketDataFormatted,
 } from '@/tools/utils';
 
 interface UseMarketsReturn {
-  markets: MarketInfoFormatted[];
+  marketInfo: MarketInfoFormatted[];
+  marketData: Map<number, MarketDataFormatted>;
   marketCount: number;
   fee: bigint;
   isLoading: boolean;
   error: Error | null;
   refetch: () => Promise<void>;
-  fetchMarketsByIds: (ids: number[]) => Promise<MarketInfoFormatted[]>;
+  fetchMarketInfoByIds: (ids: number[]) => Promise<MarketInfoFormatted[]>;
+  fetchMarketDataByIds: (ids: number[]) => Promise<MarketDataFormatted[]>;
 }
 
 export function useMarkets(initialIds?: number[]): UseMarketsReturn {
-  const [markets, setMarkets] = useState<MarketInfoFormatted[]>([]);
+  const [marketInfo, setMarketInfo] = useState<MarketInfoFormatted[]>([]);
+  const [marketData, setMarketData] = useState<Map<number, MarketDataFormatted>>(new Map());
   const [marketCount, setMarketCount] = useState<number>(0);
   const [fee, setFee] = useState<bigint>(BigInt(0));
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<Error | null>(null);
 
-  const fetchMarketsByIds = useCallback(async (ids: number[]): Promise<MarketInfoFormatted[]> => {
+  const fetchMarketInfoByIds = useCallback(async (ids: number[]): Promise<MarketInfoFormatted[]> => {
     if (ids.length === 0) return [];
     try {
-      const result = await readMarket(ids);
+      const result = await readMarketInfo(ids);
       return result;
     } catch (err) {
-      console.error('Error fetching markets by ids:', err);
+      console.error('Error fetching market info by ids:', err);
+      throw err;
+    }
+  }, []);
+
+  const fetchMarketDataByIds = useCallback(async (ids: number[]): Promise<MarketDataFormatted[]> => {
+    if (ids.length === 0) return [];
+    try {
+      const result = await readMarketData(ids);
+      return result;
+    } catch (err) {
+      console.error('Error fetching market data by ids:', err);
       throw err;
     }
   }, []);
@@ -59,12 +75,24 @@ export function useMarkets(initialIds?: number[]): UseMarketsReturn {
         idsToFetch = [];
       }
 
-      // Fetch markets
+      // Fetch market info and data in parallel
       if (idsToFetch.length > 0) {
-        const marketsData = await readMarket(idsToFetch);
-        setMarkets(marketsData);
+        const [infoData, dataData] = await Promise.all([
+          readMarketInfo(idsToFetch),
+          readMarketData(idsToFetch),
+        ]);
+
+        setMarketInfo(infoData);
+
+        // Create a map of market data indexed by indexer
+        const dataMap = new Map<number, MarketDataFormatted>();
+        dataData.forEach((data, idx) => {
+          dataMap.set(idsToFetch[idx], data);
+        });
+        setMarketData(dataMap);
       } else {
-        setMarkets([]);
+        setMarketInfo([]);
+        setMarketData(new Map());
       }
     } catch (err) {
       const errorObj = err instanceof Error ? err : new Error('Failed to fetch market data');
@@ -80,13 +108,15 @@ export function useMarkets(initialIds?: number[]): UseMarketsReturn {
   }, [fetchAllData]);
 
   return {
-    markets,
+    marketInfo,
+    marketData,
     marketCount,
     fee,
     isLoading,
     error,
     refetch: fetchAllData,
-    fetchMarketsByIds,
+    fetchMarketInfoByIds,
+    fetchMarketDataByIds,
   };
 }
 

@@ -1,14 +1,17 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { Market, CreateMarketData } from "@/types/market";
-import type { MarketInfoFormatted } from "@/tools/utils";
+import type { MarketInfoFormatted, MarketDataFormatted } from "@/tools/utils";
 
 interface MarketStore {
   markets: Market[];
+  marketInfos: MarketInfoFormatted[];
+  marketDataMap: Map<number, MarketDataFormatted>;
   hasStarted: boolean;
   isLoadingFromBlockchain: boolean;
   setHasStarted: (value: boolean) => void;
-  setMarketsFromBlockchain: (blockchainMarkets: MarketInfoFormatted[]) => void;
+  setMarketsFromBlockchain: (blockchainInfos: MarketInfoFormatted[], blockchainDataMap: Map<number, MarketDataFormatted>) => void;
+  updateMarketData: (dataMap: Map<number, MarketDataFormatted>) => void;
   setIsLoadingFromBlockchain: (value: boolean) => void;
   addMarket: (data: CreateMarketData) => Market;
   getMarket: (id: string) => Market | undefined;
@@ -21,6 +24,8 @@ export const useMarketStore = create<MarketStore>()(
   persist(
     (set, get) => ({
       markets: [],
+      marketInfos: [],
+      marketDataMap: new Map(),
       hasStarted: false,
       isLoadingFromBlockchain: false,
 
@@ -28,24 +33,55 @@ export const useMarketStore = create<MarketStore>()(
 
       setIsLoadingFromBlockchain: (value) => set({ isLoadingFromBlockchain: value }),
 
-      setMarketsFromBlockchain: (blockchainMarkets) => {
-        const markets: Market[] = blockchainMarkets.map((bm) => ({
-          id: `penny4thot-${bm.indexer}`,
-          indexer: bm.indexer,
-          creator: bm.creator,
-          title: bm.title,
-          subtitle: bm.subtitle,
-          description: bm.description,
-          posterImage: bm.image,
-          tags: bm.tags,
-          tradeOptions: bm.status,
-          yesVotes: 0,
-          noVotes: 0,
-          createdAt: new Date().toISOString(),
-          marketBalance: bm.marketBalance,
-          status: bm.status,
-        }));
-        set({ markets });
+      setMarketsFromBlockchain: (blockchainInfos, blockchainDataMap) => {
+        const markets: Market[] = blockchainInfos.map((info) => {
+          const data = blockchainDataMap.get(info.indexer);
+          return {
+            id: `penny4thot-${info.indexer}`,
+            indexer: info.indexer,
+            creator: data?.creator || "",
+            title: info.title,
+            subtitle: info.subtitle,
+            description: info.description,
+            posterImage: info.image,
+            tags: info.tags,
+            tradeOptions: data?.status || false,
+            yesVotes: data?.aVotes || 0,
+            noVotes: data?.bVotes || 0,
+            createdAt: new Date().toISOString(),
+            marketBalance: data?.marketBalance || "0",
+            status: data?.status || false,
+          };
+        });
+        set({
+          markets,
+          marketInfos: blockchainInfos,
+          marketDataMap: blockchainDataMap,
+        });
+      },
+
+      updateMarketData: (dataMap) => {
+        const { marketInfos } = get();
+        const markets: Market[] = marketInfos.map((info) => {
+          const data = dataMap.get(info.indexer);
+          return {
+            id: `penny4thot-${info.indexer}`,
+            indexer: info.indexer,
+            creator: data?.creator || "",
+            title: info.title,
+            subtitle: info.subtitle,
+            description: info.description,
+            posterImage: info.image,
+            tags: info.tags,
+            tradeOptions: data?.status || false,
+            yesVotes: data?.aVotes || 0,
+            noVotes: data?.bVotes || 0,
+            createdAt: new Date().toISOString(),
+            marketBalance: data?.marketBalance || "0",
+            status: data?.status || false,
+          };
+        });
+        set({ markets, marketDataMap: dataMap });
       },
 
       addMarket: (data) => {

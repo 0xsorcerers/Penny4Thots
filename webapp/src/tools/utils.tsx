@@ -27,19 +27,34 @@ export interface MarketData {
   status: boolean;
   marketBalance: bigint;
   activity: bigint;
+  optionA: string;
+  aVotes: bigint;
+  optionB: string;
+  bVotes: bigint;
 }
 
 export interface MarketInfoFormatted {
   indexer: number;
-  creator: string;
   title: string;
   subtitle: string;
   description: string;
   image: string;
   tags: string[];
+}
+
+export interface MarketDataFormatted {
+  indexer: number;
+  creator: string;
   status: boolean;
   marketBalance: string;
+  activity: string;
+  optionA: string;
+  aVotes: number;
+  optionB: string;
+  bVotes: number;
 }
+
+export interface MarketCombined extends MarketInfoFormatted, MarketDataFormatted {}
 
 export interface WriteMarketParams {
   title: string;
@@ -89,7 +104,7 @@ export const blockchain = {
   rpc: 'https://ethereum-sepolia-rpc.publicnode.com',
   blockExplorer: 'https://sepolia.etherscan.io',
   decimals: 18,
-  contract_address: '0xA85558269AF540a934355b9ff0f1E552f951fAd9' as Address,
+  contract_address: '0x2FBc6BF00A2CDa6f763c4AA1F8b56c8B5Cc9d909' as Address,
   symbol: 'ETH',
 };
 
@@ -151,33 +166,47 @@ export function Connector(): ReactElement {
 // Read Calls (using viem)
 // ============================================================================
 
-export const readMarket = async (ids: number[]): Promise<MarketInfoFormatted[]> => {
-  const uint8Ids = ids.map(id => id);
-
+export const readMarketInfo = async (ids: number[]): Promise<MarketInfoFormatted[]> => {
   const result = await publicClient.readContract({
     address: blockchain.contract_address,
     abi: contractABI,
     functionName: 'readMarket',
-    args: [uint8Ids],
+    args: [ids],
   });
 
-  const marketInfoArray = (result as unknown[])[0] as MarketInfo[];
-  const marketDataArray = (result as unknown[])[1] as MarketData[];
+  const marketInfoArray = result as MarketInfo[];
 
-  return marketInfoArray.map((marketInfo, index) => {
-    const marketData = marketDataArray[index];
-    return {
-      indexer: Number(marketInfo.indexer),
-      creator: marketData.creator,
-      title: marketInfo.title,
-      subtitle: marketInfo.subtitle,
-      description: marketInfo.description,
-      image: marketInfo.image,
-      tags: parseTags(marketInfo.tags),
-      status: marketData.status,
-      marketBalance: formatEther(marketData.marketBalance),
-    };
+  return marketInfoArray.map((marketInfo) => ({
+    indexer: Number(marketInfo.indexer),
+    title: marketInfo.title,
+    subtitle: marketInfo.subtitle,
+    description: marketInfo.description,
+    image: marketInfo.image,
+    tags: parseTags(marketInfo.tags),
+  }));
+};
+
+export const readMarketData = async (ids: number[]): Promise<MarketDataFormatted[]> => {
+  const result = await publicClient.readContract({
+    address: blockchain.contract_address,
+    abi: contractABI,
+    functionName: 'readMarketData',
+    args: [ids],
   });
+
+  const marketDataArray = result as MarketData[];
+
+  return marketDataArray.map((marketData) => ({
+    indexer: 0, // Will be filled from context
+    creator: marketData.creator,
+    status: marketData.status,
+    marketBalance: formatEther(marketData.marketBalance),
+    activity: formatEther(marketData.activity),
+    optionA: marketData.optionA,
+    aVotes: Number(marketData.aVotes),
+    optionB: marketData.optionB,
+    bVotes: Number(marketData.bVotes),
+  }));
 };
 
 export const readMarketCount = async (): Promise<number> => {
@@ -206,8 +235,9 @@ const MARKET_FETCH_LIMIT = 50;
 /**
  * Fetch markets from blockchain with a limit of 50 most recent markets
  * Markets are fetched in descending order (newest first)
+ * Only fetches MarketInfo (immutable data)
  */
-export const fetchMarketsFromBlockchain = async (): Promise<MarketInfoFormatted[]> => { 
+export const fetchMarketsFromBlockchain = async (): Promise<MarketInfoFormatted[]> => {
   const marketCount = await readMarketCount();
 
   // No markets
@@ -226,8 +256,18 @@ export const fetchMarketsFromBlockchain = async (): Promise<MarketInfoFormatted[
     marketIds.push(i);
   }
 
-  const markets = await readMarket(marketIds);
+  const markets = await readMarketInfo(marketIds);
   return markets;
+};
+
+/**
+ * Fetch market data from blockchain for given IDs
+ * Only fetches MarketData (volatile/changing data)
+ */
+export const fetchMarketDataFromBlockchain = async (ids: number[]): Promise<MarketDataFormatted[]> => {
+  if (ids.length === 0) return [];
+  const marketData = await readMarketData(ids);
+  return marketData;
 };
 
 

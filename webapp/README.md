@@ -32,6 +32,19 @@ A beautifully animated Web3 prediction market app where users can create and par
 
 Using Zustand with persistence - markets and app state are saved to localStorage.
 
+### Market Data Separation (Optimized RPC Usage)
+The app now separates immutable market information from volatile market data to reduce blockchain RPC calls:
+
+- **MarketInfo** (cached): Title, subtitle, description, image, tags
+  - Fetched once when new markets are created
+  - Persisted to localStorage
+  - Only re-fetched when `marketCount` increases
+
+- **MarketData** (refreshable): Creator, status, balance, voting counts
+  - Fetched independently via `fetchMarketDataFromBlockchain()`
+  - Can be updated frequently without fetching market info
+  - Enables efficient state updates without stressing RPC endpoints
+
 ## Design System
 
 - **Fonts**: Syne (headings), Outfit (body), Space Mono (code/tags)
