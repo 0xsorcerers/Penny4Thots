@@ -63,10 +63,11 @@ export default function Index() {
         fee: fee,
       });
 
-      // Reload markets from blockchain on success
-      await loadMarketsFromBlockchain();
       toast.success("Market created successfully!");
       setIsCreateModalOpen(false);
+
+      // Reload markets from blockchain after successful transaction
+      await loadMarketsFromBlockchain();
     } catch (err: unknown) {
       console.error("Failed to create market:", err);
       // Check if user rejected/cancelled the transaction
