@@ -29,9 +29,9 @@ Structure:
 - Modal has translucent background (`bg-card/95 backdrop-blur-sm`) for visibility through the overlay
 
 ### Filter Tags
-- Filter bar below search input displays first 5 tags
-- If more than 5 tags exist, a "+N more" button appears
-- Clicking the button opens a modal showing all available tags for filtering
+- Filter bar displays all available tags
+- "More" button only appears when tags exceed 95% of the container width
+- Clicking the button opens a modal showing all tags for filtering
 - Users can select a tag to filter the market list
 - Modal has translucent background for a clean, unobtrusive appearance
 

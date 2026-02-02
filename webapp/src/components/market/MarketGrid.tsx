@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Plus, Search, X, Sparkles, Loader2 } from "lucide-react";
 import type { Market } from "@/types/market";
@@ -17,6 +17,8 @@ export function MarketGrid({ markets, onCreateMarket, isLoading = false }: Marke
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [showAllTags, setShowAllTags] = useState(false);
+  const [tagsContainerWidth, setTagsContainerWidth] = useState(0);
+  const tagsContainerRef = useRef<HTMLDivElement>(null);
 
   // Extract all unique tags
   const allTags = useMemo(() => {
@@ -52,6 +54,23 @@ export function MarketGrid({ markets, onCreateMarket, isLoading = false }: Marke
       (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     );
   }, [markets, selectedTag, searchQuery]);
+
+  // Monitor container width to determine when to show "more" button
+  useEffect(() => {
+    const handleResize = () => {
+      if (tagsContainerRef.current) {
+        setTagsContainerWidth(tagsContainerRef.current.scrollWidth);
+      }
+    };
+
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, [allTags]);
+
+  // Calculate if we should show the "more" button based on 95% threshold
+  const containerMaxWidth = 1280; // max-w-7xl is 80rem = 1280px
+  const shouldShowMoreButton = tagsContainerWidth > containerMaxWidth * 0.95;
 
   return (
     <div className="min-h-screen pt-20 pb-12">
@@ -109,7 +128,7 @@ export function MarketGrid({ markets, onCreateMarket, isLoading = false }: Marke
 
           {/* Tags Filter */}
           {allTags.length > 0 && (
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-2" ref={tagsContainerRef}>
               <button
                 onClick={() => setSelectedTag(null)}
                 className={`rounded-full px-3 py-1.5 font-mono text-xs transition-all ${
@@ -120,7 +139,7 @@ export function MarketGrid({ markets, onCreateMarket, isLoading = false }: Marke
               >
                 All
               </button>
-              {allTags.slice(0, 5).map((tag) => (
+              {allTags.map((tag) => (
                 <button
                   key={tag}
                   onClick={() => setSelectedTag(selectedTag === tag ? null : tag)}
@@ -133,12 +152,12 @@ export function MarketGrid({ markets, onCreateMarket, isLoading = false }: Marke
                   {tag}
                 </button>
               ))}
-              {allTags.length > 5 && (
+              {shouldShowMoreButton && (
                 <button
                   onClick={() => setShowAllTags(true)}
-                  className="rounded-full px-3 py-1.5 font-mono text-xs bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground transition-all"
+                  className="rounded-full px-3 py-1.5 font-mono text-xs bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground transition-all flex-shrink-0"
                 >
-                  +{allTags.length - 5} more
+                  More
                 </button>
               )}
             </div>
