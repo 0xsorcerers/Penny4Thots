@@ -133,7 +133,7 @@ export function MarketGrid({ markets, onCreateMarket, isLoading = false }: Marke
               >
                 All
               </button>
-              {allTags.map((tag) => (
+              {allTags.slice(0, 12).map((tag) => (
                 <button
                   key={tag}
                   onClick={() => setSelectedTag(selectedTag === tag ? null : tag)}
@@ -151,7 +151,7 @@ export function MarketGrid({ markets, onCreateMarket, isLoading = false }: Marke
                   onClick={() => setShowAllTags(true)}
                   className="rounded-full px-3 py-1.5 font-mono text-xs bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground transition-all flex-shrink-0"
                 >
-                  More
+                  +{allTags.length - 12} more
                 </button>
               )}
             </div>

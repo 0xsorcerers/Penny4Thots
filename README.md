@@ -29,10 +29,10 @@ Structure:
 - Modal has translucent background (`bg-card/95 backdrop-blur-sm`) for visibility through the overlay
 
 ### Filter Tags
-- Filter bar displays all available tags in random order
+- Filter bar displays a fixed 12 shuffled tags to keep the interface compact
 - Tags are shuffled each time the market list updates, giving different tags visibility
-- "More" button appears when there are more than 12 tags
-- Clicking the button opens a modal showing all tags for filtering
+- "+N more" button appears when there are more than 12 total tags
+- Clicking the button opens a modal showing all available tags for filtering
 - Users can select a tag to filter the market list
 - Modal has translucent background for a clean, unobtrusive appearance
 
