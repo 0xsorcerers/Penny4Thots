@@ -21,7 +21,6 @@ export function MarketCard({ market, onVoteClick }: MarketCardProps) {
   const navigate = useNavigate();
   const { deleteMarket } = useMarketStore();
   const [isHovered, setIsHovered] = useState(false);
-  const [voteMode, setVoteMode] = useState<"idle" | "active">("idle");
   const [tradeMode, setTradeMode] = useState<"idle" | "active">("idle");
   const [showAllTags, setShowAllTags] = useState(false);
 
@@ -58,17 +57,13 @@ export function MarketCard({ market, onVoteClick }: MarketCardProps) {
     }
   };
 
-  const handleVoteOption = (e: React.MouseEvent, signal: boolean) => {
-    e.stopPropagation();
-    if (onVoteClick && market.indexer !== undefined) {
-      onVoteClick(market.indexer, signal);
-    }
-    setVoteMode("idle");
-  };
-
   const handleVoteClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    setVoteMode(voteMode === "idle" ? "active" : "idle");
+    // Directly open vote modal without showing option buttons
+    if (onVoteClick && market.indexer !== undefined) {
+      // Pass true as default signal, user will select in modal
+      onVoteClick(market.indexer, true);
+    }
   };
 
   return (
@@ -163,7 +158,7 @@ export function MarketCard({ market, onVoteClick }: MarketCardProps) {
 
         {/* Vote/Trade Buttons */}
         <AnimatePresence mode="wait">
-          {voteMode === "idle" ? (
+          {tradeMode === "idle" ? (
             <motion.button
               key="vote"
               initial={{ opacity: 0 }}
@@ -174,28 +169,7 @@ export function MarketCard({ market, onVoteClick }: MarketCardProps) {
             >
               Vote
             </motion.button>
-          ) : voteMode === "active" ? (
-            <motion.div
-              key="yes-no"
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="flex gap-2"
-            >
-              <button
-                onClick={(e) => handleVoteOption(e, true)}
-                className="flex-1 rounded-xl bg-yes py-2.5 font-outfit text-sm font-semibold text-yes-foreground transition-all hover:bg-yes/90 hover:shadow-[0_0_20px_rgba(var(--yes),0.3)]"
-              >
-                {truncateOption(market.optionA || "Yes")}
-              </button>
-              <button
-                onClick={(e) => handleVoteOption(e, false)}
-                className="flex-1 rounded-xl bg-no py-2.5 font-outfit text-sm font-semibold text-no-foreground transition-all hover:bg-no/90 hover:shadow-[0_0_20px_rgba(var(--no),0.3)]"
-              >
-                {truncateOption(market.optionB || "No")}
-              </button>
-            </motion.div>
-          ) : tradeMode === "idle" ? (
+          ) : tradeMode === "active" ? (
             <motion.button
               key="trade"
               initial={{ opacity: 0 }}
