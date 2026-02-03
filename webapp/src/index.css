@@ -67,50 +67,50 @@ All colors MUST be HSL.
   }
 
   .dark {
-    --background: 60 10% 95%;
+    --background: 45 100% 50%;
     --foreground: 220 20% 3%;
 
-    --card: 60 10% 93%;
+    --card: 45 100% 55%;
     --card-foreground: 220 20% 3%;
 
-    --popover: 60 10% 92%;
+    --popover: 45 100% 52%;
     --popover-foreground: 220 20% 3%;
 
-    --primary: 220 100% 45%;
-    --primary-foreground: 60 10% 95%;
+    --primary: 220 20% 3%;
+    --primary-foreground: 45 100% 55%;
 
-    --secondary: 60 15% 85%;
+    --secondary: 45 100% 60%;
     --secondary-foreground: 220 20% 3%;
 
-    --muted: 60 15% 88%;
-    --muted-foreground: 60 10% 50%;
+    --muted: 45 100% 65%;
+    --muted-foreground: 220 20% 50%;
 
-    --accent: 220 70% 55%;
-    --accent-foreground: 60 10% 95%;
+    --accent: 220 20% 3%;
+    --accent-foreground: 45 100% 55%;
 
     --destructive: 0 75% 45%;
     --destructive-foreground: 220 20% 3%;
 
     --success: 145 70% 55%;
-    --success-foreground: 60 10% 95%;
+    --success-foreground: 45 100% 50%;
 
-    --border: 60 10% 82%;
-    --input: 60 10% 88%;
-    --ring: 220 100% 45%;
+    --border: 45 100% 45%;
+    --input: 45 100% 60%;
+    --ring: 220 20% 3%;
 
     --yes: 145 80% 58%;
-    --yes-foreground: 60 10% 95%;
+    --yes-foreground: 45 100% 50%;
     --no: 0 80% 45%;
-    --no-foreground: 220 20% 3%;
+    --no-foreground: 45 100% 50%;
 
-    --sidebar-background: 60 10% 94%;
+    --sidebar-background: 45 100% 52%;
     --sidebar-foreground: 220 20% 3%;
-    --sidebar-primary: 220 100% 45%;
-    --sidebar-primary-foreground: 60 10% 95%;
-    --sidebar-accent: 60 10% 88%;
+    --sidebar-primary: 220 20% 3%;
+    --sidebar-primary-foreground: 45 100% 55%;
+    --sidebar-accent: 45 100% 58%;
     --sidebar-accent-foreground: 220 20% 3%;
-    --sidebar-border: 60 10% 82%;
-    --sidebar-ring: 220 100% 45%;
+    --sidebar-border: 45 100% 45%;
+    --sidebar-ring: 220 20% 3%;
   }
 }
 
