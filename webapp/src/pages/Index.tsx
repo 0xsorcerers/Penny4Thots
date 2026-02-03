@@ -19,6 +19,7 @@ export default function Index() {
   const [voteModalData, setVoteModalData] = useState<{ marketId: number; marketTitle: string; marketImage?: string; optionA?: string; optionB?: string } | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [lastFetchedCount, setLastFetchedCount] = useState(0);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
   const account = useActiveAccount();
   const { writeMarket, isPending, error } = useWriteMarket();
   const { vote, isPending: isVoting } = useVote();
@@ -37,20 +38,27 @@ export default function Index() {
         return;
       }
 
-      // Show loading state only if we're actually fetching data
-      setIsLoadingFromBlockchain(true);
-
-      // If no new markets, just refresh market data
+      // If we already have all markets cached and counts match, only refresh vote data
       if (currentMarketCount === lastFetchedCount && marketInfos.length > 0) {
-        const marketDataMap = await fetchMarketDataFromBlockchain(
-          marketInfos.map(m => m.indexer)
-        );
-        const dataMap = new Map(
-          marketDataMap.map((data, idx) => [marketInfos[idx].indexer, data])
-        );
-        updateMarketData(dataMap);
-      } else {
-        // Fetch all market info and data together before updating UI
+        // Just refresh market data (votes, status) without fetching market info
+        setIsLoadingFromBlockchain(true);
+        try {
+          const marketDataMap = await fetchMarketDataFromBlockchain(
+            marketInfos.map(m => m.indexer)
+          );
+          const dataMap = new Map(
+            marketDataMap.map((data, idx) => [marketInfos[idx].indexer, data])
+          );
+          updateMarketData(dataMap);
+        } finally {
+          setIsLoadingFromBlockchain(false);
+        }
+        return;
+      }
+
+      // New markets detected - fetch all market info and data
+      setIsLoadingFromBlockchain(true);
+      try {
         const blockchainInfos = await fetchMarketsFromBlockchain();
         const marketDataMap = await fetchMarketDataFromBlockchain(
           blockchainInfos.map(m => m.indexer)
@@ -61,12 +69,12 @@ export default function Index() {
         // Update all at once after all data is collected
         setMarketsFromBlockchain(blockchainInfos, dataMap);
         setLastFetchedCount(currentMarketCount);
+      } finally {
+        setIsLoadingFromBlockchain(false);
       }
     } catch (err) {
       console.error("Failed to load markets from blockchain:", err);
       toast.error("Failed to load markets from blockchain");
-    } finally {
-      setIsLoadingFromBlockchain(false);
     }
   }, [lastFetchedCount, marketInfos, setMarketsFromBlockchain, updateMarketData, setIsLoadingFromBlockchain]);
 
@@ -78,10 +86,14 @@ export default function Index() {
   }, [loadMarketsFromBlockchain]);
 
   useEffect(() => {
-    if (account) {
+    if (account && isInitialLoad) {
+      setIsInitialLoad(false);
+      loadMarketsFromBlockchain();
+    } else if (account && !isInitialLoad && marketInfos.length === 0) {
+      // If we've navigated back and lost data, reload
       loadMarketsFromBlockchain();
     }
-  }, [account, loadMarketsFromBlockchain]);
+  }, [account, isInitialLoad, marketInfos.length, loadMarketsFromBlockchain]);
 
   const handleConnect = () => {
     setIsConnected(!isConnected);
