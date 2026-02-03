@@ -18,6 +18,8 @@ interface MarketStore {
   voteYes: (id: string) => void;
   voteNo: (id: string) => void;
   toggleTradeOptions: (id: string) => void;
+  deleteMarket: (indexer: number) => void;
+  clearAllMarkets: () => void;
 }
 
 export const useMarketStore = create<MarketStore>()(
@@ -119,6 +121,24 @@ export const useMarketStore = create<MarketStore>()(
             m.id === id ? { ...m, tradeOptions: !m.tradeOptions } : m
           ),
         })),
+
+      deleteMarket: (indexer) => {
+        set((state) => ({
+          markets: state.markets.filter((m) => m.indexer !== indexer),
+          marketInfos: state.marketInfos.filter((m) => m.indexer !== indexer),
+          marketDataMap: new Map(
+            Array.from(state.marketDataMap).filter(([key]) => key !== indexer)
+          ),
+        }));
+      },
+
+      clearAllMarkets: () => {
+        set({
+          markets: [],
+          marketInfos: [],
+          marketDataMap: new Map(),
+        });
+      },
     }),
     {
       name: "prediction-market-storage",

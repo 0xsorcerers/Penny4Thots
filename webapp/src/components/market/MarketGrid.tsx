@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Search, X, Sparkles, Loader2 } from "lucide-react";
+import { Plus, Search, X, Sparkles, Loader2, RotateCcw } from "lucide-react";
 import type { Market } from "@/types/market";
 import { MarketCard } from "./MarketCard";
 import { Button } from "@/components/ui/button";
@@ -20,13 +20,15 @@ const shuffleArray = <T,>(array: T[]): T[] => {
 interface MarketGridProps {
   markets: Market[];
   onCreateMarket: () => void;
+  onRefreshMarkets?: () => void;
   isLoading?: boolean;
 }
 
-export function MarketGrid({ markets, onCreateMarket, isLoading = false }: MarketGridProps) {
+export function MarketGrid({ markets, onCreateMarket, onRefreshMarkets, isLoading = false }: MarketGridProps) {
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [showAllTags, setShowAllTags] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Extract all unique tags and shuffle them
   const allTags = useMemo(() => {
@@ -66,6 +68,16 @@ export function MarketGrid({ markets, onCreateMarket, isLoading = false }: Marke
 
   // Show "More" button when there are more than 20 tags
 
+  const handleRefreshMarkets = async () => {
+    if (isRefreshing || !onRefreshMarkets) return;
+    setIsRefreshing(true);
+    try {
+      await onRefreshMarkets();
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
   return (
     <div className="min-h-screen pt-20 pb-12">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -82,15 +94,33 @@ export function MarketGrid({ markets, onCreateMarket, isLoading = false }: Marke
             </p>
           </div>
 
-          <Button
-            onClick={onCreateMarket}
-            className="group relative overflow-hidden rounded-xl bg-primary font-outfit font-semibold"
-          >
-            <span className="relative z-10 flex items-center gap-2">
-              <Plus className="h-4 w-4" />
-              Create Market
-            </span>
-          </Button>
+          <div className="flex items-center gap-3">
+            <motion.button
+              onClick={handleRefreshMarkets}
+              disabled={isRefreshing || isLoading}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="relative flex h-11 w-11 items-center justify-center rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              title="Refresh all markets from blockchain"
+            >
+              <motion.div
+                animate={{ rotate: isRefreshing || isLoading ? 360 : 0 }}
+                transition={{ duration: 1, repeat: isRefreshing || isLoading ? Infinity : 0 }}
+              >
+                <RotateCcw className="h-5 w-5" />
+              </motion.div>
+            </motion.button>
+
+            <Button
+              onClick={onCreateMarket}
+              className="group relative overflow-hidden rounded-xl bg-primary font-outfit font-semibold"
+            >
+              <span className="relative z-10 flex items-center gap-2">
+                <Plus className="h-4 w-4" />
+                Create Market
+              </span>
+            </Button>
+          </div>
         </motion.div>
 
         {/* Search & Filter Bar */}

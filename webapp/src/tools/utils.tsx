@@ -20,6 +20,9 @@ export interface MarketInfo {
   description: string;
   image: string;
   tags: string;
+  optionA: string;
+  optionB: string;
+  feetype: boolean;
 }
 
 export interface MarketData {
@@ -40,6 +43,9 @@ export interface MarketInfoFormatted {
   description: string;
   image: string;
   tags: string[];
+  optionA: string;
+  optionB: string;
+  feetype: boolean;
 }
 
 export interface MarketDataFormatted {
@@ -62,7 +68,11 @@ export interface WriteMarketParams {
   description: string;
   image: string;
   tags: string;
+  optionA?: string;
+  optionB?: string;
   marketBalance: bigint;
+  feetype?: boolean;
+  paymentToken?: Address;
   fee: bigint;
 }
 
@@ -104,7 +114,7 @@ export const blockchain = {
   rpc: 'https://ethereum-sepolia-rpc.publicnode.com',
   blockExplorer: 'https://sepolia.etherscan.io',
   decimals: 18,
-  contract_address: '0x2FBc6BF00A2CDa6f763c4AA1F8b56c8B5Cc9d909' as Address,
+  contract_address: '0x826F0F01E41C1AB3dD1b52b7e3662da9702Bb9Ad' as Address,
   symbol: 'ETH',
 };
 
@@ -183,6 +193,9 @@ export const readMarketInfo = async (ids: number[]): Promise<MarketInfoFormatted
     description: marketInfo.description,
     image: marketInfo.image,
     tags: parseTags(marketInfo.tags),
+    optionA: marketInfo.optionA,
+    optionB: marketInfo.optionB,
+    feetype: marketInfo.feetype,
   }));
 };
 
@@ -225,6 +238,17 @@ export const readFee = async (): Promise<bigint> => {
     abi: contractABI,
     functionName: 'fee',
   }) as bigint;
+
+  return result;
+};
+
+export const readPaymentToken = async (marketId: number): Promise<Address> => {
+  const result = await publicClient.readContract({
+    address: blockchain.contract_address,
+    abi: contractABI,
+    functionName: 'paymentTokens',
+    args: [marketId],
+  }) as Address;
 
   return result;
 };
@@ -282,12 +306,20 @@ export const prepareWriteMarket = (params: WriteMarketParams) => {
     params.description,
     params.image,
     params.tags,
+    params.optionA || "Yes",
+    params.optionB || "No",
   ];
 
   return prepareContractCall({
     contract: penny4thotsContract,
-    method: "function writeMarket(string[] calldata _info, uint256 _marketBalance) external payable",
-    params: [infoArray, params.marketBalance],
+    method: "function writeMarket(string[] calldata _info, uint256 _marketBalance, bool _signal, bool _feetype, address _paymentToken) external payable",
+    params: [
+      infoArray,
+      params.marketBalance,
+      false, // _signal - initial vote (false = NO, true = YES)
+      params.feetype || false,
+      params.paymentToken || "0x0000000000000000000000000000000000000000" as Address,
+    ],
     value: params.fee,
   });
 };
@@ -312,6 +344,42 @@ export const useWriteMarket = () => {
   };
 
   return { writeMarket, isPending, error };
+};
+
+export interface VoteParams {
+  marketId: number;
+  signal: boolean; // true for YES, false for NO
+  marketBalance: bigint;
+  feetype: boolean;
+  paymentToken: Address;
+}
+
+export const prepareVote = (params: VoteParams) => {
+  return prepareContractCall({
+    contract: penny4thotsContract,
+    method: "function vote(bool _signal, uint256 _market, uint256 _marketBalance) external payable",
+    params: [params.signal, BigInt(params.marketId), params.marketBalance],
+    value: params.feetype ? 0n : params.marketBalance,
+  });
+};
+
+export const useVote = () => {
+  const { mutateAsync: sendTx, isPending, error } = useSendTransaction();
+
+  const vote = async (params: VoteParams) => {
+    const transaction = prepareVote(params);
+    const result = await sendTx(transaction);
+
+    await waitForReceipt({
+      client,
+      chain: sepolia,
+      transactionHash: result.transactionHash,
+    });
+
+    return result;
+  };
+
+  return { vote, isPending, error };
 };
 
 // ============================================================================
