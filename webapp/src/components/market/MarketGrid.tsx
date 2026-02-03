@@ -159,7 +159,7 @@ export function MarketGrid({ markets, onCreateMarket, onVoteClick, onRefreshMark
                 className={`rounded-full px-3 py-1.5 font-mono text-xs transition-all ${
                   selectedTag === null
                     ? "bg-primary text-primary-foreground"
-                    : "bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground"
+                    : "bg-foreground text-primary hover:bg-foreground/90"
                 }`}
               >
                 All
@@ -171,7 +171,7 @@ export function MarketGrid({ markets, onCreateMarket, onVoteClick, onRefreshMark
                   className={`rounded-full px-3 py-1.5 font-mono text-xs transition-all ${
                     selectedTag === tag
                       ? "bg-primary text-primary-foreground"
-                      : "bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground"
+                      : "bg-foreground text-primary hover:bg-foreground/90"
                   }`}
                 >
                   {tag}
@@ -180,7 +180,7 @@ export function MarketGrid({ markets, onCreateMarket, onVoteClick, onRefreshMark
               {allTags.length > 20 && (
                 <button
                   onClick={() => setShowAllTags(true)}
-                  className="rounded-full px-3 py-1.5 font-mono text-xs bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground transition-all flex-shrink-0"
+                  className="rounded-full px-3 py-1.5 font-mono text-xs bg-foreground text-primary hover:bg-foreground/90 transition-all flex-shrink-0"
                 >
                   +{allTags.length - 20} more
                 </button>
@@ -205,7 +205,7 @@ export function MarketGrid({ markets, onCreateMarket, onVoteClick, onRefreshMark
                     className={`rounded-full px-3 py-1.5 font-mono text-xs transition-all ${
                       selectedTag === null
                         ? "bg-primary text-primary-foreground"
-                        : "bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground"
+                        : "bg-foreground text-primary hover:bg-foreground/90"
                     }`}
                   >
                     All
@@ -220,7 +220,7 @@ export function MarketGrid({ markets, onCreateMarket, onVoteClick, onRefreshMark
                       className={`rounded-full px-3 py-1.5 font-mono text-xs transition-all ${
                         selectedTag === tag
                           ? "bg-primary text-primary-foreground"
-                          : "bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground"
+                          : "bg-foreground text-primary hover:bg-foreground/90"
                       }`}
                     >
                       {tag}
