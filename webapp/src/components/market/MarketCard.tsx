@@ -76,7 +76,7 @@ export function MarketCard({ market, onVoteClick }: MarketCardProps) {
       onHoverStart={() => setIsHovered(true)}
       onHoverEnd={() => setIsHovered(false)}
       onClick={handleCardClick}
-      className="group relative cursor-pointer overflow-hidden rounded-2xl border border-border/50 bg-card transition-all duration-300 hover:border-primary/30 hover:shadow-[0_0_30px_rgba(var(--primary),0.1)]"
+      className="group relative cursor-pointer overflow-hidden rounded-2xl border border-border/50 bg-card/80 backdrop-blur-sm transition-all duration-300 hover:border-primary/30 hover:shadow-[0_0_30px_rgba(var(--primary),0.1)] hover:bg-card"
     >
       {/* Background image with overlay */}
       <div className="absolute inset-0">
@@ -108,7 +108,7 @@ export function MarketCard({ market, onVoteClick }: MarketCardProps) {
           {market.tags.slice(0, 3).map((tag) => (
             <span
               key={tag}
-              className="rounded-full bg-primary/25 px-2.5 py-0.5 font-mono text-xs text-primary"
+              className="rounded-full bg-primary/10 px-2.5 py-0.5 font-mono text-xs text-primary"
             >
               {tag}
             </span>
@@ -236,7 +236,7 @@ export function MarketCard({ market, onVoteClick }: MarketCardProps) {
               {market.tags.map((tag) => (
                 <span
                   key={tag}
-                  className="rounded-full bg-primary/25 px-3 py-1.5 font-mono text-sm text-primary"
+                  className="rounded-full bg-primary/10 px-3 py-1.5 font-mono text-sm text-primary"
                 >
                   {tag}
                 </span>
