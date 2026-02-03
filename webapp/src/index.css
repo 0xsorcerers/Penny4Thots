@@ -12,61 +12,6 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    --background: 200 25% 94%;
-    --foreground: 210 10% 18%;
-
-    --card: 200 20% 96%;
-    --card-foreground: 210 10% 18%;
-
-    --popover: 200 20% 96%;
-    --popover-foreground: 210 10% 18%;
-
-    --primary: 200 60% 45%;
-    --primary-foreground: 210 20% 98%;
-
-    --secondary: 200 20% 88%;
-    --secondary-foreground: 210 10% 18%;
-
-    --muted: 200 15% 89%;
-    --muted-foreground: 210 8% 42%;
-
-    --accent: 160 60% 40%;
-    --accent-foreground: 200 25% 96%;
-
-    --destructive: 0 75% 50%;
-    --destructive-foreground: 60 10% 95%;
-
-    --success: 145 70% 35%;
-    --success-foreground: 40 40% 95%;
-
-    --border: 200 20% 82%;
-    --input: 200 20% 88%;
-    --ring: 200 60% 45%;
-
-    --radius: 1rem;
-
-    /* Custom prediction market colors */
-    --yes: 145 80% 32%;
-    --yes-foreground: 60 10% 95%;
-    --no: 0 80% 48%;
-    --no-foreground: 60 10% 95%;
-
-    /* Gradient colors for shimmer effect */
-    --shimmer-start: 200 60% 45%;
-    --shimmer-mid: 160 60% 40%;
-    --shimmer-end: 200 70% 50%;
-
-    --sidebar-background: 200 22% 91%;
-    --sidebar-foreground: 210 10% 18%;
-    --sidebar-primary: 200 60% 45%;
-    --sidebar-primary-foreground: 210 20% 98%;
-    --sidebar-accent: 200 18% 85%;
-    --sidebar-accent-foreground: 210 10% 18%;
-    --sidebar-border: 200 20% 82%;
-    --sidebar-ring: 200 60% 45%;
-  }
-
-  .dark {
     --background: 220 20% 3%;
     --foreground: 60 10% 95%;
 
@@ -98,10 +43,18 @@ All colors MUST be HSL.
     --input: 220 15% 12%;
     --ring: 45 100% 55%;
 
+    --radius: 1rem;
+
+    /* Custom prediction market colors */
     --yes: 145 80% 42%;
     --yes-foreground: 220 20% 3%;
     --no: 0 80% 55%;
     --no-foreground: 60 10% 95%;
+
+    /* Gradient colors for shimmer effect */
+    --shimmer-start: 45 100% 55%;
+    --shimmer-mid: 160 70% 45%;
+    --shimmer-end: 220 80% 50%;
 
     --sidebar-background: 220 15% 6%;
     --sidebar-foreground: 60 10% 95%;
@@ -111,6 +64,53 @@ All colors MUST be HSL.
     --sidebar-accent-foreground: 60 10% 95%;
     --sidebar-border: 220 15% 18%;
     --sidebar-ring: 45 100% 55%;
+  }
+
+  .dark {
+    --background: 60 10% 95%;
+    --foreground: 220 20% 3%;
+
+    --card: 60 10% 93%;
+    --card-foreground: 220 20% 3%;
+
+    --popover: 60 10% 92%;
+    --popover-foreground: 220 20% 3%;
+
+    --primary: 220 100% 45%;
+    --primary-foreground: 60 10% 95%;
+
+    --secondary: 60 15% 85%;
+    --secondary-foreground: 220 20% 3%;
+
+    --muted: 60 15% 88%;
+    --muted-foreground: 60 10% 50%;
+
+    --accent: 220 70% 55%;
+    --accent-foreground: 60 10% 95%;
+
+    --destructive: 0 75% 45%;
+    --destructive-foreground: 220 20% 3%;
+
+    --success: 145 70% 55%;
+    --success-foreground: 60 10% 95%;
+
+    --border: 60 10% 82%;
+    --input: 60 10% 88%;
+    --ring: 220 100% 45%;
+
+    --yes: 145 80% 58%;
+    --yes-foreground: 60 10% 95%;
+    --no: 0 80% 45%;
+    --no-foreground: 220 20% 3%;
+
+    --sidebar-background: 60 10% 94%;
+    --sidebar-foreground: 220 20% 3%;
+    --sidebar-primary: 220 100% 45%;
+    --sidebar-primary-foreground: 60 10% 95%;
+    --sidebar-accent: 60 10% 88%;
+    --sidebar-accent-foreground: 220 20% 3%;
+    --sidebar-border: 60 10% 82%;
+    --sidebar-ring: 220 100% 45%;
   }
 }
 
