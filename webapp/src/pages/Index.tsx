@@ -26,7 +26,6 @@ export default function Index() {
 
   // Smart fetch that only loads new markets not already in localStorage
   const loadMarketsFromBlockchain = useCallback(async () => {
-    setIsLoadingFromBlockchain(true);
     try {
       const currentMarketCount = await readMarketCount();
 
@@ -38,6 +37,9 @@ export default function Index() {
         return;
       }
 
+      // Show loading state only if we're actually fetching data
+      setIsLoadingFromBlockchain(true);
+
       // If no new markets, just refresh market data
       if (currentMarketCount === lastFetchedCount && marketInfos.length > 0) {
         const marketDataMap = await fetchMarketDataFromBlockchain(
@@ -48,7 +50,7 @@ export default function Index() {
         );
         updateMarketData(dataMap);
       } else {
-        // Fetch all market info and data
+        // Fetch all market info and data together before updating UI
         const blockchainInfos = await fetchMarketsFromBlockchain();
         const marketDataMap = await fetchMarketDataFromBlockchain(
           blockchainInfos.map(m => m.indexer)
@@ -56,6 +58,7 @@ export default function Index() {
         const dataMap = new Map(
           marketDataMap.map((data, idx) => [blockchainInfos[idx].indexer, data])
         );
+        // Update all at once after all data is collected
         setMarketsFromBlockchain(blockchainInfos, dataMap);
         setLastFetchedCount(currentMarketCount);
       }
