@@ -16,7 +16,7 @@ export default function Index() {
   const [isConnected, setIsConnected] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isVoteModalOpen, setIsVoteModalOpen] = useState(false);
-  const [voteModalData, setVoteModalData] = useState<{ marketId: number; marketTitle: string; optionA?: string; optionB?: string } | null>(null);
+  const [voteModalData, setVoteModalData] = useState<{ marketId: number; marketTitle: string; marketImage?: string; optionA?: string; optionB?: string } | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [lastFetchedCount, setLastFetchedCount] = useState(0);
   const account = useActiveAccount();
@@ -90,6 +90,7 @@ export default function Index() {
       setVoteModalData({
         marketId,
         marketTitle: market.title,
+        marketImage: market.posterImage,
         optionA: market.optionA,
         optionB: market.optionB,
       });
@@ -226,6 +227,7 @@ export default function Index() {
           isLoading={isSubmitting || isVoting || isApproving}
           marketId={voteModalData.marketId}
           marketTitle={voteModalData.marketTitle}
+          marketImage={voteModalData.marketImage}
           optionA={voteModalData.optionA}
           optionB={voteModalData.optionB}
         />

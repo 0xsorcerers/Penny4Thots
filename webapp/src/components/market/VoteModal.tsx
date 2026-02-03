@@ -20,6 +20,7 @@ interface VoteModalProps {
   isLoading?: boolean;
   marketId: number;
   marketTitle: string;
+  marketImage?: string;
   optionA?: string;
   optionB?: string;
 }
@@ -33,6 +34,7 @@ export function VoteModal({
   isLoading = false,
   marketId,
   marketTitle,
+  marketImage,
   optionA = "Yes",
   optionB = "No",
 }: VoteModalProps) {
@@ -129,26 +131,42 @@ export function VoteModal({
     <AnimatePresence>
       {isOpen && (
         <>
-          {/* Backdrop */}
+          {/* Background with market image */}
           <motion.div
             initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
+            animate={{
+              opacity: step === "select" ? 0.75 : 0.55,
+            }}
             exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
             onClick={onClose}
-            className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm"
-          />
+            className="fixed inset-0 z-50 bg-black backdrop-blur-md"
+          >
+            {/* Market image background */}
+            {marketImage && (
+              <img
+                src={marketImage}
+                alt=""
+                className="absolute inset-0 h-full w-full object-cover"
+                style={{
+                  opacity: step === "select" ? 0.4 : 0.25,
+                  mixBlendMode: "overlay",
+                }}
+              />
+            )}
+          </motion.div>
 
           {/* Dialog */}
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
               transition={{ type: "spring", damping: 25, stiffness: 300 }}
-              className="w-full max-w-md"
+              className="w-full max-w-md pointer-events-auto"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="relative overflow-hidden rounded-2xl border border-border/50 bg-card shadow-2xl">
+              <div className="relative overflow-hidden rounded-2xl border border-border/50 bg-card/95 shadow-2xl backdrop-blur-xl">
                 {/* Header */}
                 <div className="flex items-center justify-between border-b border-border/50 p-6">
                   <div>
