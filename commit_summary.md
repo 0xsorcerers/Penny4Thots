@@ -103,6 +103,8 @@ Implemented comprehensive voting system with market deletion, refresh functional
 **Updated Functions:**
 - `readMarketInfo()` - Now maps all fields including optionA, optionB, feetype
 - `prepareWriteMarket()` - Updated method signature to include _signal, _feetype, _paymentToken parameters
+  - When `feetype = false`: Sends marketBalance + fee as `msg.value` (ETH payment)
+  - When `feetype = true`: Sends only fee as `msg.value` (token payment, future implementation)
 
 ### Store Updates (`webapp/src/store/marketStore.ts`)
 
@@ -187,6 +189,11 @@ Implemented comprehensive voting system with market deletion, refresh functional
 - `WriteMarketParams`: Now includes `optionA` and `optionB` parameters
 - `prepareWriteMarket()`: Passes options to smart contract (indices 5-6 in info array)
 - Fallback to "Yes"/"No" if not provided maintains backward compatibility
+- **Payment Handling**:
+  - `feetype = false`: User's Spending Amount sent as `msg.value` (ETH payment)
+    - Total: `fee + marketBalance` sent as `msg.value`
+  - `feetype = true`: Only `fee` sent as `msg.value` (token payment, future implementation)
+    - Will support ERC20 token transfers when implemented
 
 ### Market Count Optimization
 1. App calls `readMarketCount()` first on initial load
