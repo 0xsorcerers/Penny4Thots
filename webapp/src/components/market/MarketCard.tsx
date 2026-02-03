@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useMarketStore } from "@/store/marketStore";
 import { toast } from "sonner";
+import { VoteModal } from "./VoteModal";
 
 interface MarketCardProps {
   market: Market;
@@ -21,9 +22,11 @@ export function MarketCard({ market }: MarketCardProps) {
   const { deleteMarket } = useMarketStore();
   const [isHovered, setIsHovered] = useState(false);
   const [voteMode, setVoteMode] = useState<"idle" | "active">("idle");
-  const [hasVoted, setHasVoted] = useState(false);
+  const [showVoteModal, setShowVoteModal] = useState(false);
   const [tradeMode, setTradeMode] = useState<"idle" | "active">("idle");
   const [showAllTags, setShowAllTags] = useState(false);
+
+  const [selectedSignal, setSelectedSignal] = useState<boolean | null>(null);
 
   const totalVotes = market.yesVotes + market.noVotes;
   const yesPercentage = totalVotes > 0 ? (market.yesVotes / totalVotes) * 100 : 50;
@@ -58,16 +61,26 @@ export function MarketCard({ market }: MarketCardProps) {
     }
   };
 
-  const handleVote = (e: React.MouseEvent, choice: "yes" | "no") => {
+  const handleVoteOption = (e: React.MouseEvent, signal: boolean) => {
     e.stopPropagation();
-    console.log(`Voted ${choice} on market:`, market.id);
-    setHasVoted(true);
+    setSelectedSignal(signal);
+    setShowVoteModal(true);
     setVoteMode("idle");
   };
 
   const handleVoteClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     setVoteMode(voteMode === "idle" ? "active" : "idle");
+  };
+
+  const handleVoteModalClose = () => {
+    setShowVoteModal(false);
+    setSelectedSignal(null);
+  };
+
+  const handleVoteSuccess = () => {
+    // Vote was successful, modal will close automatically
+    // Market data will be refreshed via the blockchain fetch
   };
 
   return (
@@ -162,7 +175,7 @@ export function MarketCard({ market }: MarketCardProps) {
 
         {/* Vote/Trade Buttons */}
         <AnimatePresence mode="wait">
-          {!hasVoted && voteMode === "idle" ? (
+          {voteMode === "idle" ? (
             <motion.button
               key="vote"
               initial={{ opacity: 0 }}
@@ -173,7 +186,7 @@ export function MarketCard({ market }: MarketCardProps) {
             >
               Vote
             </motion.button>
-          ) : !hasVoted && voteMode === "active" ? (
+          ) : voteMode === "active" ? (
             <motion.div
               key="yes-no"
               initial={{ opacity: 0, scale: 0.95 }}
@@ -182,13 +195,13 @@ export function MarketCard({ market }: MarketCardProps) {
               className="flex gap-2"
             >
               <button
-                onClick={(e) => handleVote(e, "yes")}
+                onClick={(e) => handleVoteOption(e, true)}
                 className="flex-1 rounded-xl bg-yes py-2.5 font-outfit text-sm font-semibold text-yes-foreground transition-all hover:bg-yes/90 hover:shadow-[0_0_20px_rgba(var(--yes),0.3)]"
               >
                 {truncateOption(market.optionA || "Yes")}
               </button>
               <button
-                onClick={(e) => handleVote(e, "no")}
+                onClick={(e) => handleVoteOption(e, false)}
                 className="flex-1 rounded-xl bg-no py-2.5 font-outfit text-sm font-semibold text-no-foreground transition-all hover:bg-no/90 hover:shadow-[0_0_20px_rgba(var(--no),0.3)]"
               >
                 {truncateOption(market.optionB || "No")}
@@ -270,6 +283,19 @@ export function MarketCard({ market }: MarketCardProps) {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Vote Modal */}
+      {market.indexer !== undefined && (
+        <VoteModal
+          isOpen={showVoteModal}
+          onClose={handleVoteModalClose}
+          onVoteSuccess={handleVoteSuccess}
+          marketId={market.indexer}
+          marketTitle={market.title}
+          optionA={market.optionA}
+          optionB={market.optionB}
+        />
+      )}
     </motion.div>
   );
 }

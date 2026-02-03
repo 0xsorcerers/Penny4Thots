@@ -466,5 +466,99 @@ export function normalizeNumberString(n: string | number): string {
   });
 }
 
+// ============================================================================
+// ERC20 Token Functions (for token-based voting)
+// ============================================================================
+
+const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000" as Address;
+
+// Standard ERC20 ABI for allowance and approve
+const erc20ABI = [
+  {
+    inputs: [
+      { name: "owner", type: "address" },
+      { name: "spender", type: "address" },
+    ],
+    name: "allowance",
+    outputs: [{ name: "", type: "uint256" }],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [
+      { name: "spender", type: "address" },
+      { name: "amount", type: "uint256" },
+    ],
+    name: "approve",
+    outputs: [{ name: "", type: "bool" }],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+] as const;
+
+/**
+ * Check if a token address is the zero address (indicating ETH payment)
+ */
+export const isZeroAddress = (address: Address): boolean => {
+  return address === ZERO_ADDRESS;
+};
+
+/**
+ * Read the current allowance for a spender on a token
+ */
+export const readTokenAllowance = async (
+  tokenAddress: Address,
+  ownerAddress: Address,
+  spenderAddress: Address
+): Promise<bigint> => {
+  const result = await publicClient.readContract({
+    address: tokenAddress,
+    abi: erc20ABI,
+    functionName: "allowance",
+    args: [ownerAddress, spenderAddress],
+  });
+
+  return result as bigint;
+};
+
+/**
+ * Prepare an ERC20 approve transaction
+ */
+export const prepareTokenApprove = (tokenAddress: Address, amount: bigint) => {
+  const tokenContract = getContract({
+    client,
+    chain: sepolia,
+    address: tokenAddress,
+  });
+
+  return prepareContractCall({
+    contract: tokenContract,
+    method: "function approve(address spender, uint256 amount) external returns (bool)",
+    params: [blockchain.contract_address, amount],
+  });
+};
+
+/**
+ * Hook for approving token spending
+ */
+export const useTokenApprove = () => {
+  const { mutateAsync: sendTx, isPending, error } = useSendTransaction();
+
+  const approve = async (tokenAddress: Address, amount: bigint) => {
+    const transaction = prepareTokenApprove(tokenAddress, amount);
+    const result = await sendTx(transaction);
+
+    await waitForReceipt({
+      client,
+      chain: sepolia,
+      transactionHash: result.transactionHash,
+    });
+
+    return result;
+  };
+
+  return { approve, isPending, error };
+};
+
 // Re-export useful viem utilities
-export { formatEther, parseEther };
+export { formatEther, parseEther, ZERO_ADDRESS };
