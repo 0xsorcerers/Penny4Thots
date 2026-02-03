@@ -6,8 +6,16 @@ import { createPublicClient, http, formatEther, parseEther, type Address, type A
 import { sepolia as viemSepolia } from "viem/chains";
 import { ReactElement } from "react";
 import penny4thots from "../abi/penny4thots.json";
+import erc20 from "../abi/ERC20.json";
 
 const contractABI = penny4thots.abi as Abi;
+const erc20ABI = erc20.abi as Abi;
+
+// ============================================================================
+// ERC20 Token Functions (for token-based voting)
+// ============================================================================
+
+const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000" as Address;
 
 // ============================================================================
 // Types
@@ -114,7 +122,7 @@ export const blockchain = {
   rpc: 'https://ethereum-sepolia-rpc.publicnode.com',
   blockExplorer: 'https://sepolia.etherscan.io',
   decimals: 18,
-  contract_address: '0xd754Ba4bf541B68C5f9C085904DB4c7399205a38' as Address,
+  contract_address: '0x0E897875A16A78fd0c69e9Fbc3a65ef99bBa98B6' as Address,
   symbol: 'ETH',
 };
 
@@ -465,36 +473,6 @@ export function normalizeNumberString(n: string | number): string {
     useGrouping: false
   });
 }
-
-// ============================================================================
-// ERC20 Token Functions (for token-based voting)
-// ============================================================================
-
-const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000" as Address;
-
-// Standard ERC20 ABI for allowance and approve
-const erc20ABI = [
-  {
-    inputs: [
-      { name: "owner", type: "address" },
-      { name: "spender", type: "address" },
-    ],
-    name: "allowance",
-    outputs: [{ name: "", type: "uint256" }],
-    stateMutability: "view",
-    type: "function",
-  },
-  {
-    inputs: [
-      { name: "spender", type: "address" },
-      { name: "amount", type: "uint256" },
-    ],
-    name: "approve",
-    outputs: [{ name: "", type: "bool" }],
-    stateMutability: "nonpayable",
-    type: "function",
-  },
-] as const;
 
 /**
  * Check if a token address is the zero address (indicating ETH payment)
