@@ -14,6 +14,10 @@ interface MarketCardProps {
   market: Market;
 }
 
+const truncateOption = (option: string, maxLength: number = 9): string => {
+  return option.length > maxLength ? option.slice(0, maxLength) + "..." : option;
+};
+
 export function MarketCard({ market }: MarketCardProps) {
   const navigate = useNavigate();
   const { deleteMarket } = useMarketStore();
@@ -191,15 +195,15 @@ export function MarketCard({ market }: MarketCardProps) {
           {market.description}
         </p>
 
-        {/* Progress bar showing YES/NO ratio */}
+        {/* Progress bar showing option A/B ratio */}
         <div className="mb-4">
           <div className="mb-1.5 flex items-center justify-between text-xs">
             <span className="flex items-center gap-1 font-mono text-yes">
               <TrendingUp className="h-3 w-3" />
-              YES {yesPercentage.toFixed(0)}%
+              {truncateOption(market.optionA || "Yes")} {yesPercentage.toFixed(0)}%
             </span>
             <span className="flex items-center gap-1 font-mono text-no">
-              NO {(100 - yesPercentage).toFixed(0)}%
+              {truncateOption(market.optionB || "No")} {(100 - yesPercentage).toFixed(0)}%
               <TrendingDown className="h-3 w-3" />
             </span>
           </div>
@@ -238,13 +242,13 @@ export function MarketCard({ market }: MarketCardProps) {
                 onClick={handleVoteYes}
                 className="flex-1 rounded-xl bg-yes py-2.5 font-outfit text-sm font-semibold text-yes-foreground transition-all hover:bg-yes/90 hover:shadow-[0_0_20px_rgba(var(--yes),0.3)]"
               >
-                YES
+                {truncateOption(market.optionA || "Yes")}
               </button>
               <button
                 onClick={handleVoteNo}
                 className="flex-1 rounded-xl bg-no py-2.5 font-outfit text-sm font-semibold text-no-foreground transition-all hover:bg-no/90 hover:shadow-[0_0_20px_rgba(var(--no),0.3)]"
               >
-                NO
+                {truncateOption(market.optionB || "No")}
               </button>
             </motion.div>
           ) : tradeMode === "idle" ? (
@@ -332,6 +336,8 @@ export function MarketCard({ market }: MarketCardProps) {
         isLoading={isVotePending || isRefreshingData}
         marketTitle={market.title}
         signal={voteSignal}
+        optionA={market.optionA}
+        optionB={market.optionB}
       />
     </motion.div>
   );

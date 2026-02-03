@@ -53,6 +53,8 @@ export const useMarketStore = create<MarketStore>()(
             createdAt: new Date().toISOString(),
             marketBalance: data?.marketBalance || "0",
             status: data?.status || false,
+            optionA: info.optionA || "Yes",
+            optionB: info.optionB || "No",
           };
         });
         set({
@@ -81,6 +83,8 @@ export const useMarketStore = create<MarketStore>()(
             createdAt: new Date().toISOString(),
             marketBalance: data?.marketBalance || "0",
             status: data?.status || false,
+            optionA: info.optionA || "Yes",
+            optionB: info.optionB || "No",
           };
         });
         set({ markets, marketDataMap: dataMap });
