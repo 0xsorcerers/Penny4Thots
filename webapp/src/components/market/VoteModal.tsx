@@ -17,6 +17,7 @@ interface VoteModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmitVote: (params: VoteParams) => Promise<void>;
+  onVoteSuccess?: () => void;
   isLoading?: boolean;
   marketId: number;
   marketTitle: string;
@@ -31,6 +32,7 @@ export function VoteModal({
   isOpen,
   onClose,
   onSubmitVote,
+  onVoteSuccess,
   isLoading = false,
   marketId,
   marketTitle,
@@ -111,6 +113,11 @@ export function VoteModal({
 
       await onSubmitVote(voteParams);
       setStep("success");
+      
+      // Call success callback if provided
+      if (onVoteSuccess) {
+        onVoteSuccess();
+      }
 
       // Close modal after success animation
       setTimeout(() => {
@@ -182,7 +189,28 @@ export function VoteModal({
               className="w-full max-w-md pointer-events-auto"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="relative overflow-hidden rounded-2xl border border-border/50 bg-card/95 shadow-2xl backdrop-blur-xl">
+              <div className="relative overflow-hidden rounded-2xl border border-border/50 shadow-2xl backdrop-blur-xl">
+                {/* Background image */}
+                {marketImage && (
+                  <>
+                    <img
+                      src={marketImage}
+                      alt="Market background"
+                      loading="eager"
+                      decoding="async"
+                      className="absolute inset-0 h-full w-full object-cover"
+                    />
+                    {/* Overlay for text readability */}
+                    <div className="absolute inset-0 bg-black/75" />
+                  </>
+                )}
+                {/* Card background fallback */}
+                {!marketImage && (
+                  <div className="absolute inset-0 bg-card/95" />
+                )}
+                
+                {/* Content - relative positioning above background */}
+                <div className="relative z-10">
                 {/* Header */}
                 <div className="flex items-center justify-between border-b border-border/50 p-6">
                   <div>
@@ -354,6 +382,7 @@ export function VoteModal({
                       </p>
                     </div>
                   ) : null}
+                </div>
                 </div>
               </div>
             </motion.div>
