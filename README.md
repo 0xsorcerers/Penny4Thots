@@ -7,9 +7,23 @@ Structure:
 - `webapp/` — React frontend (Thirdweb wallet integration, Tailwind)
 - `backend/` — API and server code (if present)
 
+### Market Card Features
+- **Delete Button**: Small delete (X) button in the top-right corner of each market card. Removes the market from your local cache without affecting the blockchain. The market can be fetched fresh on the next refresh.
+- **Vote Button Flow**:
+  - Clicking Vote shows YES/NO buttons
+  - Selecting YES or NO opens a VoteDialog asking for the amount of ETH to send
+  - Vote amount cannot be zero
+  - Before voting, fresh market data is fetched from the blockchain to ensure current state
+- **Trade Button**: Shows Buy/Sell options when enabled for a market
+
+### Market Grid Header
+- **Create Market Button**: Standard button to create a new prediction market
+- **Refresh Markets Button**: Circular button with rotating refresh icon next to Create Market. Clears all markets from local cache and fetches fresh data from the blockchain on user request.
+
 ### Market Card Button Flow
 - **Initial state**: Shows "Vote" button as the primary action
 - **Vote expanded**: Clicking Vote shows YES/NO buttons for voting
+- **Vote Dialog**: Selecting YES/NO opens a dialog asking for ETH amount to send with the vote
 - **After voting**: Transitions to Trade button for Buy/Sell options
 - **Trade expanded**: Clicking Trade shows Buy/Sell buttons for trading
 - This flow guides users: Vote → Trade, with expandable options at each step
@@ -28,9 +42,13 @@ Structure:
 - `parseTags(string)` - Converts comma-delimited blockchain string to array
 - `serializeTags(array)` - Converts array to comma-delimited string for storage
 - `fetchMarketsFromBlockchain()` - Fetches up to 50 most recent markets
+- `fetchMarketDataFromBlockchain(ids[])` - Fetches fresh market data for given market IDs
 - `readMarketCount()` - Gets total market count from contract
-- `readMarket(ids[])` - Reads specific market data by IDs
+- `readMarket(ids[])` - Reads specific market info by IDs
+- `readMarketData(ids[])` - Reads specific market data by IDs
+- `readPaymentToken(marketId)` - Reads payment token address for a market
 - `useWriteMarket()` - Hook for creating new markets on-chain
+- `useVote()` - Hook for voting on markets with amount
 
 ### Tag Display
 - Markets display first 3 tags directly on the card
@@ -46,7 +64,14 @@ Structure:
 - Users can select a tag to filter the market list
 - Modal has translucent background for a clean, unobtrusive appearance
 
-## Theme
+### Smart Market Loading
+- On initial load, app fetches up to 50 most recent markets from blockchain
+- Subsequent loads check if new markets have been added since last fetch
+- If no new markets, only refreshes market data (votes, balances, activity)
+- If new markets exist, fetches all market info and data
+- Users can manually clear cache with refresh button to force full reload
+
+### Theme
 
 The application uses dark mode as the default theme for all new users. Users can switch between light and dark mode at any time using the theme toggle button in the header.
 

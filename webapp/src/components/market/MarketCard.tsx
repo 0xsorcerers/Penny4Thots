@@ -1,10 +1,14 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { TrendingUp, TrendingDown, BarChart3 } from "lucide-react";
+import { TrendingUp, TrendingDown, BarChart3, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import type { Market } from "@/types/market";
 import { cn } from "@/lib/utils";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { VoteDialog } from "./VoteDialog";
+import { useMarketStore } from "@/store/marketStore";
+import { fetchMarketDataFromBlockchain, useVote } from "@/tools/utils";
+import { toast } from "sonner";
 
 interface MarketCardProps {
   market: Market;
@@ -12,11 +16,16 @@ interface MarketCardProps {
 
 export function MarketCard({ market }: MarketCardProps) {
   const navigate = useNavigate();
+  const { deleteMarket } = useMarketStore();
+  const { vote, isPending: isVotePending } = useVote();
   const [isHovered, setIsHovered] = useState(false);
   const [voteMode, setVoteMode] = useState<"idle" | "active">("idle");
   const [hasVoted, setHasVoted] = useState(false);
   const [tradeMode, setTradeMode] = useState<"idle" | "active">("idle");
   const [showAllTags, setShowAllTags] = useState(false);
+  const [voteDialogOpen, setVoteDialogOpen] = useState(false);
+  const [voteSignal, setVoteSignal] = useState<boolean>(true); // true for YES, false for NO
+  const [isRefreshingData, setIsRefreshingData] = useState(false);
 
   const totalVotes = market.yesVotes + market.noVotes;
   const yesPercentage = totalVotes > 0 ? (market.yesVotes / totalVotes) * 100 : 50;
@@ -43,16 +52,75 @@ export function MarketCard({ market }: MarketCardProps) {
     setShowAllTags(true);
   };
 
-  const handleVote = (e: React.MouseEvent, choice: "yes" | "no") => {
+  const handleDeleteMarket = (e: React.MouseEvent) => {
     e.stopPropagation();
-    console.log(`Voted ${choice} on market:`, market.id);
-    setHasVoted(true);
-    setVoteMode("idle");
+    if (market.indexer !== undefined) {
+      deleteMarket(market.indexer);
+      toast.success("Market removed from your view");
+    }
   };
 
-  const handleVoteClick = (e: React.MouseEvent) => {
+  const handleVote = async (amount: bigint, signal: boolean) => {
+    if (market.indexer === undefined) {
+      toast.error("Market indexer not found");
+      return;
+    }
+
+    try {
+      // Fetch fresh market data before voting
+      setIsRefreshingData(true);
+      const freshData = await fetchMarketDataFromBlockchain([market.indexer]);
+      setIsRefreshingData(false);
+
+      if (freshData.length === 0) {
+        toast.error("Failed to fetch market data");
+        return;
+      }
+
+      // Call vote function
+      await vote({
+        marketId: market.indexer,
+        signal,
+        marketBalance: amount,
+        feetype: false, // Default to false for now
+        paymentToken: "0x0000000000000000000000000000000000000000" as `0x${string}`,
+      });
+
+      toast.success("Vote cast successfully!");
+      setHasVoted(true);
+      setVoteMode("idle");
+      setVoteDialogOpen(false);
+    } catch (err: unknown) {
+      console.error("Vote failed:", err);
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      if (!errorMessage.toLowerCase().includes("reject") &&
+          !errorMessage.toLowerCase().includes("denied") &&
+          !errorMessage.toLowerCase().includes("cancel")) {
+        toast.error(errorMessage || "Failed to cast vote");
+      }
+    }
+  };
+
+  const handleVoteClick = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    setVoteMode(voteMode === "idle" ? "active" : "idle");
+    // If already in active mode, toggle to vote dialog for YES
+    if (voteMode === "active") {
+      setVoteMode("idle");
+    } else {
+      setVoteMode("active");
+    }
+  };
+
+  const handleVoteYes = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setVoteSignal(true);
+    setVoteDialogOpen(true);
+  };
+
+  const handleVoteNo = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setVoteSignal(false);
+    setVoteDialogOpen(true);
   };
 
   return (
@@ -79,6 +147,19 @@ export function MarketCard({ market }: MarketCardProps) {
 
       {/* Content */}
       <div className="relative z-10 flex h-full flex-col p-5">
+        {/* Delete Button */}
+        <motion.button
+          onClick={handleDeleteMarket}
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: isHovered ? 1 : 0, scale: isHovered ? 1 : 0.8 }}
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.95 }}
+          className="absolute top-4 right-4 z-20 rounded-full p-2 bg-destructive/10 text-destructive hover:bg-destructive/20 transition-all"
+          title="Remove market from view"
+        >
+          <X className="h-4 w-4" />
+        </motion.button>
+
         {/* Tags */}
         <div className="mb-3 flex flex-wrap gap-1.5">
           {market.tags.slice(0, 3).map((tag) => (
@@ -154,13 +235,13 @@ export function MarketCard({ market }: MarketCardProps) {
               className="flex gap-2"
             >
               <button
-                onClick={(e) => handleVote(e, "yes")}
+                onClick={handleVoteYes}
                 className="flex-1 rounded-xl bg-yes py-2.5 font-outfit text-sm font-semibold text-yes-foreground transition-all hover:bg-yes/90 hover:shadow-[0_0_20px_rgba(var(--yes),0.3)]"
               >
                 YES
               </button>
               <button
-                onClick={(e) => handleVote(e, "no")}
+                onClick={handleVoteNo}
                 className="flex-1 rounded-xl bg-no py-2.5 font-outfit text-sm font-semibold text-no-foreground transition-all hover:bg-no/90 hover:shadow-[0_0_20px_rgba(var(--no),0.3)]"
               >
                 NO
@@ -242,6 +323,16 @@ export function MarketCard({ market }: MarketCardProps) {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Vote Dialog */}
+      <VoteDialog
+        isOpen={voteDialogOpen}
+        onClose={() => setVoteDialogOpen(false)}
+        onVote={handleVote}
+        isLoading={isVotePending || isRefreshingData}
+        marketTitle={market.title}
+        signal={voteSignal}
+      />
     </motion.div>
   );
 }
