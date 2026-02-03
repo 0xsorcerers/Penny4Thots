@@ -88,6 +88,8 @@ export default function Index() {
         description: data.description,
         image: data.posterImage,
         tags: data.tags.join(","),
+        optionA: data.optionA,
+        optionB: data.optionB,
         marketBalance: marketBalanceBigInt,
         fee: fee,
       });
