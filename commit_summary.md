@@ -1,4 +1,28 @@
-# Commit Summary - Smart Contract Integration & Voting UI Enhancement
+# Commit Summary 
+
+feat: initial commit - Penny4Thots prediction market platform 
+
+- Implement Thirdweb wallet integration and authentication flow 
+  - GetStartedPage.tsx: Web3 login component with Connector 
+  - Index.tsx: Protected routes showing market only after auth 
+  - Welcome.tsx: Landing page with wallet connection 
+  
+- Polish UI/UX with theme-aware design 
+  - Custom slim scrollbars (5px) for light/dark themes 
+  - Brand color integration with primary accent (#7FFF00) 
+  - Cross-browser scrollbar support (Webkit + Firefox) 
+  - Fixed pointer-events blocking on interactive elements 
+  
+- Establish project structure and documentation 
+  - Comprehensive .gitignore 
+  - README with setup instructions 
+  - TypeScript + React 18 + Tailwind setup 
+  
+- Stack: React, Thirdweb, Tailwind, TypeScript, React Router, React Query" 
+
+
+
+# Smart Contract Integration & Voting UI Enhancement
 
 ## Overview
 -Implemented comprehensive voting system with market deletion, refresh functionality, and new smart contract integration. Updated MarketInfo to include feetype field and implemented vote() function with dynamic payment handling. Added market count check optimization to avoid unnecessary blockchain calls when no markets exist.
@@ -279,7 +303,7 @@ Cache Invalidation:
 7. Test zero-amount vote rejection
 8. Verify toast notifications appear
 
-# Blockchain RPC Optimization - Commit Summary
+# Blockchain RPC Optimization -
 
 ## Overview
 Implemented a dual-fetch strategy to reduce blockchain RPC calls by separating immutable market info from volatile market data. This allows us to cache market information locally while independently updating market data.
