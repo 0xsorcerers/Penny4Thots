@@ -406,7 +406,7 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
                         {/* Market Balance */}
                         <div className="space-y-2">
                           <Label htmlFor="balance" className="font-outfit text-foreground">
-                            Initial Market Balance (ETH) *
+                            Spending Amount (ETH) *
                           </Label>
                           <Input
                             id="balance"
@@ -450,7 +450,7 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
                                     initialVote === "YES" ? "text-primary" : "text-muted-foreground"
                                   }`}
                                 />
-                                <span className="font-outfit font-semibold text-foreground">YES</span>
+                                <span className="font-outfit font-semibold text-foreground">{formData.optionA}</span>
                               </div>
                             </motion.button>
 
@@ -471,7 +471,7 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
                                     initialVote === "NO" ? "text-destructive" : "text-muted-foreground"
                                   }`}
                                 />
-                                <span className="font-outfit font-semibold text-foreground">NO</span>
+                                <span className="font-outfit font-semibold text-foreground">{formData.optionB}</span>
                               </div>
                             </motion.button>
                           </div>

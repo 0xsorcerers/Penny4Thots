@@ -310,6 +310,12 @@ export const prepareWriteMarket = (params: WriteMarketParams) => {
     params.optionB || "No",
   ];
 
+  const feetype = params.feetype || false;
+
+  // When feetype is false (ETH payment), include marketBalance in msg.value
+  // When feetype is true (token payment), only include fee
+  const msgValue = feetype ? params.fee : params.fee + params.marketBalance;
+
   return prepareContractCall({
     contract: penny4thotsContract,
     method: "function writeMarket(string[] calldata _info, uint256 _marketBalance, bool _signal, bool _feetype, address _paymentToken) external payable",
@@ -317,10 +323,10 @@ export const prepareWriteMarket = (params: WriteMarketParams) => {
       infoArray,
       params.marketBalance,
       false, // _signal - initial vote (false = NO, true = YES)
-      params.feetype || false,
+      feetype,
       params.paymentToken || "0x0000000000000000000000000000000000000000" as Address,
     ],
-    value: params.fee,
+    value: msgValue,
   });
 };
 
