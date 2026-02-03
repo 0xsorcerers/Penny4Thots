@@ -24,6 +24,14 @@ export default function Index() {
     try {
       const currentMarketCount = await readMarketCount();
 
+      // If no markets exist, clear and return early
+      if (currentMarketCount === 0) {
+        const { clearAllMarkets } = useMarketStore.getState();
+        clearAllMarkets();
+        setLastFetchedCount(0);
+        return;
+      }
+
       // If no new markets, just refresh market data
       if (currentMarketCount === lastFetchedCount && marketInfos.length > 0) {
         const marketDataMap = await fetchMarketDataFromBlockchain(

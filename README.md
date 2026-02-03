@@ -67,7 +67,9 @@ Structure:
 - Modal has translucent background for a clean, unobtrusive appearance
 
 ### Smart Market Loading
-- On initial load, app fetches up to 50 most recent markets from blockchain
+- On initial load, app first calls `readMarketCount()` to check if any markets exist
+- If count is 0, immediately returns without fetching (no RPC calls wasted)
+- If count > 0, proceeds to fetch market info and data from blockchain
 - Subsequent loads check if new markets have been added since last fetch
 - If no new markets, only refreshes market data (votes, balances, activity)
 - If new markets exist, fetches all market info and data

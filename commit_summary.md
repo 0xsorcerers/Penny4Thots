@@ -1,7 +1,7 @@
 # Commit Summary - Smart Contract Integration & Voting UI Enhancement
 
 ## Overview
-Implemented comprehensive voting system with market deletion, refresh functionality, and new smart contract integration. Updated MarketInfo to include feetype field and implemented vote() function with dynamic payment handling.
+Implemented comprehensive voting system with market deletion, refresh functionality, and new smart contract integration. Updated MarketInfo to include feetype field and implemented vote() function with dynamic payment handling. Added market count check optimization to avoid unnecessary blockchain calls when no markets exist.
 
 ## Smart Contract Changes
 
@@ -119,6 +119,13 @@ Implemented comprehensive voting system with market deletion, refresh functional
 
 ### Page Updates (`webapp/src/pages/Index.tsx`)
 
+- **Market Count Optimization**:
+  - `loadMarketsFromBlockchain()` now checks market count first via `readMarketCount()`
+  - If count is 0, immediately returns without fetching markets (early exit)
+  - This avoids unnecessary blockchain calls when no markets exist
+  - Clears local state if market count drops to zero
+  - Sets `lastFetchedCount` to 0 for subsequent syncs
+
 - `handleRefreshAllMarkets()` callback:
   - Calls `clearAllMarkets()` to reset local state
   - Resets `lastFetchedCount` to 0
@@ -180,6 +187,14 @@ Implemented comprehensive voting system with market deletion, refresh functional
 - `WriteMarketParams`: Now includes `optionA` and `optionB` parameters
 - `prepareWriteMarket()`: Passes options to smart contract (indices 5-6 in info array)
 - Fallback to "Yes"/"No" if not provided maintains backward compatibility
+
+### Market Count Optimization
+1. App calls `readMarketCount()` first on initial load
+2. If count is 0, immediately returns (no markets to fetch)
+3. Clears local cache if market count is zero
+4. If count > 0, proceeds with normal fetch flow
+5. Subsequent loads check if count has changed
+6. This eliminates unnecessary RPC calls when blockchain has no markets
 
 ### Market Deletion
 1. User hovers over market card
