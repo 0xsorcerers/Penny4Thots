@@ -108,7 +108,7 @@ export function MarketCard({ market, onVoteClick }: MarketCardProps) {
           {market.tags.slice(0, 3).map((tag) => (
             <span
               key={tag}
-              className="rounded-full bg-foreground px-2.5 py-0.5 font-mono text-xs text-primary"
+              className="rounded-full bg-primary/10 px-2.5 py-0.5 font-mono text-xs text-primary"
             >
               {tag}
             </span>
@@ -116,7 +116,7 @@ export function MarketCard({ market, onVoteClick }: MarketCardProps) {
           {market.tags.length > 3 && (
             <button
               onClick={handleShowMoreTags}
-              className="rounded-full bg-foreground px-2.5 py-0.5 font-mono text-xs text-primary transition-colors hover:bg-foreground/90"
+              className="rounded-full bg-muted px-2.5 py-0.5 font-mono text-xs text-muted-foreground transition-colors hover:bg-muted/80 hover:text-foreground"
             >
               +{market.tags.length - 3} tags
             </button>
@@ -236,7 +236,7 @@ export function MarketCard({ market, onVoteClick }: MarketCardProps) {
               {market.tags.map((tag) => (
                 <span
                   key={tag}
-                  className="rounded-full bg-foreground px-3 py-1.5 font-mono text-sm text-primary"
+                  className="rounded-full bg-primary/10 px-3 py-1.5 font-mono text-sm text-primary"
                 >
                   {tag}
                 </span>
