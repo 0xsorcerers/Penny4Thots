@@ -12,65 +12,65 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    /* Tropical Light Theme - Clean, modern background with warm undertones */
-    --background: 180 20% 97%;
-    --foreground: 200 30% 12%;
+    /* Fresh Tropical Light Theme - Vibrant, contemporary, elegant */
+    --background: 150 40% 95%;
+    --foreground: 200 25% 10%;
 
     --card: 0 0% 100%;
-    --card-foreground: 200 30% 12%;
+    --card-foreground: 200 25% 10%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 200 30% 12%;
+    --popover-foreground: 200 25% 10%;
 
-    /* Vibrant tropical turquoise primary */
-    --primary: 180 85% 42%;
+    /* Vibrant tropical emerald - fresh and lively */
+    --primary: 155 90% 42%;
     --primary-foreground: 0 0% 100%;
 
-    /* Soft tropical mint secondary */
-    --secondary: 160 70% 75%;
-    --secondary-foreground: 200 30% 12%;
+    /* Soft tropical lime - gentle accent */
+    --secondary: 95 80% 55%;
+    --secondary-foreground: 200 25% 10%;
 
-    /* Muted tropical neutrals */
-    --muted: 180 15% 88%;
-    --muted-foreground: 200 20% 45%;
+    /* Muted tropical neutrals with hint of cyan */
+    --muted: 150 25% 88%;
+    --muted-foreground: 200 20% 42%;
 
-    /* Vivid tropical orange accent */
-    --accent: 25 90% 52%;
+    /* Vibrant tropical coral - warm energy */
+    --accent: 10 85% 54%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    /* Tropical emerald green */
-    --success: 155 75% 42%;
+    /* Tropical sky blue */
+    --success: 200 75% 48%;
     --success-foreground: 0 0% 100%;
 
-    /* Soft tropical borders */
-    --border: 180 20% 90%;
-    --input: 180 15% 94%;
-    --ring: 180 85% 42%;
+    /* Light tropical borders */
+    --border: 150 30% 88%;
+    --input: 150 25% 93%;
+    --ring: 155 90% 42%;
 
     --radius: 1rem;
 
-    /* Custom prediction market colors - Tropical edition */
-    --yes: 155 75% 42%;
+    /* Prediction market colors - Tropical edition */
+    --yes: 155 90% 42%;
     --yes-foreground: 0 0% 100%;
     --no: 0 84% 60%;
     --no-foreground: 0 0% 100%;
 
-    /* Gradient colors for shimmer effect */
-    --shimmer-start: 180 85% 42%;
-    --shimmer-mid: 25 90% 52%;
-    --shimmer-end: 155 75% 42%;
+    /* Gradient for shimmer effect */
+    --shimmer-start: 155 90% 42%;
+    --shimmer-mid: 10 85% 54%;
+    --shimmer-end: 200 75% 48%;
 
-    --sidebar-background: 180 18% 96%;
-    --sidebar-foreground: 200 30% 12%;
-    --sidebar-primary: 180 85% 42%;
+    --sidebar-background: 150 35% 94%;
+    --sidebar-foreground: 200 25% 10%;
+    --sidebar-primary: 155 90% 42%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 160 70% 75%;
-    --sidebar-accent-foreground: 200 30% 12%;
-    --sidebar-border: 180 20% 90%;
-    --sidebar-ring: 180 85% 42%;
+    --sidebar-accent: 95 80% 55%;
+    --sidebar-accent-foreground: 200 25% 10%;
+    --sidebar-border: 150 30% 88%;
+    --sidebar-ring: 155 90% 42%;
   }
 
   .dark {
