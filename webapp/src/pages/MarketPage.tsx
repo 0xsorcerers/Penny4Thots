@@ -202,10 +202,10 @@ export default function MarketPage() {
               <div className="mb-2 flex items-center justify-between text-sm">
                 <span className="flex items-center gap-1.5 font-mono text-yes">
                   <TrendingUp className="h-4 w-4" />
-                  YES {yesPercentage.toFixed(1)}%
+                  {market.optionA} {yesPercentage.toFixed(1)}%
                 </span>
                 <span className="flex items-center gap-1.5 font-mono text-no">
-                  NO {(100 - yesPercentage).toFixed(1)}%
+                  {market.optionB} {(100 - yesPercentage).toFixed(1)}%
                   <TrendingDown className="h-4 w-4" />
                 </span>
               </div>
@@ -241,7 +241,7 @@ export default function MarketPage() {
               >
                 <span className="relative z-10 flex items-center justify-center gap-2">
                   <TrendingUp className="h-6 w-6" />
-                  YES
+                  {market.optionA}
                 </span>
               </motion.button>
 
@@ -261,7 +261,7 @@ export default function MarketPage() {
               >
                 <span className="relative z-10 flex items-center justify-center gap-2">
                   <TrendingDown className="h-6 w-6" />
-                  NO
+                  {market.optionB}
                 </span>
               </motion.button>
             </div>
