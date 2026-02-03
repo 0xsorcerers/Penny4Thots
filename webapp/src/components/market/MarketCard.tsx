@@ -7,26 +7,23 @@ import { cn } from "@/lib/utils";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useMarketStore } from "@/store/marketStore";
 import { toast } from "sonner";
-import { VoteModal } from "./VoteModal";
 
 interface MarketCardProps {
   market: Market;
+  onVoteClick?: (marketId: number, signal: boolean) => void;
 }
 
 const truncateOption = (option: string, maxLength: number = 9): string => {
   return option.length > maxLength ? option.slice(0, maxLength) + "..." : option;
 };
 
-export function MarketCard({ market }: MarketCardProps) {
+export function MarketCard({ market, onVoteClick }: MarketCardProps) {
   const navigate = useNavigate();
   const { deleteMarket } = useMarketStore();
   const [isHovered, setIsHovered] = useState(false);
   const [voteMode, setVoteMode] = useState<"idle" | "active">("idle");
-  const [showVoteModal, setShowVoteModal] = useState(false);
   const [tradeMode, setTradeMode] = useState<"idle" | "active">("idle");
   const [showAllTags, setShowAllTags] = useState(false);
-
-  const [selectedSignal, setSelectedSignal] = useState<boolean | null>(null);
 
   const totalVotes = market.yesVotes + market.noVotes;
   const yesPercentage = totalVotes > 0 ? (market.yesVotes / totalVotes) * 100 : 50;
@@ -63,24 +60,15 @@ export function MarketCard({ market }: MarketCardProps) {
 
   const handleVoteOption = (e: React.MouseEvent, signal: boolean) => {
     e.stopPropagation();
-    setSelectedSignal(signal);
-    setShowVoteModal(true);
+    if (onVoteClick && market.indexer !== undefined) {
+      onVoteClick(market.indexer, signal);
+    }
     setVoteMode("idle");
   };
 
   const handleVoteClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     setVoteMode(voteMode === "idle" ? "active" : "idle");
-  };
-
-  const handleVoteModalClose = () => {
-    setShowVoteModal(false);
-    setSelectedSignal(null);
-  };
-
-  const handleVoteSuccess = () => {
-    // Vote was successful, modal will close automatically
-    // Market data will be refreshed via the blockchain fetch
   };
 
   return (
@@ -283,19 +271,6 @@ export function MarketCard({ market }: MarketCardProps) {
           </div>
         </DialogContent>
       </Dialog>
-
-      {/* Vote Modal */}
-      {market.indexer !== undefined && (
-        <VoteModal
-          isOpen={showVoteModal}
-          onClose={handleVoteModalClose}
-          onVoteSuccess={handleVoteSuccess}
-          marketId={market.indexer}
-          marketTitle={market.title}
-          optionA={market.optionA}
-          optionB={market.optionB}
-        />
-      )}
     </motion.div>
   );
 }

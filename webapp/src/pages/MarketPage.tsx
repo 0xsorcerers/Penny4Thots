@@ -10,17 +10,27 @@ import {
   Clock,
   Share2,
 } from "lucide-react";
+import { useActiveAccount } from "thirdweb/react";
 import { useMarketStore } from "@/store/marketStore";
+import { useVote, useTokenApprove, readPaymentToken, readTokenAllowance, isZeroAddress, type VoteParams } from "@/tools/utils";
+import { VoteModal } from "@/components/market/VoteModal";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import type { Address } from "viem";
+import { toast } from "sonner";
 
 export default function MarketPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { getMarket, voteYes, voteNo } = useMarketStore();
+  const { getMarket } = useMarketStore();
   const market = getMarket(id || "");
+  const account = useActiveAccount();
+  const { vote, isPending: isVoting } = useVote();
+  const { approve, isPending: isApproving } = useTokenApprove();
 
-  const [hasVoted, setHasVoted] = useState<"yes" | "no" | null>(null);
+  const [isVoteModalOpen, setIsVoteModalOpen] = useState(false);
+  const [selectedVoteSignal, setSelectedVoteSignal] = useState<boolean | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [tradeMode, setTradeMode] = useState<"idle" | "active">("idle");
 
   // Scroll to top when market page loads
@@ -45,14 +55,59 @@ export default function MarketPage() {
   const totalVotes = market.yesVotes + market.noVotes;
   const yesPercentage = totalVotes > 0 ? (market.yesVotes / totalVotes) * 100 : 50;
 
-  const handleVote = (choice: "yes" | "no") => {
-    if (hasVoted) return;
-    if (choice === "yes") {
-      voteYes(market.id);
-    } else {
-      voteNo(market.id);
+  const handleVoteClick = (signal: boolean) => {
+    if (!market.indexer) return;
+    setSelectedVoteSignal(signal);
+    setIsVoteModalOpen(true);
+  };
+
+  const handleSubmitVote = async (voteParams: VoteParams) => {
+    if (!account?.address) {
+      toast.error("Please connect your wallet first");
+      throw new Error("Wallet not connected");
     }
-    setHasVoted(choice);
+
+    setIsSubmitting(true);
+    try {
+      const isEthPayment = isZeroAddress(voteParams.paymentToken);
+
+      // If using a token (not ETH), check allowance and approve if needed
+      if (!isEthPayment) {
+        const currentAllowance = await readTokenAllowance(
+          voteParams.paymentToken,
+          account.address as Address,
+          "0x826F0F01E41C1AB3dD1b52b7e3662da9702Bb9Ad" as Address
+        );
+
+        // If allowance is insufficient, request approval
+        if (currentAllowance < voteParams.marketBalance) {
+          toast.info("Approval required", {
+            description: "Please approve the token spending in your wallet",
+          });
+
+          await approve(voteParams.paymentToken, voteParams.marketBalance);
+          toast.success("Token approved!");
+        }
+      }
+
+      // Now submit the vote
+      await vote(voteParams);
+      toast.success("Vote submitted successfully!");
+    } catch (err: unknown) {
+      console.error("Failed to vote:", err);
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      if (errorMessage.toLowerCase().includes("reject") ||
+          errorMessage.toLowerCase().includes("denied") ||
+          errorMessage.toLowerCase().includes("cancel") ||
+          errorMessage.toLowerCase().includes("user refused")) {
+        toast.error("Transaction cancelled");
+      } else {
+        toast.error(errorMessage || "Failed to submit vote");
+      }
+      throw err;
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleTradeClick = () => {
@@ -226,18 +281,10 @@ export default function MarketPage() {
             {/* Vote Buttons */}
             <div className="grid gap-4 sm:grid-cols-2">
               <motion.button
-                whileHover={{ scale: hasVoted ? 1 : 1.02 }}
-                whileTap={{ scale: hasVoted ? 1 : 0.98 }}
-                onClick={() => handleVote("yes")}
-                disabled={hasVoted !== null}
-                className={cn(
-                  "relative overflow-hidden rounded-xl py-5 font-syne text-xl font-bold transition-all",
-                  hasVoted === "yes"
-                    ? "bg-yes text-yes-foreground ring-2 ring-yes ring-offset-2 ring-offset-background"
-                    : hasVoted === "no"
-                    ? "bg-muted/50 text-muted-foreground opacity-50"
-                    : "bg-yes/20 text-yes hover:bg-yes hover:text-yes-foreground"
-                )}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => handleVoteClick(true)}
+                className="relative overflow-hidden rounded-xl py-5 font-syne text-xl font-bold transition-all bg-yes/20 text-yes hover:bg-yes hover:text-yes-foreground"
               >
                 <span className="relative z-10 flex items-center justify-center gap-2">
                   <TrendingUp className="h-6 w-6" />
@@ -246,18 +293,10 @@ export default function MarketPage() {
               </motion.button>
 
               <motion.button
-                whileHover={{ scale: hasVoted ? 1 : 1.02 }}
-                whileTap={{ scale: hasVoted ? 1 : 0.98 }}
-                onClick={() => handleVote("no")}
-                disabled={hasVoted !== null}
-                className={cn(
-                  "relative overflow-hidden rounded-xl py-5 font-syne text-xl font-bold transition-all",
-                  hasVoted === "no"
-                    ? "bg-no text-no-foreground ring-2 ring-no ring-offset-2 ring-offset-background"
-                    : hasVoted === "yes"
-                    ? "bg-muted/50 text-muted-foreground opacity-50"
-                    : "bg-no/20 text-no hover:bg-no hover:text-no-foreground"
-                )}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => handleVoteClick(false)}
+                className="relative overflow-hidden rounded-xl py-5 font-syne text-xl font-bold transition-all bg-no/20 text-no hover:bg-no hover:text-no-foreground"
               >
                 <span className="relative z-10 flex items-center justify-center gap-2">
                   <TrendingDown className="h-6 w-6" />
@@ -265,16 +304,6 @@ export default function MarketPage() {
                 </span>
               </motion.button>
             </div>
-
-            {hasVoted && (
-              <motion.p
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="mt-4 text-center font-outfit text-sm text-muted-foreground"
-              >
-                You voted <span className={hasVoted === "yes" ? "text-yes" : "text-no"}>{hasVoted.toUpperCase()}</span>
-              </motion.p>
-            )}
           </motion.div>
 
           {/* Trade Section */}
@@ -339,6 +368,20 @@ export default function MarketPage() {
           </motion.div>
         </div>
       </div>
+
+      {/* Vote Modal */}
+      {market.indexer !== undefined && (
+        <VoteModal
+          isOpen={isVoteModalOpen}
+          onClose={() => setIsVoteModalOpen(false)}
+          onSubmitVote={handleSubmitVote}
+          isLoading={isSubmitting || isVoting || isApproving}
+          marketId={market.indexer}
+          marketTitle={market.title}
+          optionA={market.optionA}
+          optionB={market.optionB}
+        />
+      )}
     </div>
   );
 }

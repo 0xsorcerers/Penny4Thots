@@ -20,11 +20,12 @@ const shuffleArray = <T,>(array: T[]): T[] => {
 interface MarketGridProps {
   markets: Market[];
   onCreateMarket: () => void;
+  onVoteClick?: (marketId: number, signal: boolean) => void;
   onRefreshMarkets?: () => void;
   isLoading?: boolean;
 }
 
-export function MarketGrid({ markets, onCreateMarket, onRefreshMarkets, isLoading = false }: MarketGridProps) {
+export function MarketGrid({ markets, onCreateMarket, onVoteClick, onRefreshMarkets, isLoading = false }: MarketGridProps) {
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [showAllTags, setShowAllTags] = useState(false);
@@ -260,7 +261,7 @@ export function MarketGrid({ markets, onCreateMarket, onRefreshMarkets, isLoadin
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.05 }}
                   >
-                    <MarketCard market={market} />
+                    <MarketCard market={market} onVoteClick={onVoteClick} />
                   </motion.div>
                 ))}
               </AnimatePresence>
