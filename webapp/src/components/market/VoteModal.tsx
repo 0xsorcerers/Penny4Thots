@@ -45,16 +45,18 @@ export function VoteModal({
   const [isLoadingData, setIsLoadingData] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Reset state when modal opens/closes
+  // Log when modal opens
   useEffect(() => {
+    console.log("VoteModal effect - isOpen:", isOpen, "marketImage:", marketImage, "marketId:", marketId);
     if (isOpen) {
+      console.log("VoteModal opened with image:", marketImage);
       setStep("select");
       setSelectedSignal(null);
       setAmount("");
       setError(null);
       fetchMarketPaymentData();
     }
-  }, [isOpen, marketId]);
+  }, [isOpen, marketId, marketImage]);
 
   const fetchMarketPaymentData = async () => {
     setIsLoadingData(true);
@@ -144,16 +146,25 @@ export function VoteModal({
           >
             {/* Market image background - always visible */}
             {marketImage ? (
-              <img
-                src={marketImage}
-                alt="Market background"
-                loading="eager"
-                className="absolute inset-0 h-full w-full object-cover"
-                style={{
-                  opacity: step === "select" ? 0.4 : 0.25,
-                  mixBlendMode: "overlay",
-                }}
-              />
+              <>
+                <img
+                  src={marketImage}
+                  alt="Market background"
+                  loading="eager"
+                  decoding="async"
+                  onError={(e) => {
+                    console.error("Failed to load market image:", marketImage, e);
+                  }}
+                  onLoad={() => {
+                    console.log("Market image loaded successfully:", marketImage);
+                  }}
+                  className="absolute inset-0 h-full w-full object-cover"
+                  style={{
+                    opacity: step === "select" ? 0.4 : 0.25,
+                    mixBlendMode: "overlay",
+                  }}
+                />
+              </>
             ) : (
               <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-transparent" />
             )}

@@ -38,6 +38,11 @@ export default function MarketPage() {
     window.scrollTo(0, 0);
   }, [id]);
 
+  // Log vote modal state for debugging
+  useEffect(() => {
+    console.log("MarketPage render - isVoteModalOpen:", isVoteModalOpen, "market.indexer:", market?.indexer, "market.posterImage:", market?.posterImage);
+  }, [isVoteModalOpen, market?.indexer, market?.posterImage]);
+
   if (!market) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
@@ -56,9 +61,16 @@ export default function MarketPage() {
   const yesPercentage = totalVotes > 0 ? (market.yesVotes / totalVotes) * 100 : 50;
 
   const handleVoteClick = (signal: boolean) => {
-    if (!market.indexer) return;
+    console.log("handleVoteClick called with signal:", signal, "market:", market?.title, "indexer:", market?.indexer);
+    if (!market || market.indexer === undefined) {
+      console.error("Market or indexer not available", { market, indexer: market?.indexer });
+      toast.error("Market data not loaded");
+      return;
+    }
+    console.log("Opening vote modal for market:", market.indexer, "signal:", signal, "posterImage:", market.posterImage);
     setSelectedVoteSignal(signal);
     setIsVoteModalOpen(true);
+    console.log("Vote modal state set, isVoteModalOpen should now be true");
   };
 
   const handleSubmitVote = async (voteParams: VoteParams) => {
