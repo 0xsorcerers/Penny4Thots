@@ -202,7 +202,7 @@ export default function MarketPage() {
               {market.tags.map((tag) => (
                 <span
                   key={tag}
-                  className="rounded-full bg-primary/25 px-3 py-1 font-mono text-xs text-primary"
+                  className="rounded-full bg-primary/10 px-3 py-1 font-mono text-xs text-primary"
                 >
                   {tag}
                 </span>
