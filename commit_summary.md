@@ -1,5 +1,4 @@
 # Commit Summary 
-
 feat: initial commit - Penny4Thots prediction market platform 
 
 - Implement Thirdweb wallet integration and authentication flow 
@@ -506,5 +505,8 @@ function vote(bool _signal, uint256 _market, uint256 _marketBalance) external pa
 - `_market`: The market index number
 - `_marketBalance`: Amount to stake (wei for ETH, token units for tokens)
 - `msg.value`: ETH amount when using ETH payment, 0 for token payment
+
+## Theme changes
+feat: light and dark mode thematic changes
 
 
