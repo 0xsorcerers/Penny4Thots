@@ -12,9 +12,8 @@ Structure:
 - **Vote Button Flow**:
   - Clicking Vote shows custom voting option buttons (default: "Yes"/"No", max 20 chars each)
   - Options are truncated to 9 characters on market cards for display
-  - Selecting an option opens a VoteDialog asking for the amount of ETH to send
-  - Vote amount cannot be zero
-  - Before voting, fresh market data is fetched from the blockchain to ensure current state
+  - Selecting an option marks the vote and transitions to Trade button
+  - Before voting, fresh market data can be fetched from the blockchain
 - **Custom Voting Options**: Market creators can set custom voting option labels (e.g., "Approve"/"Reject" or "Bull"/"Bear") up to 20 characters each
 - **Trade Button**: Shows Buy/Sell options when enabled for a market
 
@@ -25,7 +24,6 @@ Structure:
 ### Market Card Button Flow
 - **Initial state**: Shows "Vote" button as the primary action
 - **Vote expanded**: Clicking Vote shows custom option buttons (default: "Yes"/"No" or custom labels set by creator)
-- **Vote Dialog**: Selecting an option opens a dialog asking for ETH amount to send with the vote
 - **After voting**: Transitions to Trade button for Buy/Sell options
 - **Trade expanded**: Clicking Trade shows Buy/Sell buttons for trading
 - This flow guides users: Vote → Trade, with expandable options at each step
