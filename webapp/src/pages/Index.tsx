@@ -3,20 +3,26 @@ import { GetStartedPage } from "@/components/landing/GetStartedPage";
 import { Header } from "@/components/layout/Header";
 import { MarketGrid } from "@/components/market/MarketGrid";
 import { CreateMarketModal } from "@/components/market/CreateMarketModal";
+import { VoteModal } from "@/components/market/VoteModal";
 import { useMarketStore } from "@/store/marketStore";
 import { useActiveAccount } from "thirdweb/react";
-import { useWriteMarket, readFee, fetchMarketsFromBlockchain, fetchMarketDataFromBlockchain, readMarketCount, toWei } from "@/tools/utils";
+import { useWriteMarket, useVote, useTokenApprove, readFee, fetchMarketsFromBlockchain, fetchMarketDataFromBlockchain, readMarketCount, readPaymentToken, readTokenAllowance, toWei, isZeroAddress, type VoteParams } from "@/tools/utils";
 import type { CreateMarketData } from "@/types/market";
+import type { Address } from "viem";
 import { toast } from "sonner";
 
 export default function Index() {
   const { markets, setMarketsFromBlockchain, updateMarketData, marketInfos, isLoadingFromBlockchain, setIsLoadingFromBlockchain } = useMarketStore();
   const [isConnected, setIsConnected] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isVoteModalOpen, setIsVoteModalOpen] = useState(false);
+  const [voteModalData, setVoteModalData] = useState<{ marketId: number; marketTitle: string; optionA?: string; optionB?: string } | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [lastFetchedCount, setLastFetchedCount] = useState(0);
   const account = useActiveAccount();
   const { writeMarket, isPending, error } = useWriteMarket();
+  const { vote, isPending: isVoting } = useVote();
+  const { approve, isPending: isApproving } = useTokenApprove();
 
   // Smart fetch that only loads new markets not already in localStorage
   const loadMarketsFromBlockchain = useCallback(async () => {
@@ -78,6 +84,71 @@ export default function Index() {
     setIsConnected(!isConnected);
   };
 
+  const handleVoteClick = (marketId: number, signal: boolean) => {
+    const market = markets.find(m => m.indexer === marketId);
+    if (market) {
+      setVoteModalData({
+        marketId,
+        marketTitle: market.title,
+        optionA: market.optionA,
+        optionB: market.optionB,
+      });
+      setIsVoteModalOpen(true);
+    }
+  };
+
+  const handleSubmitVote = async (voteParams: VoteParams) => {
+    if (!account?.address) {
+      toast.error("Please connect your wallet first");
+      throw new Error("Wallet not connected");
+    }
+
+    setIsSubmitting(true);
+    try {
+      const isEthPayment = isZeroAddress(voteParams.paymentToken);
+
+      // If using a token (not ETH), check allowance and approve if needed
+      if (!isEthPayment) {
+        const currentAllowance = await readTokenAllowance(
+          voteParams.paymentToken,
+          account.address as Address,
+          "0x826F0F01E41C1AB3dD1b52b7e3662da9702Bb9Ad" as Address
+        );
+
+        // If allowance is insufficient, request approval
+        if (currentAllowance < voteParams.marketBalance) {
+          toast.info("Approval required", {
+            description: "Please approve the token spending in your wallet",
+          });
+
+          await approve(voteParams.paymentToken, voteParams.marketBalance);
+          toast.success("Token approved!");
+        }
+      }
+
+      // Now submit the vote
+      await vote(voteParams);
+      toast.success("Vote submitted successfully!");
+
+      // Reload markets from blockchain after successful vote
+      await loadMarketsFromBlockchain();
+    } catch (err: unknown) {
+      console.error("Failed to vote:", err);
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      if (errorMessage.toLowerCase().includes("reject") ||
+          errorMessage.toLowerCase().includes("denied") ||
+          errorMessage.toLowerCase().includes("cancel") ||
+          errorMessage.toLowerCase().includes("user refused")) {
+        toast.error("Transaction cancelled");
+      } else {
+        toast.error(errorMessage || "Failed to submit vote");
+      }
+      throw err;
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const handleCreateMarket = async (data: CreateMarketData & { marketBalance: string; initialVote: "YES" | "NO" }) => {
     if (!account) {
       toast.error("Please connect your wallet first");
@@ -137,6 +208,7 @@ export default function Index() {
       <MarketGrid
         markets={markets}
         onCreateMarket={() => setIsCreateModalOpen(true)}
+        onVoteClick={handleVoteClick}
         onRefreshMarkets={handleRefreshAllMarkets}
         isLoading={isLoadingFromBlockchain}
       />
@@ -146,6 +218,18 @@ export default function Index() {
         onSubmit={handleCreateMarket}
         isLoading={isSubmitting}
       />
+      {voteModalData && (
+        <VoteModal
+          isOpen={isVoteModalOpen}
+          onClose={() => setIsVoteModalOpen(false)}
+          onSubmitVote={handleSubmitVote}
+          isLoading={isSubmitting || isVoting || isApproving}
+          marketId={voteModalData.marketId}
+          marketTitle={voteModalData.marketTitle}
+          optionA={voteModalData.optionA}
+          optionB={voteModalData.optionB}
+        />
+      )}
     </div>
   );
 }

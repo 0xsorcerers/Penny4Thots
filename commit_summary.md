@@ -1,66 +1,95 @@
 # Commit Summary: Vote UI Feature Implementation
 
 ## Overview
-Implemented a new voting UI feature that displays a modal dialog when users click on voting options (optionA or optionB) in market cards. The modal handles both ETH and ERC20 token payments with proper approval flow.
+Implemented a comprehensive voting UI feature with a full-screen modal that appears when users click voting options in market cards or on market detail pages. The modal handles both ETH and ERC20 token payments with automatic approval flow.
 
 ## Files Changed
 
 ### New Files
-- `webapp/src/components/market/VoteModal.tsx` - New modal component for voting
+- `webapp/src/components/market/VoteModal.tsx` - Full-screen voting modal component
 
 ### Modified Files
-- `webapp/src/tools/utils.tsx` - Added ERC20 token functions
-- `webapp/src/components/market/MarketCard.tsx` - Integrated VoteModal
+1. `webapp/src/tools/utils.tsx` - Added ERC20 token functions
+2. `webapp/src/components/market/MarketCard.tsx` - Updated to trigger page-level modal
+3. `webapp/src/components/market/MarketGrid.tsx` - Added vote callback prop
+4. `webapp/src/pages/Index.tsx` - Added page-level VoteModal
+5. `webapp/src/pages/MarketPage.tsx` - Added page-level VoteModal and vote handlers
 
 ## Detailed Changes
 
 ### 1. VoteModal Component (`webapp/src/components/market/VoteModal.tsx`)
-A new full-screen modal dialog that:
-- Dims the background with a dark overlay (backdrop-blur)
-- Presents a two-step voting flow:
-  1. **Option Selection**: User chooses between optionA (true signal) or optionB (false signal)
-  2. **Amount Entry**: User inputs the spending amount
+A full-screen modal dialog that:
+- Dims entire background with dark overlay (`bg-black/70`) and backdrop blur
+- Implements 3-step voting flow:
+  1. **Option Selection**: User chooses between optionA (signal=true) or optionB (signal=false)
+  2. **Amount Entry**: User inputs spending amount in ETH or tokens
+  3. **Success State**: Shows confirmation before auto-closing
 - Fetches fresh market data on open:
   - Calls `fetchMarketDataFromBlockchain()` for latest market state
-  - Calls `readPaymentToken()` to get the payment token address for that market
-- Handles payment logic:
-  - If `paymentToken` is zero address (`0x0000000000000000000000000000000000000000`): Sends ETH as `msg.value`
-  - If `paymentToken` is a valid token address: Checks allowance via `readTokenAllowance()`, requests approval if needed via `useTokenApprove()`, then submits vote without `msg.value`
-- Shows loading states for approval and voting transactions
-- Displays success confirmation before auto-closing
+  - Calls `readPaymentToken()` to determine if voting with ETH or tokens
+- Modal accepts `onSubmitVote` callback from parent (page) to handle blockchain logic
+- Uses simple steps: `"select" | "amount" | "success"`
 
 ### 2. ERC20 Token Functions (`webapp/src/tools/utils.tsx`)
-Added new exports:
-- `ZERO_ADDRESS` - Constant for the zero address
-- `isZeroAddress(address)` - Helper to check if address is zero
+Added utility exports for token approval:
+- `ZERO_ADDRESS` constant - Marks ETH payment (no token)
+- `isZeroAddress(address)` - Check if token is zero address
 - `readTokenAllowance(tokenAddress, owner, spender)` - Read ERC20 allowance
 - `prepareTokenApprove(tokenAddress, amount)` - Prepare approval transaction
-- `useTokenApprove()` - React hook for token approval with receipt waiting
+- `useTokenApprove()` - React hook for token approval
 
 ### 3. MarketCard Updates (`webapp/src/components/market/MarketCard.tsx`)
-- Replaced `hasVoted` state with `showVoteModal` and `selectedSignal` states
-- Updated vote button handlers:
-  - `handleVoteOption(e, signal)` - Opens VoteModal with selected signal
-  - `handleVoteModalClose()` - Closes modal and resets state
-  - `handleVoteSuccess()` - Callback for successful votes
-- Integrated `<VoteModal>` component with market data props
+- Added `onVoteClick` prop callback
+- Simplified vote button logic - now triggers parent page handler instead of managing modal state
+- Vote buttons call `onVoteClick(marketId, signal)` when clicked
+- No modal state in component anymore - cleaner separation of concerns
 
-## Vote Flow Logic
+### 4. MarketGrid Updates (`webapp/src/components/market/MarketGrid.tsx`)
+- Added `onVoteClick` optional prop to interface
+- Passes callback to each `<MarketCard>` instance
+- MarketCards can now trigger votes from grid view
 
-1. User clicks "Vote" button on market card
-2. Card shows optionA and optionB buttons
-3. User clicks an option → VoteModal opens
-4. Modal fetches fresh market data and payment token address
-5. User selects their vote (optionA = true, optionB = false)
-6. User enters spending amount
-7. Submit logic:
-   - **ETH Payment** (paymentToken is zero address):
-     - Call `vote(_signal, _market, _marketBalance)` with `msg.value = _marketBalance`
-   - **Token Payment** (paymentToken is valid address):
-     - Check `allowance(user, contract)` on the token
-     - If insufficient, call `approve(contract, amount)` and wait for confirmation
-     - Call `vote(_signal, _market, _marketBalance)` with `msg.value = 0`
-8. Show success state and close modal
+### 5. Index.tsx (Market List Page)
+Added page-level VoteModal with:
+- Vote modal state: `isVoteModalOpen`, `voteModalData`
+- `handleVoteClick(marketId, signal)` - Opens modal with market data
+- `handleSubmitVote(voteParams)` - Handles voting flow:
+  - Checks wallet connection
+  - For token payments: reads allowance, approves if needed, then votes
+  - For ETH payments: votes directly with msg.value
+  - Reloads market data after successful vote
+- Vote modal passed to `<MarketGrid>` via callback
+
+### 6. MarketPage.tsx (Market Detail Page)
+Updated vote buttons to:
+- Use new `handleVoteClick(signal)` handler
+- Open page-level VoteModal
+- `handleSubmitVote(voteParams)` with same logic as Index.tsx
+- Removed old `hasVoted` state and local vote tracking
+
+## Vote Submission Flow
+
+```
+User clicks optionA/optionB button
+    ↓
+MarketCard calls onVoteClick(marketId, signal)
+    ↓
+Index.tsx/MarketPage.tsx opens VoteModal
+    ↓
+User selects amount → clicks "Submit Vote"
+    ↓
+Parent page checks if ETH or Token payment:
+    ETH path: Direct vote call with msg.value
+    Token path: Check allowance → approve if needed → vote call
+    ↓
+Transaction submitted to blockchain
+    ↓
+Modal shows success state
+    ↓
+Markets refreshed from blockchain
+    ↓
+Modal auto-closes
+```
 
 ## Smart Contract Interface
 ```solidity
@@ -68,4 +97,6 @@ function vote(bool _signal, uint256 _market, uint256 _marketBalance) external pa
 ```
 - `_signal`: true for optionA, false for optionB
 - `_market`: The market index number
-- `_marketBalance`: Amount to stake (in wei for ETH, or token units)
+- `_marketBalance`: Amount to stake (wei for ETH, token units for tokens)
+- `msg.value`: ETH amount when using ETH payment, 0 for token payment
+
