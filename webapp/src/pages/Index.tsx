@@ -53,6 +53,13 @@ export default function Index() {
     }
   }, [lastFetchedCount, marketInfos, setMarketsFromBlockchain, updateMarketData, setIsLoadingFromBlockchain]);
 
+  const handleRefreshAllMarkets = useCallback(async () => {
+    const { clearAllMarkets } = useMarketStore.getState();
+    clearAllMarkets();
+    setLastFetchedCount(0);
+    await loadMarketsFromBlockchain();
+  }, [loadMarketsFromBlockchain]);
+
   useEffect(() => {
     if (account) {
       loadMarketsFromBlockchain();
@@ -120,6 +127,7 @@ export default function Index() {
       <MarketGrid
         markets={markets}
         onCreateMarket={() => setIsCreateModalOpen(true)}
+        onRefreshMarkets={handleRefreshAllMarkets}
         isLoading={isLoadingFromBlockchain}
       />
       <CreateMarketModal

@@ -3,42 +3,6 @@
 	{
 		"inputs": [
 			{
-				"internalType": "contract IERC20",
-				"name": "_paytoken",
-				"type": "address"
-			}
-		],
-		"name": "addCurrency",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "uint256",
-				"name": "_farmInWei",
-				"type": "uint256"
-			},
-			{
-				"internalType": "address",
-				"name": "_token",
-				"type": "address"
-			},
-			{
-				"internalType": "uint256[]",
-				"name": "_permittedFarms",
-				"type": "uint256[]"
-			}
-		],
-		"name": "AddToFarmReorg",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
 				"internalType": "address",
 				"name": "_pennyDAO",
 				"type": "address"
@@ -80,55 +44,14 @@
 	{
 		"inputs": [
 			{
-				"internalType": "address",
-				"name": "_burnAddress",
-				"type": "address"
+				"internalType": "uint256",
+				"name": "_farmInWei",
+				"type": "uint256"
 			},
 			{
 				"internalType": "address",
-				"name": "_bobbAddress",
+				"name": "_token",
 				"type": "address"
-			},
-			{
-				"internalType": "address",
-				"name": "_stakeAddress",
-				"type": "address"
-			},
-			{
-				"internalType": "address",
-				"name": "_devAddress",
-				"type": "address"
-			}
-		],
-		"name": "setAddresses",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "string",
-				"name": "_reveal",
-				"type": "string"
-			}
-		],
-		"name": "setAuthor",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "address[]",
-				"name": "_allowedFarms",
-				"type": "address[]"
-			},
-			{
-				"internalType": "uint256[]",
-				"name": "_farmingAmounts",
-				"type": "uint256[]"
 			},
 			{
 				"internalType": "uint256[]",
@@ -136,122 +59,9 @@
 				"type": "uint256[]"
 			}
 		],
-		"name": "setFarmYield",
+		"name": "AddToFarmReorg",
 		"outputs": [],
 		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "uint256",
-				"name": "_binary",
-				"type": "uint256"
-			}
-		],
-		"name": "setFeeType",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "uint256",
-				"name": "_feeInWei",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "_payId",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint8[]",
-				"name": "_taxes",
-				"type": "uint8[]"
-			}
-		],
-		"name": "setValues",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "string[]",
-				"name": "_info",
-				"type": "string[]"
-			},
-			{
-				"internalType": "uint256",
-				"name": "_marketBalance",
-				"type": "uint256"
-			},
-			{
-				"internalType": "bool",
-				"name": "_signal",
-				"type": "bool"
-			}
-		],
-		"name": "writeMarket",
-		"outputs": [],
-		"stateMutability": "payable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"name": "allMarketData",
-		"outputs": [
-			{
-				"internalType": "address",
-				"name": "creator",
-				"type": "address"
-			},
-			{
-				"internalType": "bool",
-				"name": "status",
-				"type": "bool"
-			},
-			{
-				"internalType": "uint256",
-				"name": "marketBalance",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "activity",
-				"type": "uint256"
-			},
-			{
-				"internalType": "string",
-				"name": "optionA",
-				"type": "string"
-			},
-			{
-				"internalType": "uint256",
-				"name": "aVotes",
-				"type": "uint256"
-			},
-			{
-				"internalType": "string",
-				"name": "optionB",
-				"type": "string"
-			},
-			{
-				"internalType": "uint256",
-				"name": "bVotes",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "view",
 		"type": "function"
 	},
 	{
@@ -319,6 +129,160 @@
 				"internalType": "string",
 				"name": "",
 				"type": "string"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"name": "TokensDistributed",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "TotalAmountWon",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "TotalBurns",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "TotalPaid",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "TotalPromos",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "TotalReserved",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "TotalStaked",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "contract IERC20",
+				"name": "_paytoken",
+				"type": "address"
+			}
+		],
+		"name": "addCurrency",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"name": "allMarketData",
+		"outputs": [
+			{
+				"internalType": "address",
+				"name": "creator",
+				"type": "address"
+			},
+			{
+				"internalType": "bool",
+				"name": "status",
+				"type": "bool"
+			},
+			{
+				"internalType": "uint256",
+				"name": "marketBalance",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "activity",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "aVotes",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "bVotes",
+				"type": "uint256"
 			}
 		],
 		"stateMutability": "view",
@@ -430,19 +394,6 @@
 	},
 	{
 		"inputs": [],
-		"name": "feeType",
-		"outputs": [
-			{
-				"internalType": "bool",
-				"name": "",
-				"type": "bool"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [],
 		"name": "fetchData",
 		"outputs": [
 			{
@@ -519,6 +470,25 @@
 				"internalType": "uint256",
 				"name": "",
 				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"name": "paymentTokens",
+		"outputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
 			}
 		],
 		"stateMutability": "view",
@@ -610,6 +580,21 @@
 						"internalType": "string",
 						"name": "tags",
 						"type": "string"
+					},
+					{
+						"internalType": "string",
+						"name": "optionA",
+						"type": "string"
+					},
+					{
+						"internalType": "string",
+						"name": "optionB",
+						"type": "string"
+					},
+					{
+						"internalType": "bool",
+						"name": "feetype",
+						"type": "bool"
 					}
 				],
 				"internalType": "struct Penny4Thots.MarketInfo[]",
@@ -653,19 +638,9 @@
 						"type": "uint256"
 					},
 					{
-						"internalType": "string",
-						"name": "optionA",
-						"type": "string"
-					},
-					{
 						"internalType": "uint256",
 						"name": "aVotes",
 						"type": "uint256"
-					},
-					{
-						"internalType": "string",
-						"name": "optionB",
-						"type": "string"
 					},
 					{
 						"internalType": "uint256",
@@ -692,6 +667,93 @@
 			}
 		],
 		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "_burnAddress",
+				"type": "address"
+			},
+			{
+				"internalType": "address",
+				"name": "_bobbAddress",
+				"type": "address"
+			},
+			{
+				"internalType": "address",
+				"name": "_stakeAddress",
+				"type": "address"
+			},
+			{
+				"internalType": "address",
+				"name": "_devAddress",
+				"type": "address"
+			}
+		],
+		"name": "setAddresses",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "string",
+				"name": "_reveal",
+				"type": "string"
+			}
+		],
+		"name": "setAuthor",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address[]",
+				"name": "_allowedFarms",
+				"type": "address[]"
+			},
+			{
+				"internalType": "uint256[]",
+				"name": "_farmingAmounts",
+				"type": "uint256[]"
+			},
+			{
+				"internalType": "uint256[]",
+				"name": "_permittedFarms",
+				"type": "uint256[]"
+			}
+		],
+		"name": "setFarmYield",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "_feeInWei",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "_payId",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint8[]",
+				"name": "_taxes",
+				"type": "uint8[]"
+			}
+		],
+		"name": "setValues",
+		"outputs": [],
+		"stateMutability": "nonpayable",
 		"type": "function"
 	},
 	{
@@ -734,113 +796,59 @@
 		"type": "function"
 	},
 	{
-		"inputs": [],
-		"name": "tokenFee",
-		"outputs": [
+		"inputs": [
+			{
+				"internalType": "bool",
+				"name": "_signal",
+				"type": "bool"
+			},
 			{
 				"internalType": "uint256",
-				"name": "",
+				"name": "_market",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "_marketBalance",
 				"type": "uint256"
 			}
 		],
-		"stateMutability": "view",
+		"name": "vote",
+		"outputs": [],
+		"stateMutability": "payable",
 		"type": "function"
 	},
 	{
 		"inputs": [
 			{
+				"internalType": "string[]",
+				"name": "_info",
+				"type": "string[]"
+			},
+			{
+				"internalType": "uint256",
+				"name": "_marketBalance",
+				"type": "uint256"
+			},
+			{
+				"internalType": "bool",
+				"name": "_signal",
+				"type": "bool"
+			},
+			{
+				"internalType": "bool",
+				"name": "_feetype",
+				"type": "bool"
+			},
+			{
 				"internalType": "address",
-				"name": "",
+				"name": "_paymentToken",
 				"type": "address"
 			}
 		],
-		"name": "TokensDistributed",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "TotalAmountWon",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "TotalBurns",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "TotalPaid",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "TotalPromos",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "TotalReserved",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "TotalStaked",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "view",
+		"name": "writeMarket",
+		"outputs": [],
+		"stateMutability": "payable",
 		"type": "function"
 	}
 ]
