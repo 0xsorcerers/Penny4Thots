@@ -140,20 +140,25 @@ export function VoteModal({
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
             onClick={onClose}
-            className="fixed inset-0 z-50 bg-black backdrop-blur-md"
+            className="fixed inset-0 z-50 bg-black backdrop-blur-md overflow-hidden"
           >
-            {/* Market image background */}
-            {marketImage && (
+            {/* Market image background - always visible */}
+            {marketImage ? (
               <img
                 src={marketImage}
-                alt=""
+                alt="Market background"
+                loading="eager"
                 className="absolute inset-0 h-full w-full object-cover"
                 style={{
                   opacity: step === "select" ? 0.4 : 0.25,
                   mixBlendMode: "overlay",
                 }}
               />
+            ) : (
+              <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-transparent" />
             )}
+            {/* Additional dark overlay for contrast */}
+            <div className="absolute inset-0 bg-black/40" />
           </motion.div>
 
           {/* Dialog */}
