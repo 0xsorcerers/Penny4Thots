@@ -33,6 +33,8 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
     posterImage: "",
     tagInput: "",
     tags: [] as string[],
+    optionA: "Yes",
+    optionB: "No",
   });
   const [marketBalance, setMarketBalance] = useState("");
   const [initialVote, setInitialVote] = useState<"YES" | "NO" | null>(null);
@@ -104,6 +106,8 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
         tags: formData.tags,
         marketBalance,
         initialVote,
+        optionA: formData.optionA,
+        optionB: formData.optionB,
       });
 
       // Only reset form on successful submission
@@ -115,6 +119,8 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
         posterImage: "",
         tagInput: "",
         tags: [],
+        optionA: "Yes",
+        optionB: "No",
       });
       setMarketBalance("");
       setInitialVote(null);
@@ -301,6 +307,56 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
                             </div>
                           )}
                         </div>
+
+                        {/* Voting Options */}
+                        <div className="space-y-3">
+                          <Label className="font-outfit text-foreground">Voting Options</Label>
+                          <div className="grid grid-cols-2 gap-3">
+                            <div className="space-y-2">
+                              <Label htmlFor="optionA" className="text-xs font-outfit text-muted-foreground">
+                                Option A (max 20 chars)
+                              </Label>
+                              <Input
+                                id="optionA"
+                                value={formData.optionA}
+                                onChange={(e) =>
+                                  setFormData({
+                                    ...formData,
+                                    optionA: e.target.value.slice(0, 20),
+                                  })
+                                }
+                                placeholder="Yes"
+                                maxLength={20}
+                                className="rounded-xl border-border/50 bg-background font-outfit text-sm"
+                              />
+                              <p className="text-xs text-muted-foreground">
+                                {formData.optionA.length}/20
+                              </p>
+                            </div>
+
+                            <div className="space-y-2">
+                              <Label htmlFor="optionB" className="text-xs font-outfit text-muted-foreground">
+                                Option B (max 20 chars)
+                              </Label>
+                              <Input
+                                id="optionB"
+                                value={formData.optionB}
+                                onChange={(e) =>
+                                  setFormData({
+                                    ...formData,
+                                    optionB: e.target.value.slice(0, 20),
+                                  })
+                                }
+                                placeholder="No"
+                                maxLength={20}
+                                className="rounded-xl border-border/50 bg-background font-outfit text-sm"
+                              />
+                              <p className="text-xs text-muted-foreground">
+                                {formData.optionB.length}/20
+                              </p>
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   ) : (
@@ -332,6 +388,19 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
                               </div>
                             </div>
                           )}
+                          <div className="pt-2 border-t border-border/30">
+                            <p className="text-xs text-muted-foreground mb-2">Voting Options</p>
+                            <div className="grid grid-cols-2 gap-2 text-xs">
+                              <div className="rounded bg-primary/5 px-2 py-1.5">
+                                <p className="text-muted-foreground">Option A</p>
+                                <p className="font-semibold text-foreground">{formData.optionA}</p>
+                              </div>
+                              <div className="rounded bg-destructive/5 px-2 py-1.5">
+                                <p className="text-muted-foreground">Option B</p>
+                                <p className="font-semibold text-foreground">{formData.optionB}</p>
+                              </div>
+                            </div>
+                          </div>
                         </div>
 
                         {/* Market Balance */}

@@ -14,6 +14,8 @@ interface VoteDialogProps {
   isLoading?: boolean;
   marketTitle: string;
   signal: boolean; // true for YES, false for NO
+  optionA?: string;
+  optionB?: string;
 }
 
 export function VoteDialog({
@@ -23,9 +25,12 @@ export function VoteDialog({
   isLoading = false,
   marketTitle,
   signal,
+  optionA = "Yes",
+  optionB = "No",
 }: VoteDialogProps) {
   const [amount, setAmount] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const selectedOption = signal ? optionA : optionB;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -93,7 +98,7 @@ export function VoteDialog({
                   <div className="rounded-xl bg-muted/50 p-4">
                     <p className="text-sm text-muted-foreground mb-2">Your Vote</p>
                     <p className={`text-2xl font-bold ${signal ? "text-yes" : "text-no"}`}>
-                      {signal ? "YES" : "NO"}
+                      {selectedOption}
                     </p>
                   </div>
 

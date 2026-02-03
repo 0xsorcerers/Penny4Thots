@@ -34,11 +34,12 @@ Implemented comprehensive voting system with market deletion, refresh functional
 
 #### VoteDialog Component (`webapp/src/components/market/VoteDialog.tsx`)
 - Modal dialog for voting with amount input
-- Displays vote direction (YES/NO) with color-coded styling
+- Displays vote direction with custom option labels (truncated to 9 characters)
 - Prevents zero-value votes with validation
 - Shows warning about non-zero amount requirement
 - Loading states during vote submission
 - Automatically closes on successful vote
+- Supports custom voting option labels (optionA/optionB)
 
 ### Updated Components
 
@@ -51,17 +52,24 @@ Implemented comprehensive voting system with market deletion, refresh functional
 
 - **Enhanced Vote Flow**:
   1. User clicks "Vote" button
-  2. YES/NO buttons expand
-  3. User selects YES or NO
-  4. VoteDialog opens asking for ETH amount
-  5. Before voting, `fetchMarketDataFromBlockchain()` called to get fresh market state
-  6. Vote is submitted with specified amount
-  7. Success toast shown
+  2. Custom voting option buttons expand (e.g., "Approve", "Reject" or "Yes", "No")
+  3. Options displayed with 9-character truncation on percentage display
+  4. User selects option
+  5. VoteDialog opens with selected option and amount input
+  6. Before voting, `fetchMarketDataFromBlockchain()` called to get fresh market state
+  7. Vote is submitted with specified amount
+  8. Success toast shown
+
+- **Voting Option Labels**:
+  - Displays full option text in expanded vote buttons
+  - Truncates to 9 characters on vote percentage display
+  - Supports custom labels set during market creation (default: "Yes", "No")
+  - Helper function `truncateOption()` handles 9-char limit for card display
 
 - **Imports**: Added `useVote` hook, `VoteDialog`, market store deletion
 - **State Management**:
   - `voteDialogOpen` - Controls dialog visibility
-  - `voteSignal` - Tracks YES/NO selection
+  - `voteSignal` - Tracks option A/B selection
   - `isRefreshingData` - Loading state during market data refresh
 
 #### MarketGrid (`webapp/src/components/market/MarketGrid.tsx`)
@@ -136,6 +144,42 @@ Implemented comprehensive voting system with market deletion, refresh functional
    - If feetype = false: amount sent as msg.value (ETH)
    - If feetype = true: amount sent as ERC20 token transfer
 10. Toast notification on success or error
+
+## Custom Voting Options Feature
+
+### Market Creation Enhancement
+- Users can now customize voting option labels during market creation
+- **Constraints**:
+  - Maximum 20 characters per option
+  - Defaults to "Yes" and "No" if not specified
+  - Examples: "Bull/Bear", "Approve/Reject", "Bullish/Bearish"
+
+### CreateMarketModal Updates (`webapp/src/components/market/CreateMarketModal.tsx`)
+- Added "Voting Options" input fields in Step 1
+- Two input fields side-by-side for Option A and Option B
+- Character counter for each option (0-20 chars)
+- Live text truncation to enforce 20 character limit
+- Options displayed in Step 2 confirmation summary
+- Validation ensures options are properly set before submission
+
+### Display and Truncation
+- **Create Modal**: Full option text visible (max 20 chars)
+- **Market Cards**: Options truncated to 9 characters
+  - Example: "Approve Proposal" → "Approve..."
+  - Used in vote percentage display
+- **Vote Buttons**: Full option text displayed
+- **VoteDialog**: Full option text displayed with vote selection
+
+### Type Updates
+- `CreateMarketData` interface: Added `optionA` and `optionB` fields
+- `Market` interface: Added optional `optionA` and `optionB` fields
+- `MarketInfoFormatted` interface: Includes `optionA` and `optionB` from blockchain
+- All store updates ensure custom options are preserved through market lifecycle
+
+### Backend Integration
+- `WriteMarketParams`: Now includes `optionA` and `optionB` parameters
+- `prepareWriteMarket()`: Passes options to smart contract (indices 5-6 in info array)
+- Fallback to "Yes"/"No" if not provided maintains backward compatibility
 
 ### Market Deletion
 1. User hovers over market card

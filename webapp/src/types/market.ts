@@ -13,6 +13,8 @@ export interface Market {
   createdAt: string;
   marketBalance?: string; // ETH balance from blockchain
   status?: boolean; // Market status from blockchain
+  optionA?: string; // Custom option A label
+  optionB?: string; // Custom option B label
 }
 
 export interface CreateMarketData {
@@ -21,4 +23,6 @@ export interface CreateMarketData {
   description: string;
   posterImage: string;
   tags: string[];
+  optionA: string;
+  optionB: string;
 }
