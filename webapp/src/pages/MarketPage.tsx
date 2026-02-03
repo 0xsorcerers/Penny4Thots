@@ -378,6 +378,7 @@ export default function MarketPage() {
           isLoading={isSubmitting || isVoting || isApproving}
           marketId={market.indexer}
           marketTitle={market.title}
+          marketImage={market.posterImage}
           optionA={market.optionA}
           optionB={market.optionB}
         />
