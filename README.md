@@ -74,7 +74,7 @@ Structure:
 - Users can manually clear cache with refresh button to force full reload
 
 ### Payment Method Selection
-Both the Create Market and Vote dialogs feature flexible payment method selection:
+Both the Create Market dialog feature flexible payment method selection:
 
 **Create Market Modal**:
 - Payment toggle switch in the confirm step lets creators choose between ETH or any ERC20 token
@@ -84,6 +84,12 @@ Both the Create Market and Vote dialogs feature flexible payment method selectio
 - Real-time validation: when a valid 42-character address is entered, the app queries the blockchain to fetch and display the token symbol
 - Invalid addresses show "invalid" in red; valid tokens show a green success message with the verified symbol
 - The spending amount label dynamically updates to show "Pay with ETH" or "Pay with [TOKEN_SYMBOL]"
+- The `_signal` parameter is set conditionally:
+  - `false` when user creates the market with ETH payment
+  - `true` when user creates the market with token payment
+- `msg.value` is set conditionally:
+  - When ETH payment: `msg.value = fee + marketBalance`
+  - When token payment: `msg.value = fee` (marketBalance is handled by token transfer)
 
 **Vote Modal**:
 - Payment method is determined by the market's pre-set token address
