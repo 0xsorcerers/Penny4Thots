@@ -459,14 +459,14 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
                         </div>
 
                         {/* Payment Method Toggle & Spending Amount */}
-                        <div className="space-y-4">
+                        <div className="space-y-3">
                           {/* Payment Toggle Switch */}
-                          <div className="flex items-center justify-between">
-                            <Label className="font-outfit text-foreground">Payment Method</Label>
+                          <div className="flex items-center justify-between gap-3">
+                            <Label className="font-outfit text-foreground text-sm">Payment</Label>
                             <motion.button
                               type="button"
                               onClick={handleTogglePayment}
-                              className="relative inline-flex h-10 w-20 items-center rounded-full bg-muted transition-colors"
+                              className="relative inline-flex h-7 w-14 items-center rounded-full bg-muted transition-colors"
                               style={{
                                 backgroundColor: useToken ? "hsl(var(--accent))" : "hsl(var(--primary))",
                               }}
@@ -474,15 +474,15 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
                               whileTap={{ scale: 0.95 }}
                             >
                               <motion.div
-                                className="absolute h-8 w-8 rounded-full bg-foreground"
+                                className="absolute h-6 w-6 rounded-full bg-foreground"
                                 animate={{
-                                  left: useToken ? "calc(100% - 36px)" : "4px",
+                                  left: useToken ? "calc(100% - 28px)" : "2px",
                                 }}
                                 transition={{ type: "spring", stiffness: 500, damping: 30 }}
                               />
-                              <div className="relative w-full h-full flex items-center justify-between px-3 pointer-events-none">
+                              <div className="relative w-full h-full flex items-center justify-between px-2 pointer-events-none">
                                 <span className="text-xs font-semibold text-foreground/60">ETH</span>
-                                <span className="text-xs font-semibold text-foreground/60">TOKEN</span>
+                                <span className="text-xs font-semibold text-foreground/60">TKN</span>
                               </div>
                             </motion.button>
                           </div>
@@ -490,7 +490,7 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
                           {/* Payment Label with 3D Animation */}
                           <div className="perspective">
                             <motion.div
-                              className="rounded-xl border-2 border-primary/30 bg-gradient-to-r from-primary/5 to-primary/10 p-4 text-center"
+                              className="rounded-lg border border-primary/30 bg-gradient-to-r from-primary/5 to-primary/10 px-3 py-2 text-center"
                               animate={{
                                 borderColor: useToken ? "hsl(var(--accent) / 0.3)" : "hsl(var(--primary) / 0.3)",
                                 backgroundColor: useToken
@@ -508,7 +508,7 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
                                   transformStyle: "preserve-3d" as const,
                                 }}
                               >
-                                <p className="font-syne text-lg font-bold">
+                                <p className="font-syne text-sm font-bold">
                                   Pay with{" "}
                                   <span
                                     style={{
