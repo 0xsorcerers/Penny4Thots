@@ -322,6 +322,17 @@ export const prepareWriteMarket = (params: WriteMarketParams) => {
   const feetype = params.feetype || false;
   const signal = params.signal || false; // true for token payment, false for ETH
 
+  // Determine the correct payment token address
+  // Use the provided paymentToken, which should be set correctly by the caller
+  const paymentTokenAddress: Address = params.paymentToken || ("0x0000000000000000000000000000000000000000" as Address);
+
+  console.log("prepareWriteMarket params:", {
+    feetype: params.feetype,
+    paymentToken: params.paymentToken,
+    signal: params.signal,
+    paymentTokenAddress: paymentTokenAddress,
+  });
+
   // When feetype is false (ETH payment), include marketBalance in msg.value
   // When feetype is true (token payment), only include fee (no marketBalance)
   const msgValue = feetype ? params.fee : params.fee + params.marketBalance;
@@ -334,7 +345,7 @@ export const prepareWriteMarket = (params: WriteMarketParams) => {
       params.marketBalance,
       signal, // _signal - true if token payment, false if ETH payment
       feetype,
-      params.paymentToken || "0x0000000000000000000000000000000000000000" as Address,
+      paymentTokenAddress,
     ],
     value: msgValue,
   });
