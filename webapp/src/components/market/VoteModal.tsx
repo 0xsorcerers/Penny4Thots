@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, AlertCircle, Loader2, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -9,9 +9,12 @@ import {
   fetchMarketDataFromBlockchain,
   isZeroAddress,
   ZERO_ADDRESS,
+  publicClient,
   type VoteParams,
 } from "@/tools/utils";
 import type { Address } from "viem";
+import erc20 from "@/abi/ERC20.json";
+import { Abi } from "viem";
 
 interface VoteModalProps {
   isOpen: boolean;
@@ -46,6 +49,28 @@ export function VoteModal({
   const [paymentToken, setPaymentToken] = useState<Address>(ZERO_ADDRESS);
   const [isLoadingData, setIsLoadingData] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [useCustomToken, setUseCustomToken] = useState(false);
+  const [customTokenAddress, setCustomTokenAddress] = useState("");
+  const [tokenSymbol, setTokenSymbol] = useState<string | null>(null);
+  const [tokenInputError, setTokenInputError] = useState(false);
+
+  // Fetch token symbol from blockchain
+  const fetchTokenSymbol = useCallback(async (address: string) => {
+    try {
+      const erc20ABI = erc20.abi as Abi;
+      const symbol = await publicClient.readContract({
+        address: address as Address,
+        abi: erc20ABI,
+        functionName: "symbol",
+      });
+      setTokenSymbol(symbol as string);
+      setTokenInputError(false);
+    } catch (err) {
+      console.error("Failed to fetch token symbol:", err);
+      setTokenSymbol(null);
+      setTokenInputError(true);
+    }
+  }, []);
 
   // Log when modal opens
   useEffect(() => {
@@ -56,9 +81,35 @@ export function VoteModal({
       setSelectedSignal(null);
       setAmount("");
       setError(null);
+      setUseCustomToken(false);
+      setCustomTokenAddress("");
+      setTokenSymbol(null);
+      setTokenInputError(false);
       fetchMarketPaymentData();
     }
   }, [isOpen, marketId, marketImage]);
+
+  // Handle custom token address input
+  const handleTokenAddressChange = (value: string) => {
+    setCustomTokenAddress(value);
+    setTokenSymbol(null);
+    setTokenInputError(false);
+
+    // Validate address format (42 characters including 0x)
+    if (value.length === 42 && value.startsWith("0x")) {
+      fetchTokenSymbol(value);
+    } else if (value.length > 0) {
+      setTokenInputError(true);
+    }
+  };
+
+  // Handle payment method toggle
+  const handleTogglePayment = () => {
+    setUseCustomToken(!useCustomToken);
+    setCustomTokenAddress("");
+    setTokenSymbol(null);
+    setTokenInputError(false);
+  };
 
   const fetchMarketPaymentData = async () => {
     setIsLoadingData(true);
@@ -103,17 +154,20 @@ export function VoteModal({
     const amountWei = BigInt(Math.floor(parseFloat(amount) * 1e18));
 
     try {
+      // Use custom token if selected, otherwise use the market's default payment token
+      const tokenToUse = useCustomToken ? (customTokenAddress as Address) : paymentToken;
+
       const voteParams: VoteParams = {
         marketId,
         signal: selectedSignal,
         marketBalance: amountWei,
-        feetype: !isZeroAddress(paymentToken), // true if token payment, false if ETH
-        paymentToken,
+        feetype: !isZeroAddress(tokenToUse), // true if token payment, false if ETH
+        paymentToken: tokenToUse,
       };
 
       await onSubmitVote(voteParams);
       setStep("success");
-      
+
       // Call success callback if provided
       if (onVoteSuccess) {
         onVoteSuccess();
@@ -285,31 +339,139 @@ export function VoteModal({
                         </p>
                       </div>
 
-                      {/* Amount Input */}
-                      <div className="space-y-2">
-                        <Label
-                          htmlFor="vote-amount"
-                          className="font-outfit text-foreground"
-                        >
-                          Spending Amount *
-                        </Label>
-                        <Input
-                          id="vote-amount"
-                          type="number"
-                          step="0.001"
-                          min="0"
-                          value={amount}
-                          onChange={(e) => setAmount(e.target.value)}
-                          placeholder="0.01"
-                          className="rounded-xl border-border/50 bg-background font-outfit text-lg"
-                          disabled={isLoading}
-                          autoFocus
-                        />
-                        <p className="text-xs text-muted-foreground">
-                          {isZeroAddress(paymentToken)
-                            ? "Amount in ETH to send with your vote"
-                            : "Amount in tokens to stake with your vote"}
-                        </p>
+                      {/* Payment Method Toggle & Spending Amount */}
+                      <div className="space-y-4">
+                        {/* Payment Toggle Switch */}
+                        <div className="flex items-center justify-between">
+                          <Label className="font-outfit text-foreground">Payment Method</Label>
+                          <motion.button
+                            type="button"
+                            onClick={handleTogglePayment}
+                            className="relative inline-flex h-10 w-20 items-center rounded-full bg-muted transition-colors"
+                            style={{
+                              backgroundColor: useCustomToken ? "hsl(var(--accent))" : "hsl(var(--primary))",
+                            }}
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                          >
+                            <motion.div
+                              className="absolute h-8 w-8 rounded-full bg-foreground"
+                              animate={{
+                                left: useCustomToken ? "calc(100% - 36px)" : "4px",
+                              }}
+                              transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                            />
+                            <div className="relative w-full h-full flex items-center justify-between px-3 pointer-events-none">
+                              <span className="text-xs font-semibold text-foreground/60">ETH</span>
+                              <span className="text-xs font-semibold text-foreground/60">TOKEN</span>
+                            </div>
+                          </motion.button>
+                        </div>
+
+                        {/* Payment Label with 3D Animation */}
+                        <div className="perspective">
+                          <motion.div
+                            className="rounded-xl border-2 border-primary/30 bg-gradient-to-r from-primary/5 to-primary/10 p-4 text-center"
+                            animate={{
+                              borderColor: useCustomToken ? "hsl(var(--accent) / 0.3)" : "hsl(var(--primary) / 0.3)",
+                              backgroundColor: useCustomToken
+                                ? "hsl(var(--accent) / 0.05) to hsl(var(--accent) / 0.1)"
+                                : "hsl(var(--primary) / 0.05) to hsl(var(--primary) / 0.1)",
+                            }}
+                            transition={{ duration: 0.3 }}
+                          >
+                            <motion.div
+                              animate={{
+                                rotateX: useCustomToken ? 5 : -5,
+                              }}
+                              transition={{ duration: 0.3 }}
+                              style={{
+                                transformStyle: "preserve-3d" as const,
+                              }}
+                            >
+                              <p className="font-syne text-lg font-bold">
+                                Pay with{" "}
+                                <span
+                                  style={{
+                                    color: useCustomToken ? "hsl(var(--accent))" : "hsl(var(--primary))",
+                                  }}
+                                >
+                                  {useCustomToken && tokenSymbol ? tokenSymbol : useCustomToken ? "Token" : "ETH"}
+                                </span>
+                              </p>
+                            </motion.div>
+                          </motion.div>
+                        </div>
+
+                        {/* Token Address Input */}
+                        <AnimatePresence>
+                          {useCustomToken && (
+                            <motion.div
+                              initial={{ opacity: 0, y: -10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              exit={{ opacity: 0, y: -10 }}
+                              className="space-y-2"
+                            >
+                              <Label htmlFor="vote-token-address" className="font-outfit text-foreground">
+                                Token Address
+                              </Label>
+                              <Input
+                                id="vote-token-address"
+                                type="text"
+                                value={customTokenAddress}
+                                onChange={(e) => handleTokenAddressChange(e.target.value)}
+                                placeholder={ZERO_ADDRESS}
+                                className={`rounded-xl border-border/50 bg-background font-mono text-sm ${
+                                  tokenInputError ? "border-destructive/50" : ""
+                                }`}
+                              />
+                              {tokenInputError && customTokenAddress.length > 0 && (
+                                <p className="text-xs text-destructive font-semibold">Invalid token address</p>
+                              )}
+                              {tokenSymbol && (
+                                <p className="text-xs text-success font-semibold">
+                                  Token verified: {tokenSymbol}
+                                </p>
+                              )}
+                              <p className="text-xs text-muted-foreground">
+                                Enter a valid ERC20 token contract address (42 characters)
+                              </p>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+
+                        {/* Spending Amount */}
+                        <div className="space-y-2">
+                          <Label
+                            htmlFor="vote-amount"
+                            className="font-outfit text-foreground"
+                          >
+                            Spending Amount{" "}
+                            <span
+                              style={{
+                                color: useCustomToken ? "hsl(var(--accent))" : "hsl(var(--primary))",
+                              }}
+                            >
+                              ({useCustomToken && tokenSymbol ? tokenSymbol : useCustomToken ? "Token" : "ETH"})
+                            </span>{" "}
+                            *
+                          </Label>
+                          <Input
+                            id="vote-amount"
+                            type="number"
+                            step="0.001"
+                            min="0"
+                            value={amount}
+                            onChange={(e) => setAmount(e.target.value)}
+                            placeholder={useCustomToken ? "1.0" : "0.01"}
+                            className="rounded-xl border-border/50 bg-background font-outfit text-lg"
+                            disabled={isLoading}
+                            autoFocus
+                          />
+                          <p className="text-xs text-muted-foreground">
+                            Amount to stake with your vote
+                          </p>
+                        </div>
                       </div>
 
                       {/* Warning */}
