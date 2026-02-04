@@ -166,7 +166,7 @@ export default function Index() {
     }
   };
 
-  const handleCreateMarket = async (data: CreateMarketData & { marketBalance: string; initialVote: "YES" | "NO" }) => {
+  const handleCreateMarket = async (data: CreateMarketData & { marketBalance: string; initialVote: "YES" | "NO"; useToken: boolean; tokenAddress: Address }) => {
     if (!account) {
       toast.error("Please connect your wallet first");
       throw new Error("Wallet not connected");
@@ -176,6 +176,9 @@ export default function Index() {
     try {
       const fee = await readFee();
       const marketBalanceBigInt = toWei(data.marketBalance);
+
+      // _signal is true if paying with token, false if paying with ETH
+      const signal = data.useToken;
 
       // Call blockchain
       await writeMarket({
@@ -188,6 +191,9 @@ export default function Index() {
         optionB: data.optionB,
         marketBalance: marketBalanceBigInt,
         fee: fee,
+        feetype: data.useToken,
+        paymentToken: data.tokenAddress,
+        signal: signal,
       });
 
       toast.success("Market created successfully!");
