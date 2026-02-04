@@ -6,7 +6,7 @@ import { CreateMarketModal } from "@/components/market/CreateMarketModal";
 import { VoteModal } from "@/components/market/VoteModal";
 import { useMarketStore } from "@/store/marketStore";
 import { useActiveAccount } from "thirdweb/react";
-import { useWriteMarket, useVote, useTokenApprove, readFee, fetchMarketsFromBlockchain, fetchMarketDataFromBlockchain, readMarketCount, readPaymentToken, readTokenAllowance, toWei, isZeroAddress, type VoteParams } from "@/tools/utils";
+import { useWriteMarket, useVote, useTokenApprove, readFee, fetchMarketsFromBlockchain, fetchMarketDataFromBlockchain, readMarketCount, readPaymentToken, readTokenAllowance, toWei, isZeroAddress, blockchain, type VoteParams } from "@/tools/utils";
 import type { CreateMarketData } from "@/types/market";
 import type { Address } from "viem";
 import { toast } from "sonner";
@@ -41,7 +41,7 @@ export default function Index() {
       // If we already have all markets cached and counts match, only refresh vote data
       if (currentMarketCount === lastFetchedCount && marketInfos.length > 0) {
         // Just refresh market data (votes, status) without fetching market info
-        setIsLoadingFromBlockchain(true);
+        // Don't show loading state for silent updates
         try {
           const marketDataMap = await fetchMarketDataFromBlockchain(
             marketInfos.map(m => m.indexer)
@@ -50,13 +50,13 @@ export default function Index() {
             marketDataMap.map((data, idx) => [marketInfos[idx].indexer, data])
           );
           updateMarketData(dataMap);
-        } finally {
-          setIsLoadingFromBlockchain(false);
+        } catch (err) {
+          console.error("Failed to refresh market data:", err);
         }
         return;
       }
 
-      // New markets detected - fetch all market info and data
+      // New markets detected - fetch all market info and data with loading state
       setIsLoadingFromBlockchain(true);
       try {
         const blockchainInfos = await fetchMarketsFromBlockchain();
@@ -75,6 +75,7 @@ export default function Index() {
     } catch (err) {
       console.error("Failed to load markets from blockchain:", err);
       toast.error("Failed to load markets from blockchain");
+      setIsLoadingFromBlockchain(false);
     }
   }, [lastFetchedCount, marketInfos, setMarketsFromBlockchain, updateMarketData, setIsLoadingFromBlockchain]);
 
@@ -121,17 +122,16 @@ export default function Index() {
 
     setIsSubmitting(true);
     try {
-      const isEthPayment = isZeroAddress(voteParams.paymentToken);
-
-      // If using a token (not ETH), check allowance and approve if needed
-      if (!isEthPayment) {
+      // Check if token payment is needed (feetype = true means token, false means ETH)
+      if (voteParams.feetype) {
+        // Token payment - check allowance and approve only if necessary
         const currentAllowance = await readTokenAllowance(
           voteParams.paymentToken,
           account.address as Address,
-          "0x826F0F01E41C1AB3dD1b52b7e3662da9702Bb9Ad" as Address
+          blockchain.contract_address
         );
 
-        // If allowance is insufficient, request approval
+        // Only approve if allowance is insufficient
         if (currentAllowance < voteParams.marketBalance) {
           toast.info("Approval required", {
             description: "Please approve the token spending in your wallet",
@@ -140,9 +140,10 @@ export default function Index() {
           await approve(voteParams.paymentToken, voteParams.marketBalance);
           toast.success("Token approved!");
         }
+        // If allowance is adequate, proceed directly to vote
       }
 
-      // Now submit the vote
+      // Submit the vote
       await vote(voteParams);
       toast.success("Vote submitted successfully!");
 
