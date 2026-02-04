@@ -69,11 +69,36 @@ Structure:
 - If count is 0, immediately returns without fetching (no RPC calls wasted)
 - If count > 0, proceeds to fetch market info and data from blockchain
 - Subsequent loads check if new markets have been added since last fetch
-- If no new markets, only refreshes market data (votes, balances, activity)
-- If new markets exist, fetches all market info and data
+- If no new markets, only refreshes market data (votes, balances, activity) silently
+- If new markets exist, fetches all market info and data with loading state
 - Users can manually clear cache with refresh button to force full reload
 
+### Payment Method Selection
+Both the Create Market and Vote dialogs feature flexible payment method selection:
+
+**Create Market Modal**:
+- Payment toggle switch in the confirm step lets creators choose between ETH or any ERC20 token
+- When "Pay with ETH" is selected: the label shows in primary color (gold in dark theme, emerald in light)
+- When "Pay with Token" is selected: the label changes to accent color (cyan in dark theme, coral in light) with smooth 3D animation
+- When token is selected, a separate input field appears for entering the ERC20 token address
+- Real-time validation: when a valid 42-character address is entered, the app queries the blockchain to fetch and display the token symbol
+- Invalid addresses show "invalid" in red; valid tokens show a green success message with the verified symbol
+- The spending amount label dynamically updates to show "Pay with ETH" or "Pay with [TOKEN_SYMBOL]"
+
+**Vote Modal**:
+- Same payment toggle system as the Create Market modal
+- Users can vote with ETH (default market payment method) or select a custom ERC20 token
+- Token symbol validation and display works identically to market creation
+- Conditional rendering of token input only when token payment is selected
+
+### Vote Optimization
+- When voting with a token payment, the app first checks the user's current allowance
+- Only calls the approval transaction if allowance is insufficient
+- If allowance is adequate from a previous approval, proceeds directly to voting
+- This eliminates unnecessary approval transactions and saves gas for repeat voters
+
 ### Theme
+
 
 The application uses dark mode as the default theme for all new users. Users can switch between light and dark mode at any time using the theme toggle button in the header.
 

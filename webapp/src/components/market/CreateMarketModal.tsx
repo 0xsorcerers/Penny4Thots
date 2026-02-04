@@ -1,12 +1,15 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Plus, Image as ImageIcon, Sparkles, ThumbsUp, ThumbsDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { readFee, formatEther } from "@/tools/utils";
+import { readFee, formatEther, publicClient, isZeroAddress, ZERO_ADDRESS } from "@/tools/utils";
 import type { CreateMarketData } from "@/types/market";
+import type { Address } from "viem";
+import erc20 from "@/abi/ERC20.json";
+import { Abi } from "viem";
 
 interface CreateMarketModalProps {
   isOpen: boolean;
@@ -38,6 +41,28 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
   });
   const [marketBalance, setMarketBalance] = useState("");
   const [initialVote, setInitialVote] = useState<"YES" | "NO" | null>(null);
+  const [useToken, setUseToken] = useState(false);
+  const [tokenAddress, setTokenAddress] = useState("");
+  const [tokenSymbol, setTokenSymbol] = useState<string | null>(null);
+  const [tokenInputError, setTokenInputError] = useState(false);
+
+  // Fetch token symbol from blockchain
+  const fetchTokenSymbol = useCallback(async (address: string) => {
+    try {
+      const erc20ABI = erc20.abi as Abi;
+      const symbol = await publicClient.readContract({
+        address: address as Address,
+        abi: erc20ABI,
+        functionName: "symbol",
+      });
+      setTokenSymbol(symbol as string);
+      setTokenInputError(false);
+    } catch (err) {
+      console.error("Failed to fetch token symbol:", err);
+      setTokenSymbol(null);
+      setTokenInputError(true);
+    }
+  }, []);
 
   // Fetch fee when modal opens
   useEffect(() => {
@@ -54,6 +79,28 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
       fetchFee();
     }
   }, [isOpen]);
+
+  // Handle token address input
+  const handleTokenAddressChange = (value: string) => {
+    setTokenAddress(value);
+    setTokenSymbol(null);
+    setTokenInputError(false);
+
+    // Validate address format (42 characters including 0x)
+    if (value.length === 42 && value.startsWith("0x")) {
+      fetchTokenSymbol(value);
+    } else if (value.length > 0) {
+      setTokenInputError(true);
+    }
+  };
+
+  // Handle payment method toggle
+  const handleTogglePayment = () => {
+    setUseToken(!useToken);
+    setTokenAddress("");
+    setTokenSymbol(null);
+    setTokenInputError(false);
+  };
 
   const handleAddTag = () => {
     const tag = formData.tagInput.trim();
@@ -92,6 +139,7 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!marketBalance || !initialVote) return;
+    if (useToken && !tokenAddress) return;
 
     const posterImage =
       formData.posterImage ||
@@ -124,6 +172,9 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
       });
       setMarketBalance("");
       setInitialVote(null);
+      setUseToken(false);
+      setTokenAddress("");
+      setTokenSymbol(null);
       setStep("details");
     } catch {
       // Don't reset form or close modal on error
@@ -135,6 +186,10 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
     setStep("details");
     setMarketBalance("");
     setInitialVote(null);
+    setUseToken(false);
+    setTokenAddress("");
+    setTokenSymbol(null);
+    setTokenInputError(false);
     onClose();
   };
 
@@ -403,28 +458,140 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
                           </div>
                         </div>
 
-                        {/* Market Balance */}
-                        <div className="space-y-2">
-                          <Label htmlFor="balance" className="font-outfit text-foreground">
-                            Spending Amount (ETH) *
-                          </Label>
-                          <Input
-                            id="balance"
-                            type="number"
-                            step="0.001"
-                            min="0"
-                            value={marketBalance}
-                            onChange={(e) => setMarketBalance(e.target.value)}
-                            placeholder="0.1"
-                            className="rounded-xl border-border/50 bg-background font-outfit"
-                            required
-                          />
-                          <p className="text-xs text-muted-foreground">
-                            Amount of ETH to fund this market with
-                          </p>
-                          <p className="text-xs text-muted-foreground opacity-75 pt-1">
-                            Contract fee: {fee} ETH (will be deducted)
-                          </p>
+                        {/* Payment Method Toggle & Spending Amount */}
+                        <div className="space-y-4">
+                          {/* Payment Toggle Switch */}
+                          <div className="flex items-center justify-between">
+                            <Label className="font-outfit text-foreground">Payment Method</Label>
+                            <motion.button
+                              type="button"
+                              onClick={handleTogglePayment}
+                              className="relative inline-flex h-10 w-20 items-center rounded-full bg-muted transition-colors"
+                              style={{
+                                backgroundColor: useToken ? "hsl(var(--accent))" : "hsl(var(--primary))",
+                              }}
+                              whileHover={{ scale: 1.05 }}
+                              whileTap={{ scale: 0.95 }}
+                            >
+                              <motion.div
+                                className="absolute h-8 w-8 rounded-full bg-foreground"
+                                animate={{
+                                  left: useToken ? "calc(100% - 36px)" : "4px",
+                                }}
+                                transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                              />
+                              <div className="relative w-full h-full flex items-center justify-between px-3 pointer-events-none">
+                                <span className="text-xs font-semibold text-foreground/60">ETH</span>
+                                <span className="text-xs font-semibold text-foreground/60">TOKEN</span>
+                              </div>
+                            </motion.button>
+                          </div>
+
+                          {/* Payment Label with 3D Animation */}
+                          <div className="perspective">
+                            <motion.div
+                              className="rounded-xl border-2 border-primary/30 bg-gradient-to-r from-primary/5 to-primary/10 p-4 text-center"
+                              animate={{
+                                borderColor: useToken ? "hsl(var(--accent) / 0.3)" : "hsl(var(--primary) / 0.3)",
+                                backgroundColor: useToken
+                                  ? "hsl(var(--accent) / 0.05) to hsl(var(--accent) / 0.1)"
+                                  : "hsl(var(--primary) / 0.05) to hsl(var(--primary) / 0.1)",
+                              }}
+                              transition={{ duration: 0.3 }}
+                            >
+                              <motion.div
+                                animate={{
+                                  rotateX: useToken ? 5 : -5,
+                                }}
+                                transition={{ duration: 0.3 }}
+                                style={{
+                                  transformStyle: "preserve-3d" as const,
+                                }}
+                              >
+                                <p className="font-syne text-lg font-bold">
+                                  Pay with{" "}
+                                  <span
+                                    style={{
+                                      color: useToken ? "hsl(var(--accent))" : "hsl(var(--primary))",
+                                    }}
+                                  >
+                                    {useToken && tokenSymbol ? tokenSymbol : useToken ? "Token" : "ETH"}
+                                  </span>
+                                </p>
+                              </motion.div>
+                            </motion.div>
+                          </div>
+
+                          {/* Token Address Input */}
+                          <AnimatePresence>
+                            {useToken && (
+                              <motion.div
+                                initial={{ opacity: 0, y: -10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -10 }}
+                                className="space-y-2"
+                              >
+                                <Label htmlFor="token-address" className="font-outfit text-foreground">
+                                  Token Address
+                                </Label>
+                                <Input
+                                  id="token-address"
+                                  type="text"
+                                  value={tokenAddress}
+                                  onChange={(e) => handleTokenAddressChange(e.target.value)}
+                                  placeholder={ZERO_ADDRESS}
+                                  className={`rounded-xl border-border/50 bg-background font-mono text-sm ${
+                                    tokenInputError ? "border-destructive/50" : ""
+                                  }`}
+                                />
+                                {tokenInputError && tokenAddress.length > 0 && (
+                                  <p className="text-xs text-destructive font-semibold">Invalid token address</p>
+                                )}
+                                {tokenSymbol && (
+                                  <p className="text-xs text-success font-semibold">
+                                    Token verified: {tokenSymbol}
+                                  </p>
+                                )}
+                                <p className="text-xs text-muted-foreground">
+                                  Enter a valid ERC20 token contract address (42 characters)
+                                </p>
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
+
+                          {/* Spending Amount */}
+                          <div className="space-y-2">
+                            <Label htmlFor="balance" className="font-outfit text-foreground">
+                              Spending Amount{" "}
+                              <span
+                                style={{
+                                  color: useToken ? "hsl(var(--accent))" : "hsl(var(--primary))",
+                                }}
+                              >
+                                ({useToken && tokenSymbol ? tokenSymbol : useToken ? "Token" : "ETH"})
+                              </span>{" "}
+                              *
+                            </Label>
+                            <Input
+                              id="balance"
+                              type="number"
+                              step="0.001"
+                              min="0"
+                              value={marketBalance}
+                              onChange={(e) => setMarketBalance(e.target.value)}
+                              placeholder={useToken ? "1.0" : "0.1"}
+                              className="rounded-xl border-border/50 bg-background font-outfit"
+                              required
+                            />
+                            <p className="text-xs text-muted-foreground">
+                              Amount to fund this market with
+                            </p>
+                            {!useToken && (
+                              <p className="text-xs text-muted-foreground opacity-75 pt-1">
+                                Contract fee: {fee} ETH (will be deducted)
+                              </p>
+                            )}
+                          </div>
                         </div>
 
                         {/* Initial Vote */}
@@ -497,7 +664,7 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
                         isLoading ||
                         (step === "details"
                           ? !isDetailsValid
-                          : !marketBalance || !initialVote)
+                          : !marketBalance || !initialVote || (useToken && !tokenAddress))
                       }
                       className="rounded-xl bg-primary font-outfit font-semibold"
                     >
