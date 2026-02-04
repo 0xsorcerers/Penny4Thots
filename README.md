@@ -86,10 +86,11 @@ Both the Create Market and Vote dialogs feature flexible payment method selectio
 - The spending amount label dynamically updates to show "Pay with ETH" or "Pay with [TOKEN_SYMBOL]"
 
 **Vote Modal**:
-- Same payment toggle system as the Create Market modal
-- Users can vote with ETH (default market payment method) or select a custom ERC20 token
-- Token symbol validation and display works identically to market creation
-- Conditional rendering of token input only when token payment is selected
+- Payment method is determined by the market's pre-set token address
+- If market uses ETH (zero address), displays "Pay with ETH" label with primary color
+- If market uses a token, automatically fetches the token's symbol via ERC20 `symbol()` call and displays "Pay with [TOKEN_SYMBOL]" with accent color
+- Spending amount label dynamically shows the payment method
+- No user choice for payment method—market creator's choice is enforced
 
 ### Vote Optimization
 - When voting with a token payment, the app first checks the user's current allowance
