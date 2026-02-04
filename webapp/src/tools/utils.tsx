@@ -122,7 +122,7 @@ export const blockchain = {
   rpc: 'https://ethereum-sepolia-rpc.publicnode.com',
   blockExplorer: 'https://sepolia.etherscan.io',
   decimals: 18,
-  contract_address: '0xC1446dC15404842300BF5af80751337Cd43f7F4D' as Address,
+  contract_address: '0xE5A9E12a673336d3c5DE2922763E19270cE9123B' as Address,
   symbol: 'ETH',
 };
 
