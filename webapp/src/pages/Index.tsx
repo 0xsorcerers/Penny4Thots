@@ -180,12 +180,6 @@ export default function Index() {
       // _signal is true if paying with token, false if paying with ETH
       const signal = data.useToken;
 
-      console.log("Creating market with payment data:", {
-        useToken: data.useToken,
-        tokenAddress: data.tokenAddress,
-        signal: signal,
-      });
-
       // Call blockchain
       await writeMarket({
         title: data.title,
