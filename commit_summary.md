@@ -1,56 +1,59 @@
-# Commit Summary: Theme, Vote Modal, and UX Improvements
+# Webapp Commit Summary - Last 10 Hours
 
 ## Overview
-This session focused on implementing a warm tropical light theme for the app and enhancing the vote modal with background image integration and streamlined voting flow.
+This summary details significant modifications across market creation, voting, and payment functionality.
 
-## Changes Made
+## Key Changes
 
-### 1. Theme System Overhaul
-**File: webapp/src/index.css**
-- Reverted all light and dark theme color changes from the previous 24 hours
-- Implemented a new warm tropical light theme with distinctive styling:
-  - Background: Warm cream/sand (25 100% 97%)
-  - Primary: Vibrant coral orange (15 95% 55%)
-  - Secondary: Sunny yellow (50 100% 60%)
-  - Accent: Turquoise/ocean blue (180 90% 45%)
-  - Foreground: Warm dark brown (15 40% 20%)
-  - Updated sidebar colors to complement tropical aesthetic
-- Maintained dark theme consistency for contrast
-- Light theme now has elegant, distinctive feel from dark theme
+### 1. Vote Modal Enhancement
+**Commit:** `46fea0c`
+- Redesigned vote modal to implement dynamic payment method selection
+- Implemented dual payment support: ETH and token-based payments
+- Changed payment method determination from user choice to market-driven logic
+- Enables automatic selection of payment method based on market configuration
 
-### 2. Vote Modal Background Integration
-**File: webapp/src/components/market/VoteModal.tsx**
-- Integrated market `posterImage` as background for vote modal dialog box
-- Added dark overlay to dialog box for text readability (bg-black/75 opacity)
-- Market background image now visible behind modal content while maintaining legibility
-- Enhanced visual appeal by showing context-specific imagery during voting
+### 2. UI Layout Optimization
+**Commit:** `1dd5391`
+- Resolved oversized ETH/TOKEN toggle button on Create Market page
+- Improved visual balance and layout of the Pay with Token input component
+- Maintained optimal token address and input field dimensions
+- Enhanced overall UI consistency and user experience
 
-### 3. Simplified Voting Flow
-**File: webapp/src/components/market/MarketCard.tsx**
-- Removed intermediate vote option buttons (optionA/optionB selection step)
-- Vote button now directly opens vote modal instead of requiring two clicks
-- Streamlined user experience: Click Vote → Modal opens with option selection inside
-- Removed `voteMode` state for "active" state, simplified component logic
-- Deleted `handleVoteOption` function as no longer needed
-- Button flow: Vote → Trade (after successful vote)
+### 3. Market Creation Logic Refinement
+**Commit:** `3455cd4`
+- Improved conditional handling of the `_signal` parameter in market creation
+- Previously defaulted to false; now conditionally set based on user input
+- Optimized Spending Amount (ETH) segment implementation
+- Streamlined market creation workflow
 
-### 4. Enhanced Vote Success Feedback (Partial)
-**Files: webapp/src/components/market/MarketCard.tsx, webapp/src/pages/Index.tsx**
-- Added state tracking for voted markets (`hasVoted`, `voteSuccessMessage`)
-- Implemented success receipt display after voting
-- Added `handleVoteSuccess` callback in Index.tsx
-- Vote button transitions to Trade button after successful vote
-- Added visual success indicator with checkmark icon
+### 4. Token Approval Optimization
+**Commit:** `01da114`
+- Fixed redundant token approval function calls
+- Implemented conditional approval logic: only request approval for tokens without prior user authorization
+- Prevents unnecessary blockchain transactions for pre-approved tokens
+- Improves user experience and reduces transaction costs
 
-## Key Improvements
-✅ **Visual Enhancement**: Warm tropical theme creates cohesive, appealing aesthetic
-✅ **User Experience**: One-click voting reduces friction and improves conversion
-✅ **Visual Feedback**: Market context now visible in vote modal via background image
-✅ **Success Confirmation**: Users see immediate feedback after voting
+### 5. Backend Scripts Upgrade
+**Commit:** `4264908`
+- Updated backend scripts from template
+- Maintenance update ensuring current best practices
 
-## Technical Notes
-- All color variables use HSL format per design system
-- Maintained accessibility with proper contrast ratios
-- Smooth transitions and animations preserved
-- Modal overlay optimized for readability (75% black opacity)
-- Card component logic simplified by removing unnecessary state transitions
+## Files Modified
+- `webapp/src/abi/ERC20.json` - Added ERC20 ABI reference (+317 lines)
+- `webapp/src/abi/penny4thots.json` - Updated contract ABI (+57/-0 lines)
+- `webapp/src/components/market/CreateMarketModal.tsx` - Major refactoring (+217/-217 lines)
+- `webapp/src/components/market/MarketCard.tsx` - Minor adjustment (+2/-1 lines)
+- `webapp/src/components/market/VoteModal.tsx` - Enhanced voting logic (+78/-0 lines)
+- `webapp/src/index.css` - Styling improvements (+70/-70 lines)
+- `webapp/src/pages/Index.tsx` - Page-level updates (+60/-60 lines)
+- `webapp/src/tools/utils.tsx` - Utility function refinements (+40/-40 lines)
+
+## Statistics
+- **Total Commits:** 8
+- **Files Changed:** 8
+- **Lines Added:** 705
+- **Lines Removed:** 136
+- **Net Change:** +569 lines
+
+## Impact Assessment
+The changes represent a focused iteration on market creation and voting functionality with emphasis on payment flexibility and user experience optimization. The modifications improve both the technical implementation (approval logic, conditional parameters) and the user interface (button sizing, layout consistency).

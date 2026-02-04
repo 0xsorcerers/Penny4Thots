@@ -14,7 +14,7 @@ import { Abi } from "viem";
 interface CreateMarketModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (data: CreateMarketData & { marketBalance: string; initialVote: "YES" | "NO" }) => Promise<void>;
+  onSubmit: (data: CreateMarketData & { marketBalance: string; initialVote: "YES" | "NO"; useToken: boolean; tokenAddress: Address }) => Promise<void>;
   isLoading?: boolean;
 }
 
@@ -156,6 +156,8 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
         initialVote,
         optionA: formData.optionA,
         optionB: formData.optionB,
+        useToken,
+        tokenAddress: (useToken ? tokenAddress : ZERO_ADDRESS) as Address,
       });
 
       // Only reset form on successful submission

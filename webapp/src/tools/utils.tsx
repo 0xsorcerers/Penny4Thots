@@ -82,6 +82,7 @@ export interface WriteMarketParams {
   feetype?: boolean;
   paymentToken?: Address;
   fee: bigint;
+  signal?: boolean;
 }
 
 // ============================================================================
@@ -319,9 +320,10 @@ export const prepareWriteMarket = (params: WriteMarketParams) => {
   ];
 
   const feetype = params.feetype || false;
+  const signal = params.signal || false; // true for token payment, false for ETH
 
   // When feetype is false (ETH payment), include marketBalance in msg.value
-  // When feetype is true (token payment), only include fee
+  // When feetype is true (token payment), only include fee (no marketBalance)
   const msgValue = feetype ? params.fee : params.fee + params.marketBalance;
 
   return prepareContractCall({
@@ -330,7 +332,7 @@ export const prepareWriteMarket = (params: WriteMarketParams) => {
     params: [
       infoArray,
       params.marketBalance,
-      false, // _signal - initial vote (false = NO, true = YES)
+      signal, // _signal - true if token payment, false if ETH payment
       feetype,
       params.paymentToken || "0x0000000000000000000000000000000000000000" as Address,
     ],
