@@ -180,6 +180,29 @@ export default function Index() {
       // _signal is true if paying with token, false if paying with ETH
       const signal = data.useToken;
 
+      // Check token allowance if paying with token
+      if (data.useToken) {
+        const currentAllowance = await readTokenAllowance(
+          data.tokenAddress,
+          account.address as Address,
+          blockchain.contract_address
+        );
+
+        // Need to approve for both marketBalance and fee when creating market with token
+        const totalTokenRequired = marketBalanceBigInt + fee;
+
+        // Only approve if allowance is insufficient
+        if (currentAllowance < totalTokenRequired) {
+          toast.info("Approval required", {
+            description: "Please approve the token spending in your wallet",
+          });
+
+          await approve(data.tokenAddress, totalTokenRequired);
+          toast.success("Token approved!");
+        }
+        // If allowance is adequate, proceed directly to market creation
+      }
+
       // Call blockchain
       await writeMarket({
         title: data.title,

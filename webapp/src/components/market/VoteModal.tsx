@@ -332,7 +332,7 @@ export function VoteModal({
                               transformStyle: "preserve-3d" as const,
                             }}
                           >
-                            <p className="font-syne text-sm font-bold">
+                            <p className="font-syne text-sm font-bold text-foreground dark:text-foreground">
                               Pay with{" "}
                               <span
                                 style={{
