@@ -96,6 +96,11 @@ export function VoteModal({
 
       setPaymentToken(tokenAddress);
       console.log("Payment token for market", marketId, ":", tokenAddress);
+
+      // If token is not zero address, fetch its symbol
+      if (!isZeroAddress(tokenAddress)) {
+        await fetchTokenSymbol(tokenAddress);
+      }
     } catch (err) {
       console.error("Failed to fetch market data:", err);
       setError("Failed to load market data. Please try again.");
