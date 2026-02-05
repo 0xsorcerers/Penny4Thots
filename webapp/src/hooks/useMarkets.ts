@@ -3,7 +3,6 @@ import {
   readMarketInfo,
   readMarketData,
   readMarketCount,
-  readFee,
   type MarketInfoFormatted,
   type MarketDataFormatted,
 } from '@/tools/utils';
@@ -12,7 +11,6 @@ interface UseMarketsReturn {
   marketInfo: MarketInfoFormatted[];
   marketData: Map<number, MarketDataFormatted>;
   marketCount: number;
-  fee: bigint;
   isLoading: boolean;
   error: Error | null;
   refetch: () => Promise<void>;
@@ -24,7 +22,6 @@ export function useMarkets(initialIds?: number[]): UseMarketsReturn {
   const [marketInfo, setMarketInfo] = useState<MarketInfoFormatted[]>([]);
   const [marketData, setMarketData] = useState<Map<number, MarketDataFormatted>>(new Map());
   const [marketCount, setMarketCount] = useState<number>(0);
-  const [fee, setFee] = useState<bigint>(BigInt(0));
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<Error | null>(null);
 
@@ -55,14 +52,10 @@ export function useMarkets(initialIds?: number[]): UseMarketsReturn {
     setError(null);
 
     try {
-      // Fetch market count and fee in parallel
-      const [count, currentFee] = await Promise.all([
-        readMarketCount(),
-        readFee(),
-      ]);
+      // Fetch market count
+      const count = await readMarketCount();
 
       setMarketCount(count);
-      setFee(currentFee);
 
       // Determine which IDs to fetch
       let idsToFetch: number[];
@@ -111,7 +104,6 @@ export function useMarkets(initialIds?: number[]): UseMarketsReturn {
     marketInfo,
     marketData,
     marketCount,
-    fee,
     isLoading,
     error,
     refetch: fetchAllData,
