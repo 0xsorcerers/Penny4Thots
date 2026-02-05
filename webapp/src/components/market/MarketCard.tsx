@@ -6,6 +6,7 @@ import type { Market } from "@/types/market";
 import { cn } from "@/lib/utils";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useMarketStore } from "@/store/marketStore";
+import { VoteStats } from "./VoteStats";
 import { toast } from "sonner";
 
 interface MarketCardProps {
@@ -154,6 +155,11 @@ export function MarketCard({ market, onVoteClick }: MarketCardProps) {
               transition={{ duration: 0.8, ease: "easeOut" }}
             />
           </div>
+        </div>
+
+        {/* Vote Stats Tag */}
+        <div className="mb-4">
+          <VoteStats aVotes={market.yesVotes} bVotes={market.noVotes} />
         </div>
 
         {/* Vote/Trade Buttons */}

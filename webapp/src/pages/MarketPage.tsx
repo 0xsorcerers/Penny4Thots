@@ -14,6 +14,8 @@ import { useActiveAccount } from "thirdweb/react";
 import { useMarketStore } from "@/store/marketStore";
 import { useVote, useTokenApprove, readPaymentToken, readTokenAllowance, isZeroAddress, type VoteParams } from "@/tools/utils";
 import { VoteModal } from "@/components/market/VoteModal";
+import { VoteStats } from "@/components/market/VoteStats";
+import { MarketBalance } from "@/components/market/MarketBalance";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { Address } from "viem";
@@ -32,11 +34,27 @@ export default function MarketPage() {
   const [selectedVoteSignal, setSelectedVoteSignal] = useState<boolean | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [tradeMode, setTradeMode] = useState<"idle" | "active">("idle");
+  const [paymentToken, setPaymentToken] = useState<Address | null>(null);
 
   // Scroll to top when market page loads
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [id]);
+
+  // Fetch payment token
+  useEffect(() => {
+    if (market?.indexer !== undefined) {
+      const fetchToken = async () => {
+        try {
+          const token = await readPaymentToken(market.indexer!);
+          setPaymentToken(token);
+        } catch (err) {
+          console.error("Failed to fetch payment token:", err);
+        }
+      };
+      fetchToken();
+    }
+  }, [market?.indexer]);
 
   // Log vote modal state for debugging
   useEffect(() => {
@@ -288,6 +306,17 @@ export default function MarketPage() {
                 <span>{market.yesVotes} votes</span>
                 <span>{market.noVotes} votes</span>
               </div>
+            </div>
+
+            {/* Stats Section */}
+            <div className="mb-6 flex flex-wrap gap-4 justify-center sm:justify-start">
+              <VoteStats aVotes={market.yesVotes} bVotes={market.noVotes} />
+              {market.marketBalance && (
+                <MarketBalance
+                  marketBalance={market.marketBalance}
+                  paymentToken={paymentToken as Address}
+                />
+              )}
             </div>
 
             {/* Vote Buttons */}
