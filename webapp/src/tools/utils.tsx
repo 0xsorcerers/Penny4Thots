@@ -265,15 +265,6 @@ export const readMarketCount = async (): Promise<number> => {
   return Number(result);
 };
 
-export const readFee = async (): Promise<bigint> => {
-  const result = await publicClient.readContract({
-    address: blockchain.contract_address,
-    abi: contractABI,
-    functionName: 'fee',
-  }) as bigint;
-
-  return result;
-};
 
 export const readPaymentToken = async (marketId: number): Promise<Address> => {
   const result = await publicClient.readContract({
