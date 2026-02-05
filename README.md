@@ -73,6 +73,25 @@ Structure:
 - If new markets exist, fetches all market info and data with loading state
 - Users can manually clear cache with refresh button to force full reload
 
+### Market Data Structure (Updated)
+The market data has been updated to include the new shares system and market lifecycle features:
+
+**MarketData Interface** (from smart contract):
+- `creator` - Market creator's wallet address
+- `status` - Boolean market status flag
+- `marketBalance` - Total ETH/token balance in the market
+- `activity` - Total transaction count/activity level
+- `aVotes` - Number of votes for option A
+- `bVotes` - Number of votes for option B
+- **Shares System**:
+  - `startTime` - Unix timestamp when shares trading begins
+  - `endTime` - Unix timestamp when shares trading ends
+  - `closed` - Boolean indicating if the market is closed
+  - `winningSide` - Enum value (0=None, 1=A, 2=B) indicating the resolved outcome
+  - `totalSharesA` - Total shares issued for option A
+  - `totalSharesB` - Total shares issued for option B
+  - `positionCount` - Number of total positions/trades in the market
+
 ### Payment Method Selection
 Both the Create Market dialog feature flexible payment method selection:
 
