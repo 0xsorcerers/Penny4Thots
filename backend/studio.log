@@ -25441,3 +25441,6 @@ bun install v1.2.19 (aad3abea)
 
 Checked 69 installs across 70 packages (no changes) [84.00ms]
 No prisma/schema.prisma found. Studio requires a Prisma schema.
++ exec gosu vibecode scripts/studio
+Starting in development mode...
+Installing dependencies...
