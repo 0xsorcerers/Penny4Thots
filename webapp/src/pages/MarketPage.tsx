@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { useActiveAccount } from "thirdweb/react";
 import { useMarketStore } from "@/store/marketStore";
-import { useVote, useTokenApprove, readPaymentToken, readTokenAllowance, isZeroAddress, type VoteParams } from "@/tools/utils";
+import { useVote, useTokenApprove, readPaymentToken, readTokenAllowance, isZeroAddress, fetchDataConstants, calculatePlatformFeePercentage, type VoteParams } from "@/tools/utils";
 import { VoteModal } from "@/components/market/VoteModal";
 import { VoteStats } from "@/components/market/VoteStats";
 import { MarketBalance } from "@/components/market/MarketBalance";
@@ -35,21 +35,27 @@ export default function MarketPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [tradeMode, setTradeMode] = useState<"idle" | "active">("idle");
   const [paymentToken, setPaymentToken] = useState<Address | null>(null);
+  const [platformFeePercentage, setPlatformFeePercentage] = useState<number | null>(null);
 
   // Scroll to top when market page loads
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [id]);
 
-  // Fetch payment token
+  // Fetch payment token and platform fee
   useEffect(() => {
     if (market?.indexer !== undefined) {
       const fetchToken = async () => {
         try {
-          const token = await readPaymentToken(market.indexer!);
+          const [token, dataConstants] = await Promise.all([
+            readPaymentToken(market.indexer!),
+            fetchDataConstants(),
+          ]);
           setPaymentToken(token);
+          const feePercentage = calculatePlatformFeePercentage(dataConstants.platformFee);
+          setPlatformFeePercentage(feePercentage);
         } catch (err) {
-          console.error("Failed to fetch payment token:", err);
+          console.error("Failed to fetch payment token or data constants:", err);
         }
       };
       fetchToken();
@@ -322,6 +328,23 @@ export default function MarketPage() {
             <div className="mb-6 flex justify-center sm:justify-start">
               <VoteStats aVotes={market.yesVotes} bVotes={market.noVotes} />
             </div>
+
+            {/* Platform Fee Display */}
+            {platformFeePercentage !== null && (
+              <div className="mb-6 text-center sm:text-left">
+                <p className="text-xs text-muted-foreground">
+                  Platform fee:{" "}
+                  <span
+                    style={{
+                      color: "hsl(var(--primary))",
+                    }}
+                    className="font-semibold"
+                  >
+                    {platformFeePercentage.toFixed(2)}%
+                  </span>
+                </p>
+              </div>
+            )}
 
             {/* Vote Buttons */}
             <div className="grid gap-4 sm:grid-cols-2">

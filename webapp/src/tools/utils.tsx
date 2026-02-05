@@ -277,6 +277,57 @@ export const readPaymentToken = async (marketId: number): Promise<Address> => {
   return result;
 };
 
+export interface DataConstants {
+  marketCount: number;
+  payId: number;
+  platformFee: number;
+  deadtax: number;
+  bobbtax: number;
+  staketax: number;
+  lasttax: number;
+  devtax: number;
+  bps: number;
+  decayWindowBps: number;
+  decayProfitBps: number;
+  kamikazeBurnBps: number;
+  paused: boolean;
+}
+
+export const fetchDataConstants = async (): Promise<DataConstants> => {
+  const result = await publicClient.readContract({
+    address: blockchain.contract_address,
+    abi: contractABI,
+    functionName: 'fetchDataConstants',
+  }) as [bigint[], boolean[]];
+
+  const [uintValues, boolValues] = result;
+
+  return {
+    marketCount: Number(uintValues[0]),
+    payId: Number(uintValues[1]),
+    platformFee: Number(uintValues[2]),
+    deadtax: Number(uintValues[3]),
+    bobbtax: Number(uintValues[4]),
+    staketax: Number(uintValues[5]),
+    lasttax: Number(uintValues[6]),
+    devtax: Number(uintValues[7]),
+    bps: Number(uintValues[8]),
+    decayWindowBps: Number(uintValues[9]),
+    decayProfitBps: Number(uintValues[10]),
+    kamikazeBurnBps: Number(uintValues[11]),
+    paused: boolValues[0],
+  };
+};
+
+/**
+ * Calculate platform fee as a percentage
+ * platformFee divides 1, so if platformFee is 5, the fee is 1/5 = 20%
+ */
+export const calculatePlatformFeePercentage = (platformFee: number): number => {
+  if (platformFee === 0) return 0;
+  return (1 / platformFee) * 100;
+};
+
 // Range limit for fetching markets from blockchain
 const MARKET_FETCH_LIMIT = 50;
 
