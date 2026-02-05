@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { publicClient, isZeroAddress, ZERO_ADDRESS } from "@/tools/utils";
+import { publicClient, isZeroAddress, ZERO_ADDRESS, blockchain } from "@/tools/utils";
 import type { CreateMarketData } from "@/types/market";
 import type { Address } from "viem";
 import erc20 from "@/abi/ERC20.json";
@@ -295,7 +295,7 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
                             className="rounded-xl border-border/50 bg-background font-outfit"
                           />
                           <p className="text-xs text-muted-foreground">
-                            Leave empty for a random image
+                            Try Pinterest for lots of free images. (HINT: copy image address, not page URL 😉)
                           </p>
                         </div>
 
@@ -467,7 +467,7 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
                                 transition={{ type: "spring", stiffness: 500, damping: 30 }}
                               />
                               <div className="relative w-full h-full flex items-center justify-between px-2 pointer-events-none">
-                                <span className="text-xs font-semibold text-foreground/60">ETH</span>
+                                <span className="text-xs font-semibold text-foreground/60">{blockchain.symbol}</span>
                                 <span className="text-xs font-semibold text-foreground/60">TKN</span>
                               </div>
                             </motion.button>
@@ -501,7 +501,7 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
                                       color: useToken ? "hsl(var(--accent))" : "hsl(var(--primary))",
                                     }}
                                   >
-                                    {useToken && tokenSymbol ? tokenSymbol : useToken ? "Token" : "ETH"}
+                                    {useToken && tokenSymbol ? tokenSymbol : useToken ? "Token" : blockchain.symbol}
                                   </span>
                                 </p>
                               </motion.div>
@@ -554,7 +554,7 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
                                   color: useToken ? "hsl(var(--accent))" : "hsl(var(--primary))",
                                 }}
                               >
-                                ({useToken && tokenSymbol ? tokenSymbol : useToken ? "Token" : "ETH"})
+                                ({useToken && tokenSymbol ? tokenSymbol : useToken ? "Token" : blockchain.symbol})
                               </span>{" "}
                               *
                             </Label>

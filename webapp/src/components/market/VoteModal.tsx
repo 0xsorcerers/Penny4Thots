@@ -11,6 +11,7 @@ import {
   isZeroAddress,
   ZERO_ADDRESS,
   publicClient,
+  blockchain,
   type VoteParams,
 } from "@/tools/utils";
 import type { Address } from "viem";
@@ -342,7 +343,7 @@ export function VoteModal({
                                   color: isZeroAddress(paymentToken) ? "hsl(var(--primary))" : "hsl(var(--accent))",
                                 }}
                               >
-                                {tokenSymbol ? tokenSymbol : isZeroAddress(paymentToken) ? "ETH" : "Token"}
+                                {tokenSymbol ? tokenSymbol : isZeroAddress(paymentToken) ? blockchain.symbol : "Token"}
                               </span>
                             </p>
                           </motion.div>
@@ -366,7 +367,7 @@ export function VoteModal({
                               color: isZeroAddress(paymentToken) ? "hsl(var(--primary))" : "hsl(var(--accent))",
                             }}
                           >
-                            ({tokenSymbol ? tokenSymbol : isZeroAddress(paymentToken) ? "ETH" : "Token"})
+                            ({tokenSymbol ? tokenSymbol : isZeroAddress(paymentToken) ? blockchain.symbol : "Token"})
                           </span>{" "}
                           *
                         </Label>

@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { formatEther } from "@/tools/utils";
+import { formatEther, blockchain } from "@/tools/utils";
 
 interface VoteDialogProps {
   isOpen: boolean;
@@ -105,7 +105,7 @@ export function VoteDialog({
                   {/* Amount Input */}
                   <div className="space-y-2">
                     <Label htmlFor="amount" className="font-outfit text-foreground">
-                      Amount to Send (ETH) *
+                      Amount to Send ({blockchain.symbol}) *
                     </Label>
                     <Input
                       id="amount"

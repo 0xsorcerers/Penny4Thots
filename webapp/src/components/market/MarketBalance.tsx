@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Wallet } from "lucide-react";
-import { publicClient, isZeroAddress, ZERO_ADDRESS } from "@/tools/utils";
+import { publicClient, isZeroAddress, ZERO_ADDRESS, blockchain } from "@/tools/utils";
 import type { Address } from "viem";
 import erc20 from "@/abi/ERC20.json";
 import { Abi } from "viem";
@@ -11,7 +11,7 @@ interface MarketBalanceProps {
 }
 
 export function MarketBalance({ marketBalance, paymentToken }: MarketBalanceProps) {
-  const [symbol, setSymbol] = useState<string>("ETH");
+  const [symbol, setSymbol] = useState<string>(blockchain.symbol);
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
@@ -35,14 +35,14 @@ export function MarketBalance({ marketBalance, paymentToken }: MarketBalanceProp
       };
       fetchSymbol();
     } else {
-      setSymbol("ETH");
+      setSymbol(blockchain.symbol);
     }
   }, [paymentToken]);
 
   const displayBalance = parseFloat(marketBalance).toFixed(4);
   const symbolColor =
-    symbol === "ETH"
-      ? "text-primary" // Primary color for ETH (gold/emerald)
+    symbol === blockchain.symbol
+      ? "text-primary" // Primary color for blockchain symbol (gold/emerald)
       : "text-accent"; // Accent color for tokens (cyan/coral)
 
   return (
