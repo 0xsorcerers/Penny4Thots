@@ -321,11 +321,11 @@ export const fetchDataConstants = async (): Promise<DataConstants> => {
 
 /**
  * Calculate platform fee as a percentage
- * platformFee divides 1, so if platformFee is 5, the fee is 1/5 = 20%
+ * platformFee divides 1%, so if platformFee is 5, the fee is 1% / 5 = 0.20%
  */
 export const calculatePlatformFeePercentage = (platformFee: number): number => {
   if (platformFee === 0) return 0;
-  return (1 / platformFee) * 100;
+  return 1 / platformFee;
 };
 
 // Range limit for fetching markets from blockchain
