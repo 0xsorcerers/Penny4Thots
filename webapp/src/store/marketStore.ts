@@ -55,6 +55,14 @@ export const useMarketStore = create<MarketStore>()(
             status: data?.status || false,
             optionA: info.optionA || "Yes",
             optionB: info.optionB || "No",
+            // New shares system fields
+            startTime: data?.startTime || 0,
+            endTime: data?.endTime || 0,
+            closed: data?.closed || false,
+            winningSide: data?.winningSide || 0,
+            totalSharesA: data?.totalSharesA || "0",
+            totalSharesB: data?.totalSharesB || "0",
+            positionCount: data?.positionCount || 0,
           };
         });
         set({
@@ -85,6 +93,14 @@ export const useMarketStore = create<MarketStore>()(
             status: data?.status || false,
             optionA: info.optionA || "Yes",
             optionB: info.optionB || "No",
+            // New shares system fields
+            startTime: data?.startTime || 0,
+            endTime: data?.endTime || 0,
+            closed: data?.closed || false,
+            winningSide: data?.winningSide || 0,
+            totalSharesA: data?.totalSharesA || "0",
+            totalSharesB: data?.totalSharesB || "0",
+            positionCount: data?.positionCount || 0,
           };
         });
         set({ markets, marketDataMap: dataMap });

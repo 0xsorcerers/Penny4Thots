@@ -15,6 +15,14 @@ export interface Market {
   status?: boolean; // Market status from blockchain
   optionA?: string; // Custom option A label
   optionB?: string; // Custom option B label
+  // New shares system fields
+  startTime?: number;
+  endTime?: number;
+  closed?: boolean;
+  winningSide?: number;
+  totalSharesA?: string;
+  totalSharesB?: string;
+  positionCount?: number;
 }
 
 export interface CreateMarketData {

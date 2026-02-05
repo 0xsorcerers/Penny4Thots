@@ -4,6 +4,7 @@ import { X, AlertCircle, Loader2, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { MarketBalance } from "./MarketBalance";
 import {
   readPaymentToken,
   fetchMarketDataFromBlockchain,
@@ -48,6 +49,7 @@ export function VoteModal({
   const [amount, setAmount] = useState("");
   const [paymentToken, setPaymentToken] = useState<Address>(ZERO_ADDRESS);
   const [tokenSymbol, setTokenSymbol] = useState<string | null>(null);
+  const [marketBalance, setMarketBalance] = useState<string>("0");
   const [isLoadingData, setIsLoadingData] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -92,6 +94,7 @@ export function VoteModal({
 
       if (marketDataArray.length > 0) {
         console.log("Fresh market data:", marketDataArray[0]);
+        setMarketBalance(marketDataArray[0].marketBalance || "0");
       }
 
       setPaymentToken(tokenAddress);
@@ -344,6 +347,11 @@ export function VoteModal({
                             </p>
                           </motion.div>
                         </motion.div>
+                      </div>
+
+                      {/* Market Balance Info */}
+                      <div className="flex justify-center">
+                        <MarketBalance marketBalance={marketBalance} paymentToken={paymentToken} />
                       </div>
 
                       {/* Spending Amount */}
