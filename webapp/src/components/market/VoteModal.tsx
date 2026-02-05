@@ -8,6 +8,8 @@ import { MarketBalance } from "./MarketBalance";
 import {
   readPaymentToken,
   fetchMarketDataFromBlockchain,
+  fetchDataConstants,
+  calculatePlatformFeePercentage,
   isZeroAddress,
   ZERO_ADDRESS,
   publicClient,
@@ -53,6 +55,7 @@ export function VoteModal({
   const [marketBalance, setMarketBalance] = useState<string>("0");
   const [isLoadingData, setIsLoadingData] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [platformFeePercentage, setPlatformFeePercentage] = useState<number | null>(null);
 
   // Fetch token symbol from blockchain
   const fetchTokenSymbol = useCallback(async (address: Address) => {
@@ -87,10 +90,11 @@ export function VoteModal({
   const fetchMarketPaymentData = async () => {
     setIsLoadingData(true);
     try {
-      // Fetch fresh market data and payment token
-      const [marketDataArray, tokenAddress] = await Promise.all([
+      // Fetch fresh market data, payment token, and data constants
+      const [marketDataArray, tokenAddress, dataConstants] = await Promise.all([
         fetchMarketDataFromBlockchain([marketId]),
         readPaymentToken(marketId),
+        fetchDataConstants(),
       ]);
 
       if (marketDataArray.length > 0) {
@@ -100,6 +104,11 @@ export function VoteModal({
 
       setPaymentToken(tokenAddress);
       console.log("Payment token for market", marketId, ":", tokenAddress);
+
+      // Calculate and set platform fee percentage
+      const feePercentage = calculatePlatformFeePercentage(dataConstants.platformFee);
+      setPlatformFeePercentage(feePercentage);
+      console.log("Platform fee:", dataConstants.platformFee, "Percentage:", feePercentage);
 
       // If token is not zero address, fetch its symbol
       if (!isZeroAddress(tokenAddress)) {
@@ -386,6 +395,20 @@ export function VoteModal({
                         <p className="text-xs text-muted-foreground">
                           Amount to stake with your vote
                         </p>
+                        {/* Platform Fee Display */}
+                        {platformFeePercentage !== null && (
+                          <p className="text-xs mt-2">
+                            <span className="text-muted-foreground">Platform fee: </span>
+                            <span
+                              style={{
+                                color: isZeroAddress(paymentToken) ? "hsl(var(--primary))" : "hsl(var(--accent))",
+                              }}
+                              className="font-semibold"
+                            >
+                              {platformFeePercentage.toFixed(2)}%
+                            </span>
+                          </p>
+                        )}
                       </div>
 
                       {/* Warning */}
