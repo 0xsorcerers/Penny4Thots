@@ -104,8 +104,8 @@ export function MarketCard({ market, onVoteClick }: MarketCardProps) {
           <X className="h-4 w-4" />
         </motion.button>
 
-        {/* Tags and Vote Stats */}
-        <div className="mb-3 flex flex-wrap items-center gap-1.5">
+        {/* Tags */}
+        <div className="mb-3 flex flex-wrap gap-1.5">
           {market.tags.slice(0, 3).map((tag) => (
             <span
               key={tag}
@@ -122,7 +122,6 @@ export function MarketCard({ market, onVoteClick }: MarketCardProps) {
               +{market.tags.length - 3} tags
             </button>
           )}
-          <VoteStats aVotes={market.yesVotes} bVotes={market.noVotes} />
         </div>
 
         {/* Title & Subtitle */}
@@ -156,6 +155,11 @@ export function MarketCard({ market, onVoteClick }: MarketCardProps) {
               transition={{ duration: 0.8, ease: "easeOut" }}
             />
           </div>
+        </div>
+
+        {/* Vote Stats Tag */}
+        <div className="mb-4">
+          <VoteStats aVotes={market.yesVotes} bVotes={market.noVotes} />
         </div>
 
         {/* Vote/Trade Buttons */}
