@@ -227,6 +227,16 @@ export default function MarketPage() {
               ))}
             </div>
 
+            {/* Market Balance - Volume Traded at Top */}
+            {market.marketBalance && (
+              <div className="mb-4">
+                <MarketBalance
+                  marketBalance={market.marketBalance}
+                  paymentToken={paymentToken as Address}
+                />
+              </div>
+            )}
+
             {/* Title */}
             <h1 className="mb-3 font-syne text-3xl font-bold leading-tight text-foreground sm:text-4xl md:text-5xl">
               {market.title}
@@ -308,15 +318,9 @@ export default function MarketPage() {
               </div>
             </div>
 
-            {/* Stats Section */}
-            <div className="mb-6 flex flex-wrap gap-4 justify-center sm:justify-start">
+            {/* Stats Section - Just Vote Stats */}
+            <div className="mb-6 flex justify-center sm:justify-start">
               <VoteStats aVotes={market.yesVotes} bVotes={market.noVotes} />
-              {market.marketBalance && (
-                <MarketBalance
-                  marketBalance={market.marketBalance}
-                  paymentToken={paymentToken as Address}
-                />
-              )}
             </div>
 
             {/* Vote Buttons */}
