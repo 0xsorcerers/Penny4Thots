@@ -170,6 +170,11 @@
 				"internalType": "address",
 				"name": "_devAddress",
 				"type": "address"
+			},
+			{
+				"internalType": "address",
+				"name": "_dAI",
+				"type": "address"
 			}
 		],
 		"name": "setAddresses",
@@ -204,11 +209,6 @@
 		"inputs": [
 			{
 				"internalType": "uint256",
-				"name": "_feeInWei",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
 				"name": "_payId",
 				"type": "uint256"
 			},
@@ -241,11 +241,6 @@
 			{
 				"internalType": "address",
 				"name": "_pennyDAO",
-				"type": "address"
-			},
-			{
-				"internalType": "address",
-				"name": "_dAI",
 				"type": "address"
 			}
 		],
@@ -652,19 +647,6 @@
 	},
 	{
 		"inputs": [],
-		"name": "burntoll",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [],
 		"name": "deadtax",
 		"outputs": [
 			{
@@ -724,19 +706,6 @@
 			}
 		],
 		"name": "farmTokensDistributed",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "fee",
 		"outputs": [
 			{
 				"internalType": "uint256",
@@ -818,19 +787,6 @@
 			}
 		],
 		"name": "marketTokenClaims",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "multiple",
 		"outputs": [
 			{
 				"internalType": "uint256",
@@ -1127,19 +1083,6 @@
 				"internalType": "struct Penny4Thots.MarketData[]",
 				"name": "",
 				"type": "tuple[]"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "reseed",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
 			}
 		],
 		"stateMutability": "view",
