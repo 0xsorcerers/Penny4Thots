@@ -240,7 +240,7 @@ export function VoteModal({
                 {/* Header */}
                 <div className="flex items-center justify-between border-b border-border/50 p-6">
                   <div>
-                    <h2 className="font-syne text-xl font-bold text-foreground">
+                    <h2 className="font-syne text-xl font-bold text-chalk dark:text-foreground">
                       {step === "select" && "Cast Your Vote"}
                       {step === "amount" && "Enter Amount"}
                       {step === "success" && "Vote Submitted!"}
@@ -301,7 +301,7 @@ export function VoteModal({
                     <div className="space-y-6">
                       {/* Selected Option */}
                       <div className="rounded-xl bg-muted/50 p-4">
-                        <p className="text-sm text-muted-foreground mb-2">
+                        <p className="text-sm text-chalk dark:text-muted-foreground mb-2">
                           Your Vote
                         </p>
                         <p
@@ -332,7 +332,7 @@ export function VoteModal({
                               transformStyle: "preserve-3d" as const,
                             }}
                           >
-                            <p className="font-syne text-sm font-bold text-foreground dark:text-foreground">
+                            <p className="font-syne text-sm font-bold text-chalk dark:text-foreground">
                               Pay with{" "}
                               <span
                                 style={{
@@ -350,7 +350,7 @@ export function VoteModal({
                       <div className="space-y-2">
                         <Label
                           htmlFor="vote-amount"
-                          className="font-outfit text-foreground"
+                          className="font-outfit text-chalk dark:text-foreground"
                         >
                           Spending Amount{" "}
                           <span
