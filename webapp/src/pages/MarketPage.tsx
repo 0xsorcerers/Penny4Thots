@@ -227,16 +227,6 @@ export default function MarketPage() {
               ))}
             </div>
 
-            {/* Market Balance - Volume Traded at Top */}
-            {market.marketBalance && (
-              <div className="mb-4">
-                <MarketBalance
-                  marketBalance={market.marketBalance}
-                  paymentToken={paymentToken as Address}
-                />
-              </div>
-            )}
-
             {/* Title */}
             <h1 className="mb-3 font-syne text-3xl font-bold leading-tight text-foreground sm:text-4xl md:text-5xl">
               {market.title}
@@ -244,6 +234,16 @@ export default function MarketPage() {
 
             {/* Subtitle */}
             <p className="mb-6 font-outfit text-xl text-muted-foreground">{market.subtitle}</p>
+
+            {/* Market Balance - Volume Traded */}
+            {market.marketBalance && (
+              <div className="mb-6">
+                <MarketBalance
+                  marketBalance={market.marketBalance}
+                  paymentToken={paymentToken as Address}
+                />
+              </div>
+            )}
 
             {/* Meta info */}
             <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
