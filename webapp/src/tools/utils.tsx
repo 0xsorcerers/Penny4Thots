@@ -21,6 +21,12 @@ const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000" as Address;
 // Types
 // ============================================================================
 
+export enum Side {
+  None = 0,
+  A = 1,
+  B = 2,
+}
+
 export interface MarketInfo {
   indexer: number;
   title: string;
@@ -44,7 +50,7 @@ export interface MarketData {
   startTime: bigint;
   endTime: bigint;
   closed: boolean;
-  winningSide: number; // 0 = None, 1 = A, 2 = B
+  winningSide: Side;
   totalSharesA: bigint;
   totalSharesB: bigint;
   positionCount: bigint;
@@ -74,7 +80,7 @@ export interface MarketDataFormatted {
   startTime: number;
   endTime: number;
   closed: boolean;
-  winningSide: number;
+  winningSide: Side;
   totalSharesA: string;
   totalSharesB: string;
   positionCount: number;
@@ -242,7 +248,7 @@ export const readMarketData = async (ids: number[]): Promise<MarketDataFormatted
     startTime: Number(marketData.startTime),
     endTime: Number(marketData.endTime),
     closed: marketData.closed,
-    winningSide: marketData.winningSide,
+    winningSide: marketData.winningSide as Side,
     totalSharesA: formatEther(marketData.totalSharesA),
     totalSharesB: formatEther(marketData.totalSharesB),
     positionCount: Number(marketData.positionCount),
