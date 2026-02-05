@@ -6,7 +6,7 @@ import { CreateMarketModal } from "@/components/market/CreateMarketModal";
 import { VoteModal } from "@/components/market/VoteModal";
 import { useMarketStore } from "@/store/marketStore";
 import { useActiveAccount } from "thirdweb/react";
-import { useWriteMarket, useVote, useTokenApprove, readFee, fetchMarketsFromBlockchain, fetchMarketDataFromBlockchain, readMarketCount, readPaymentToken, readTokenAllowance, toWei, isZeroAddress, blockchain, type VoteParams } from "@/tools/utils";
+import { useWriteMarket, useVote, useTokenApprove, fetchMarketsFromBlockchain, fetchMarketDataFromBlockchain, readMarketCount, readPaymentToken, readTokenAllowance, toWei, isZeroAddress, blockchain, type VoteParams } from "@/tools/utils";
 import type { CreateMarketData } from "@/types/market";
 import type { Address } from "viem";
 import { toast } from "sonner";
@@ -174,7 +174,6 @@ export default function Index() {
 
     setIsSubmitting(true);
     try {
-      const fee = await readFee();
       const marketBalanceBigInt = toWei(data.marketBalance);
 
       // _signal is true if paying with token, false if paying with ETH
@@ -188,16 +187,13 @@ export default function Index() {
           blockchain.contract_address
         );
 
-        // Need to approve for both marketBalance and fee when creating market with token
-        const totalTokenRequired = marketBalanceBigInt + fee;
-
         // Only approve if allowance is insufficient
-        if (currentAllowance < totalTokenRequired) {
+        if (currentAllowance < marketBalanceBigInt) {
           toast.info("Approval required", {
             description: "Please approve the token spending in your wallet",
           });
 
-          await approve(data.tokenAddress, totalTokenRequired);
+          await approve(data.tokenAddress, marketBalanceBigInt);
           toast.success("Token approved!");
         }
         // If allowance is adequate, proceed directly to market creation
@@ -213,7 +209,7 @@ export default function Index() {
         optionA: data.optionA,
         optionB: data.optionB,
         marketBalance: marketBalanceBigInt,
-        fee: fee,
+        fee: BigInt(0),
         feetype: data.useToken,
         paymentToken: data.tokenAddress,
         signal: signal,
