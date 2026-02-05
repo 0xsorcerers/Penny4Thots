@@ -38,10 +38,16 @@ export interface MarketData {
   status: boolean;
   marketBalance: bigint;
   activity: bigint;
-  optionA: string;
   aVotes: bigint;
-  optionB: string;
   bVotes: bigint;
+  // === Shares system ===
+  startTime: bigint;
+  endTime: bigint;
+  closed: boolean;
+  winningSide: number; // 0 = None, 1 = A, 2 = B
+  totalSharesA: bigint;
+  totalSharesB: bigint;
+  positionCount: bigint;
 }
 
 export interface MarketInfoFormatted {
@@ -62,10 +68,16 @@ export interface MarketDataFormatted {
   status: boolean;
   marketBalance: string;
   activity: string;
-  optionA: string;
   aVotes: number;
-  optionB: string;
   bVotes: number;
+  // === Shares system ===
+  startTime: number;
+  endTime: number;
+  closed: boolean;
+  winningSide: number;
+  totalSharesA: string;
+  totalSharesB: string;
+  positionCount: number;
 }
 
 export interface MarketCombined extends MarketInfoFormatted, MarketDataFormatted {}
@@ -123,7 +135,7 @@ export const blockchain = {
   rpc: 'https://ethereum-sepolia-rpc.publicnode.com',
   blockExplorer: 'https://sepolia.etherscan.io',
   decimals: 18,
-  contract_address: '0xE8b62B20730fcEDCc3b67620A121F5b45e71987e' as Address,
+  contract_address: '0xAEb4618C7FaD80cC2c0C2c0fbB17198D6D10D522' as Address,
   symbol: 'ETH',
 };
 
@@ -224,10 +236,16 @@ export const readMarketData = async (ids: number[]): Promise<MarketDataFormatted
     status: marketData.status,
     marketBalance: formatEther(marketData.marketBalance),
     activity: formatEther(marketData.activity),
-    optionA: marketData.optionA,
     aVotes: Number(marketData.aVotes),
-    optionB: marketData.optionB,
     bVotes: Number(marketData.bVotes),
+    // === Shares system ===
+    startTime: Number(marketData.startTime),
+    endTime: Number(marketData.endTime),
+    closed: marketData.closed,
+    winningSide: marketData.winningSide,
+    totalSharesA: formatEther(marketData.totalSharesA),
+    totalSharesB: formatEther(marketData.totalSharesB),
+    positionCount: Number(marketData.positionCount),
   }));
 };
 
