@@ -50,6 +50,7 @@ export function MarketBalance({ marketBalance, paymentToken }: MarketBalanceProp
       <Wallet className="h-3 w-3 text-accent" />
       <span className="text-foreground font-semibold">{displayBalance}</span>
       <span className={`font-bold ${symbolColor}`}>{symbol}</span>
+      traded.
     </div>
   );
 }
