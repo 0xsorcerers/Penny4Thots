@@ -539,7 +539,7 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
                                   </p>
                                 )}
                                 <p className="text-xs text-muted-foreground">
-                                  Enter a valid ERC20 token contract address (42 characters)
+                                  Enter a valid ERC20 token contract address
                                 </p>
                               </motion.div>
                             )}
