@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { publicClient, isZeroAddress, ZERO_ADDRESS, blockchain } from "@/tools/utils";
+import { publicClient, isZeroAddress, ZERO_ADDRESS, blockchain, fetchDataConstants, calculatePlatformFeePercentage } from "@/tools/utils";
 import type { CreateMarketData } from "@/types/market";
 import type { Address } from "viem";
 import erc20 from "@/abi/ERC20.json";
@@ -44,6 +44,7 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
   const [tokenAddress, setTokenAddress] = useState("");
   const [tokenSymbol, setTokenSymbol] = useState<string | null>(null);
   const [tokenInputError, setTokenInputError] = useState(false);
+  const [platformFeePercentage, setPlatformFeePercentage] = useState<number | null>(null);
 
   // Fetch token symbol from blockchain
   const fetchTokenSymbol = useCallback(async (address: string) => {
@@ -62,6 +63,22 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
       setTokenInputError(true);
     }
   }, []);
+
+  // Fetch platform fee on modal open
+  useEffect(() => {
+    if (isOpen) {
+      const fetchFee = async () => {
+        try {
+          const dataConstants = await fetchDataConstants();
+          const feePercentage = calculatePlatformFeePercentage(dataConstants.platformFee);
+          setPlatformFeePercentage(feePercentage);
+        } catch (err) {
+          console.error("Failed to fetch platform fee:", err);
+        }
+      };
+      fetchFee();
+    }
+  }, [isOpen]);
 
 
   // Handle token address input
@@ -572,6 +589,20 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
                             <p className="text-xs text-muted-foreground">
                               Amount to fund this market with
                             </p>
+                            {/* Platform Fee Display */}
+                            {platformFeePercentage !== null && (
+                              <p className="text-xs mt-2">
+                                <span className="text-muted-foreground">Platform fee: </span>
+                                <span
+                                  style={{
+                                    color: useToken ? "hsl(var(--accent))" : "hsl(var(--primary))",
+                                  }}
+                                  className="font-semibold"
+                                >
+                                  {platformFeePercentage.toFixed(4)}%
+                                </span>
+                              </p>
+                            )}
                           </div>
                         </div>
 
