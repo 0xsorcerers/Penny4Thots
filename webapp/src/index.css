@@ -71,6 +71,9 @@ All colors MUST be HSL.
     --sidebar-accent-foreground: 200 25% 10%;
     --sidebar-border: 150 30% 88%;
     --sidebar-ring: 155 90% 42%;
+
+    /* Chalk/Cream color for light theme dialog text visibility */
+    --chalk: 40 30% 87%;
   }
 
   .dark {
@@ -118,6 +121,9 @@ All colors MUST be HSL.
     --sidebar-accent-foreground: 60 10% 95%;
     --sidebar-border: 220 15% 18%;
     --sidebar-ring: 45 100% 55%;
+
+    /* Chalk/Cream color - use light foreground in dark mode */
+    --chalk: 60 10% 95%;
   }
 }
 
