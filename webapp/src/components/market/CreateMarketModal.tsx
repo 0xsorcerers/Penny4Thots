@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { readFee, formatEther, publicClient, isZeroAddress, ZERO_ADDRESS } from "@/tools/utils";
+import { publicClient, isZeroAddress, ZERO_ADDRESS } from "@/tools/utils";
 import type { CreateMarketData } from "@/types/market";
 import type { Address } from "viem";
 import erc20 from "@/abi/ERC20.json";
@@ -28,7 +28,6 @@ const PLACEHOLDER_IMAGES = [
 
 export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false }: CreateMarketModalProps) {
   const [step, setStep] = useState<"details" | "confirm">("details");
-  const [fee, setFee] = useState<string>("0");
   const [formData, setFormData] = useState({
     title: "",
     subtitle: "",
@@ -64,21 +63,6 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
     }
   }, []);
 
-  // Fetch fee when modal opens
-  useEffect(() => {
-    if (isOpen) {
-      const fetchFee = async () => {
-        try {
-          const feeBigInt = await readFee();
-          setFee(formatEther(feeBigInt));
-        } catch (err) {
-          console.error("Failed to fetch fee:", err);
-          setFee("0");
-        }
-      };
-      fetchFee();
-    }
-  }, [isOpen]);
 
   // Handle token address input
   const handleTokenAddressChange = (value: string) => {
@@ -588,11 +572,6 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
                             <p className="text-xs text-muted-foreground">
                               Amount to fund this market with
                             </p>
-                            {!useToken && (
-                              <p className="text-xs text-muted-foreground opacity-75 pt-1">
-                                Contract fee: {fee} ETH (will be deducted)
-                              </p>
-                            )}
                           </div>
                         </div>
 
