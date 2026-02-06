@@ -141,7 +141,7 @@ export const blockchain = {
   rpc: 'https://ethereum-sepolia-rpc.publicnode.com',
   blockExplorer: 'https://sepolia.etherscan.io',
   decimals: 18,
-  contract_address: '0xD62e42045bD70Fc3B35dF85449479099F3259FB7' as Address,
+  contract_address: '0x6A16998B2297BD61De9d670F1ea6BBFb1a72FD11' as Address,
   symbol: 'sETH',
 };
 
@@ -168,7 +168,7 @@ export function Connector(): ReactElement {
   return (
     <ConnectButton
       client={client}
-      chain={sepolia}
+      chain={network}
       wallets={wallets}
       theme={darkTheme({
         colors: {
@@ -184,12 +184,12 @@ export function Connector(): ReactElement {
       connectModal={{
         size: "wide",
         title: "Connect to Penny4Thots",
-        titleIcon: "/logo-white-no-bkg.png",
+        titleIcon: "/logo-white-no-bkg.webp",
         welcomeScreen: {
           title: "Penny4Thots Prediction Markets",
           subtitle: "...if you can think it, it's important.",
           img: {
-            src: '/logo-white-no-bkg.png',
+            src: '/logo-white-no-bkg.webp',
             width: 200,
             height: 200,
           },
@@ -286,10 +286,12 @@ export interface DataConstants {
   staketax: number;
   lasttax: number;
   devtax: number;
+  gasfee: number;
   bps: number;
   decayWindowBps: number;
   decayProfitBps: number;
   kamikazeBurnBps: number;
+  maxFinalizeBatch: number;
   paused: boolean;
 }
 
@@ -311,10 +313,12 @@ export const fetchDataConstants = async (): Promise<DataConstants> => {
     staketax: Number(uintValues[5]),
     lasttax: Number(uintValues[6]),
     devtax: Number(uintValues[7]),
-    bps: Number(uintValues[8]),
-    decayWindowBps: Number(uintValues[9]),
-    decayProfitBps: Number(uintValues[10]),
-    kamikazeBurnBps: Number(uintValues[11]),
+    gasfee: Number(uintValues[8]),
+    bps: Number(uintValues[9]),
+    decayWindowBps: Number(uintValues[10]),
+    decayProfitBps: Number(uintValues[11]),
+    kamikazeBurnBps: Number(uintValues[12]),
+    maxFinalizeBatch: Number(uintValues[13]),
     paused: boolValues[0],
   };
 };
@@ -392,10 +396,6 @@ export const prepareWriteMarket = (params: WriteMarketParams) => {
   // Use the provided paymentToken, which should be set correctly by the caller
   const paymentTokenAddress: Address = params.paymentToken || ("0x0000000000000000000000000000000000000000" as Address);
 
-  // When feetype is false (ETH payment), include marketBalance in msg.value
-  // When feetype is true (token payment), no ETH sent (tokens transferred separately)
-  const msgValue = feetype ? 0n : params.marketBalance;
-
   return prepareContractCall({
     contract: penny4thotsContract,
     method: "function writeMarket(string[] calldata _info, uint256 _marketBalance, bool _signal, bool _feetype, address _paymentToken) external payable",
@@ -406,7 +406,6 @@ export const prepareWriteMarket = (params: WriteMarketParams) => {
       feetype,
       paymentTokenAddress,
     ],
-    value: msgValue,
   });
 };
 
@@ -415,7 +414,13 @@ export const useWriteMarket = () => {
   const { mutateAsync: sendTx, isPending, error } = useSendTransaction();
 
   const writeMarket = async (params: WriteMarketParams) => {
-    const transaction = prepareWriteMarket(params);
+    const dataConstants = await fetchDataConstants();
+    const gasfee = BigInt(dataConstants.gasfee);
+
+    const transaction = {
+      ...prepareWriteMarket(params),
+      value: (params.signal || false) ? gasfee : params.marketBalance,
+    };
     const result = await sendTx(transaction);
 
     // Wait for transaction to be mined/confirmed before returning
@@ -445,7 +450,6 @@ export const prepareVote = (params: VoteParams) => {
     contract: penny4thotsContract,
     method: "function vote(bool _signal, uint256 _market, uint256 _marketBalance) external payable",
     params: [params.signal, BigInt(params.marketId), params.marketBalance],
-    value: params.feetype ? 0n : params.marketBalance,
   });
 };
 
@@ -453,7 +457,13 @@ export const useVote = () => {
   const { mutateAsync: sendTx, isPending, error } = useSendTransaction();
 
   const vote = async (params: VoteParams) => {
-    const transaction = prepareVote(params);
+    const dataConstants = await fetchDataConstants();
+    const gasfee = BigInt(dataConstants.gasfee);
+
+    const transaction = {
+      ...prepareVote(params),
+      value: params.feetype ? gasfee : params.marketBalance,
+    };
     const result = await sendTx(transaction);
 
     await waitForReceipt({
@@ -566,6 +576,23 @@ export const readTokenAllowance = async (
     abi: erc20ABI,
     functionName: "allowance",
     args: [ownerAddress, spenderAddress],
+  });
+
+  return result as bigint;
+};
+
+/**
+ * Read the token balance for an address
+ */
+export const readTokenBalance = async (
+  tokenAddress: Address,
+  ownerAddress: Address
+): Promise<bigint> => {
+  const result = await publicClient.readContract({
+    address: tokenAddress,
+    abi: erc20ABI,
+    functionName: "balanceOf",
+    args: [ownerAddress],
   });
 
   return result as bigint;

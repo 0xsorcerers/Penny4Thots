@@ -124,7 +124,7 @@ export function GetStartedPage({ onGetStarted }: GetStartedPageProps) {
         >
           <div className="relative mx-auto h-24 w-24 sm:h-32 sm:w-32">
             <img
-              src="/logo-white-no-bkg.png"
+              src="/logo-white-no-bkg.webp"
               alt="Penny4Thots Logo"
               className="h-full w-full object-contain drop-shadow-lg"
             />

@@ -48,9 +48,9 @@ export function MarketBalance({ marketBalance, paymentToken }: MarketBalanceProp
   return (
     <div className="flex items-center gap-1.5 rounded-full bg-accent/10 px-3 py-1.5 font-mono text-xs">
       <Wallet className="h-3 w-3 text-accent" />
-      <span className="text-primary dark:text-foreground font-semibold">{displayBalance}</span>
+      <span className="text-yellow-600 dark:text-foreground font-semibold">{displayBalance}</span>
       <span className={`font-bold ${symbolColor}`}>{symbol}</span>
-      <span className="text-primary dark:text-foreground">staked.</span>
+      <span className="text-yellow-600 dark:text-foreground">staked.</span>
     </div>
   );
 }

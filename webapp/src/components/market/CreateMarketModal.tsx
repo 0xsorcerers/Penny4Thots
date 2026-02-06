@@ -1,11 +1,13 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Plus, Image as ImageIcon, Sparkles, ThumbsUp, ThumbsDown } from "lucide-react";
+import { X, Plus, Image as ImageIcon, ThumbsUp, ThumbsDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { publicClient, isZeroAddress, ZERO_ADDRESS, blockchain, fetchDataConstants, calculatePlatformFeePercentage } from "@/tools/utils";
+import { useTheme } from "@/hooks/useTheme";
+import blackLogo from "@/assets/images/black-no-bkg.webp";
 import type { CreateMarketData } from "@/types/market";
 import type { Address } from "viem";
 import erc20 from "@/abi/ERC20.json";
@@ -27,6 +29,7 @@ const PLACEHOLDER_IMAGES = [
 ];
 
 export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false }: CreateMarketModalProps) {
+  const { theme } = useTheme();
   const [step, setStep] = useState<"details" | "confirm">("details");
   const [formData, setFormData] = useState({
     title: "",
@@ -222,8 +225,12 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
                 {/* Header */}
                 <div className="flex items-center justify-between border-b border-border/50 p-6">
                   <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
-                      <Sparkles className="h-5 w-5 text-primary" />
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 p-1">
+                      <img
+                        src={theme === "dark" ? "/logo-white-no-bkg.webp" : blackLogo}
+                        alt="Create Market"
+                        className="h-full w-full object-contain"
+                      />
                     </div>
                     <div>
                       <h2 className="font-syne text-xl font-bold text-foreground">
