@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { useActiveAccount } from "thirdweb/react";
 import { useMarketStore } from "@/store/marketStore";
-import { useVote, useTokenApprove, readPaymentToken, readTokenAllowance, isZeroAddress, fetchDataConstants, calculatePlatformFeePercentage, type VoteParams } from "@/tools/utils";
+import { useVote, useTokenApprove, readPaymentToken, readTokenAllowance, isZeroAddress, fetchDataConstants, calculatePlatformFeePercentage, fetchMarketDataFromBlockchain, type VoteParams } from "@/tools/utils";
 import { VoteModal } from "@/components/market/VoteModal";
 import { VoteStats } from "@/components/market/VoteStats";
 import { MarketBalance } from "@/components/market/MarketBalance";
@@ -128,6 +128,23 @@ export default function MarketPage() {
 
       // Now submit the vote
       await vote(voteParams);
+
+      // Refetch fresh marketData for this market so page reflects latest votes/balances.
+      // Best-effort: if it fails, the vote still succeeded.
+      try {
+        const marketId = market.indexer!;
+        const marketDataArr = await fetchMarketDataFromBlockchain([marketId]);
+        if (marketDataArr.length > 0) {
+          const freshData = { ...marketDataArr[0], indexer: marketId };
+          const { marketDataMap, updateMarketData } = useMarketStore.getState();
+          const nextMap = new Map(marketDataMap);
+          nextMap.set(marketId, freshData);
+          updateMarketData(nextMap);
+        }
+      } catch (err) {
+        console.error("Failed to refetch market data after vote:", err);
+      }
+
       toast.success("Vote submitted successfully!");
     } catch (err: unknown) {
       console.error("Failed to vote:", err);
