@@ -217,7 +217,7 @@ export default function Welcome() {
               />
               {/* Logo */}
               <img
-                src="/logo-white-no-bkg.png"
+                src="/logo-white-no-bkg.webp"
                 alt="Penny4Thots Logo"
                 className="h-full w-full object-contain drop-shadow-lg"
                 style={{ transform: "translateZ(20px)" }}

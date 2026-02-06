@@ -3,242 +3,6 @@
 	{
 		"inputs": [
 			{
-				"internalType": "contract IERC20",
-				"name": "_paytoken",
-				"type": "address"
-			}
-		],
-		"name": "addCurrency",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "uint256",
-				"name": "_farmInWei",
-				"type": "uint256"
-			},
-			{
-				"internalType": "address",
-				"name": "_token",
-				"type": "address"
-			},
-			{
-				"internalType": "uint256[]",
-				"name": "_permittedFarms",
-				"type": "uint256[]"
-			}
-		],
-		"name": "AddToFarmReorg",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "uint256",
-				"name": "_market",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256[]",
-				"name": "_posIds",
-				"type": "uint256[]"
-			}
-		],
-		"name": "batchClaim",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "uint256",
-				"name": "_market",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256[]",
-				"name": "_posIds",
-				"type": "uint256[]"
-			}
-		],
-		"name": "batchKamikaze",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "uint256",
-				"name": "_market",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "_posId",
-				"type": "uint256"
-			}
-		],
-		"name": "claim",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "uint256",
-				"name": "_market",
-				"type": "uint256"
-			},
-			{
-				"internalType": "bool",
-				"name": "_signalWinner",
-				"type": "bool"
-			}
-		],
-		"name": "closeMarket",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "uint256",
-				"name": "_market",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "_from",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "_to",
-				"type": "uint256"
-			}
-		],
-		"name": "finalizeShares",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "uint256",
-				"name": "_market",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "_posId",
-				"type": "uint256"
-			}
-		],
-		"name": "kamikaze",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "address",
-				"name": "_burnAddress",
-				"type": "address"
-			},
-			{
-				"internalType": "address",
-				"name": "_bobbAddress",
-				"type": "address"
-			},
-			{
-				"internalType": "address",
-				"name": "_stakeAddress",
-				"type": "address"
-			},
-			{
-				"internalType": "address",
-				"name": "_devAddress",
-				"type": "address"
-			},
-			{
-				"internalType": "address",
-				"name": "_dAI",
-				"type": "address"
-			}
-		],
-		"name": "setAddresses",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "address[]",
-				"name": "_allowedFarms",
-				"type": "address[]"
-			},
-			{
-				"internalType": "uint256[]",
-				"name": "_farmingAmounts",
-				"type": "uint256[]"
-			},
-			{
-				"internalType": "uint256[]",
-				"name": "_permittedFarms",
-				"type": "uint256[]"
-			}
-		],
-		"name": "setFarmYield",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "uint256",
-				"name": "_payId",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint8[]",
-				"name": "_taxes",
-				"type": "uint8[]"
-			}
-		],
-		"name": "setValues",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "uint256",
-				"name": "market",
-				"type": "uint256"
-			}
-		],
-		"name": "sweepDust",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
 				"internalType": "address",
 				"name": "_pennyDAO",
 				"type": "address"
@@ -359,70 +123,286 @@
 	{
 		"inputs": [
 			{
-				"internalType": "bool",
-				"name": "_signal",
-				"type": "bool"
-			},
-			{
 				"internalType": "uint256",
-				"name": "_market",
+				"name": "_farmInWei",
 				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "_marketBalance",
-				"type": "uint256"
-			}
-		],
-		"name": "vote",
-		"outputs": [],
-		"stateMutability": "payable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "uint256",
-				"name": "_amount",
-				"type": "uint256"
-			}
-		],
-		"name": "withdraw",
-		"outputs": [],
-		"stateMutability": "payable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "string[]",
-				"name": "_info",
-				"type": "string[]"
-			},
-			{
-				"internalType": "uint256",
-				"name": "_marketBalance",
-				"type": "uint256"
-			},
-			{
-				"internalType": "bool",
-				"name": "_signal",
-				"type": "bool"
-			},
-			{
-				"internalType": "bool",
-				"name": "_feetype",
-				"type": "bool"
 			},
 			{
 				"internalType": "address",
-				"name": "_paymentToken",
+				"name": "_token",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256[]",
+				"name": "_permittedFarms",
+				"type": "uint256[]"
+			}
+		],
+		"name": "AddToFarmReorg",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"name": "AllowedAmounts",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"name": "AllowedCrypto",
+		"outputs": [
+			{
+				"internalType": "contract IERC20",
+				"name": "paytoken",
 				"type": "address"
 			}
 		],
-		"name": "writeMarket",
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"name": "AllowedFarms",
+		"outputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "Author",
+		"outputs": [
+			{
+				"internalType": "string",
+				"name": "",
+				"type": "string"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "BPS",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "DECAY_PROFIT_BPS",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "DECAY_WINDOW_BPS",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "KAMIKAZE_BURN_BPS",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "MAX_FINALIZE_BATCH",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"name": "TotalClaimsDistributed",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"name": "TotalKamikazeBurns",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"name": "TotalPromoBurns",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"name": "TotalPromoPaid",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"name": "TotalPromoReserved",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"name": "TotalPromoStaked",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "contract IERC20",
+				"name": "_paytoken",
+				"type": "address"
+			}
+		],
+		"name": "addCurrency",
 		"outputs": [],
-		"stateMutability": "payable",
+		"stateMutability": "nonpayable",
 		"type": "function"
 	},
 	{
@@ -507,6 +487,30 @@
 	{
 		"inputs": [
 			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"name": "allMarketLocks",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "finalizedUpTo",
+				"type": "uint256"
+			},
+			{
+				"internalType": "bool",
+				"name": "sharesFinalized",
+				"type": "bool"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
 				"internalType": "address",
 				"name": "",
 				"type": "address"
@@ -527,70 +531,36 @@
 		"inputs": [
 			{
 				"internalType": "uint256",
-				"name": "",
+				"name": "_market",
 				"type": "uint256"
-			}
-		],
-		"name": "AllowedAmounts",
-		"outputs": [
+			},
 			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
+				"internalType": "uint256[]",
+				"name": "_posIds",
+				"type": "uint256[]"
 			}
 		],
-		"stateMutability": "view",
+		"name": "batchClaim",
+		"outputs": [],
+		"stateMutability": "nonpayable",
 		"type": "function"
 	},
 	{
 		"inputs": [
 			{
 				"internalType": "uint256",
-				"name": "",
+				"name": "_market",
 				"type": "uint256"
-			}
-		],
-		"name": "AllowedCrypto",
-		"outputs": [
+			},
 			{
-				"internalType": "contract IERC20",
-				"name": "paytoken",
-				"type": "address"
+				"internalType": "uint256[]",
+				"name": "_posIds",
+				"type": "uint256[]"
 			}
 		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"name": "AllowedFarms",
-		"outputs": [
-			{
-				"internalType": "address",
-				"name": "",
-				"type": "address"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "Author",
-		"outputs": [
-			{
-				"internalType": "string",
-				"name": "",
-				"type": "string"
-			}
-		],
-		"stateMutability": "view",
+		"name": "batchKamikaze",
+		"outputs": [],
+		"stateMutability": "nonpayable",
 		"type": "function"
 	},
 	{
@@ -621,19 +591,6 @@
 	},
 	{
 		"inputs": [],
-		"name": "BPS",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [],
 		"name": "burnAddress",
 		"outputs": [
 			{
@@ -646,34 +603,44 @@
 		"type": "function"
 	},
 	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "_market",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "_posId",
+				"type": "uint256"
+			}
+		],
+		"name": "claim",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "_market",
+				"type": "uint256"
+			},
+			{
+				"internalType": "bool",
+				"name": "_signalWinner",
+				"type": "bool"
+			}
+		],
+		"name": "closeMarket",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
 		"inputs": [],
 		"name": "deadtax",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "DECAY_PROFIT_BPS",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "DECAY_WINDOW_BPS",
 		"outputs": [
 			{
 				"internalType": "uint256",
@@ -735,8 +702,37 @@
 		"type": "function"
 	},
 	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "_market",
+				"type": "uint256"
+			}
+		],
+		"name": "finalizeShares",
+		"outputs": [
+			{
+				"internalType": "bool",
+				"name": "done",
+				"type": "bool"
+			},
+			{
+				"internalType": "uint256",
+				"name": "remaining",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "nextBatchSize",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
 		"inputs": [],
-		"name": "KAMIKAZE_BURN_BPS",
+		"name": "gasfee",
 		"outputs": [
 			{
 				"internalType": "uint256",
@@ -745,6 +741,43 @@
 			}
 		],
 		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "marketId",
+				"type": "uint256"
+			}
+		],
+		"name": "isClaimable",
+		"outputs": [
+			{
+				"internalType": "bool",
+				"name": "",
+				"type": "bool"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "_market",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "_posId",
+				"type": "uint256"
+			}
+		],
+		"name": "kamikaze",
+		"outputs": [],
+		"stateMutability": "nonpayable",
 		"type": "function"
 	},
 	{
@@ -1089,6 +1122,95 @@
 		"type": "function"
 	},
 	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "_burnAddress",
+				"type": "address"
+			},
+			{
+				"internalType": "address",
+				"name": "_bobbAddress",
+				"type": "address"
+			},
+			{
+				"internalType": "address",
+				"name": "_stakeAddress",
+				"type": "address"
+			},
+			{
+				"internalType": "address",
+				"name": "_devAddress",
+				"type": "address"
+			},
+			{
+				"internalType": "address",
+				"name": "_dAI",
+				"type": "address"
+			},
+			{
+				"internalType": "address",
+				"name": "_pennyDAO",
+				"type": "address"
+			}
+		],
+		"name": "setAddresses",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address[]",
+				"name": "_allowedFarms",
+				"type": "address[]"
+			},
+			{
+				"internalType": "uint256[]",
+				"name": "_farmingAmounts",
+				"type": "uint256[]"
+			},
+			{
+				"internalType": "uint256[]",
+				"name": "_permittedFarms",
+				"type": "uint256[]"
+			}
+		],
+		"name": "setFarmYield",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "_feeInWei",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "_payId",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256[]",
+				"name": "_taxes",
+				"type": "uint256[]"
+			},
+			{
+				"internalType": "uint256[]",
+				"name": "_decay",
+				"type": "uint256[]"
+			}
+		],
+		"name": "setValues",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
 		"inputs": [],
 		"name": "stakeAddress",
 		"outputs": [
@@ -1118,6 +1240,19 @@
 		"inputs": [
 			{
 				"internalType": "uint256",
+				"name": "market",
+				"type": "uint256"
+			}
+		],
+		"name": "sweepDust",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
 				"name": "",
 				"type": "uint256"
 			},
@@ -1128,44 +1263,6 @@
 			}
 		],
 		"name": "totalClaimedSoFar",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "address",
-				"name": "",
-				"type": "address"
-			}
-		],
-		"name": "TotalClaimsDistributed",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "address",
-				"name": "",
-				"type": "address"
-			}
-		],
-		"name": "TotalKamikazeBurns",
 		"outputs": [
 			{
 				"internalType": "uint256",
@@ -1190,82 +1287,6 @@
 			}
 		],
 		"name": "totalProfit",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "address",
-				"name": "",
-				"type": "address"
-			}
-		],
-		"name": "TotalPromoBurns",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "address",
-				"name": "",
-				"type": "address"
-			}
-		],
-		"name": "TotalPromoPaid",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "address",
-				"name": "",
-				"type": "address"
-			}
-		],
-		"name": "TotalPromoReserved",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "address",
-				"name": "",
-				"type": "address"
-			}
-		],
-		"name": "TotalPromoStaked",
 		"outputs": [
 			{
 				"internalType": "uint256",
@@ -1400,6 +1421,75 @@
 			}
 		],
 		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "bool",
+				"name": "_signal",
+				"type": "bool"
+			},
+			{
+				"internalType": "uint256",
+				"name": "_market",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "_marketBalance",
+				"type": "uint256"
+			}
+		],
+		"name": "vote",
+		"outputs": [],
+		"stateMutability": "payable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "_amount",
+				"type": "uint256"
+			}
+		],
+		"name": "withdraw",
+		"outputs": [],
+		"stateMutability": "payable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "string[]",
+				"name": "_info",
+				"type": "string[]"
+			},
+			{
+				"internalType": "uint256",
+				"name": "_marketBalance",
+				"type": "uint256"
+			},
+			{
+				"internalType": "bool",
+				"name": "_signal",
+				"type": "bool"
+			},
+			{
+				"internalType": "bool",
+				"name": "_feetype",
+				"type": "bool"
+			},
+			{
+				"internalType": "address",
+				"name": "_paymentToken",
+				"type": "address"
+			}
+		],
+		"name": "writeMarket",
+		"outputs": [],
+		"stateMutability": "payable",
 		"type": "function"
 	}
   ]
