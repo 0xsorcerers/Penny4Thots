@@ -1,54 +1,30 @@
-import { useState, useEffect } from "react";
-
-
+import { useState, useEffect, useMemo } from "react";
 
 import { useParams, useNavigate } from "react-router-dom";
 
-
-
 import { motion, AnimatePresence } from "framer-motion";
 
-
-
-import { ArrowLeft, TrendingUp, TrendingDown, BarChart3, Users, Clock, Share2, Loader2} from "lucide-react";
-
-
+import { ArrowLeft, TrendingUp, TrendingDown, BarChart3, Users, Clock, Share2, Loader2 } from "lucide-react";
 
 import { useActiveAccount, useIsAutoConnecting } from "thirdweb/react";
 
-
-
 import { useMarketStore } from "@/store/marketStore";
 
+import { useMarketDataHydration } from "@/hooks/useMarketDataHydration";
 
-
-import { useVote, useTokenApprove, readPaymentToken, readTokenAllowance, isZeroAddress, fetchDataConstants, calculatePlatformFeePercentage, fetchMarketDataFromBlockchain, type VoteParams } from "@/tools/utils";
-
-
+import { useVote, useTokenApprove, readPaymentToken, readTokenAllowance, isZeroAddress, fetchDataConstants, calculatePlatformFeePercentage, type VoteParams } from "@/tools/utils";
 
 import { VoteModal } from "@/components/market/VoteModal";
 
-
-
 import { VoteStats } from "@/components/market/VoteStats";
-
-
 
 import { MarketBalance } from "@/components/market/MarketBalance";
 
-
-
 import { Button } from "@/components/ui/button";
-
-
 
 import { cn } from "@/lib/utils";
 
-
-
 import type { Address } from "viem";
-
-
 
 import { toast } from "sonner";
 
@@ -60,31 +36,30 @@ import { toast } from "sonner";
 
 export default function MarketPage() {
 
-
-
   const { id } = useParams<{ id: string }>();
-
-
 
   const navigate = useNavigate();
 
+  // Extract the numeric market indexer from the URL id (format: "penny4thot-{indexer}")
+  const targetMarketIndexer = useMemo(() => {
+    if (!id) return undefined;
+    const match = id.match(/penny4thot-(\d+)/);
+    return match ? parseInt(match[1], 10) : undefined;
+  }, [id]);
 
+  // Hydrate market data - this ensures the store is populated even for deep-link access
+  // This replicates the same data loading that Index.tsx does, ensuring consistency
+  const { isLoading: isHydrating, isHydrated, refresh: refreshMarketData } = useMarketDataHydration({
+    targetMarketId: targetMarketIndexer,
+  });
 
   const market = useMarketStore((state) => state.getMarket(id || ""));
 
-
-
   const account = useActiveAccount();
-
-
 
   const isAutoConnecting = useIsAutoConnecting();
 
-
-
   const { vote, isPending: isVoting } = useVote();
-
-
 
   const { approve, isPending: isApproving } = useTokenApprove();
 
@@ -241,6 +216,18 @@ export default function MarketPage() {
 
 
 
+
+  // Show loading state while hydrating data (deep-link scenario)
+  if (isHydrating || !isHydrated) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="text-center">
+          <Loader2 className="mx-auto mb-4 h-8 w-8 animate-spin text-primary" />
+          <p className="font-outfit text-muted-foreground">Loading market data...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!market) {
 
@@ -522,117 +509,15 @@ export default function MarketPage() {
 
 
 
-      // Refetch fresh marketData for this market so page reflects latest votes/balances.
-
-
-
-      // Best-effort: if it fails, the vote still succeeded.
-
-
-
+      // Refetch fresh market data using the same hydration process
+      // This ensures consistency with the initial data load
       try {
-
-
-
-        const marketId = market.indexer!;
-
-
-
-        const marketDataArr = await fetchMarketDataFromBlockchain([marketId]);
-
-
-
-        if (marketDataArr.length > 0) {
-
-
-
-          const freshData = { ...marketDataArr[0], indexer: marketId };
-
-
-
-          // Deep-linked MarketPage can render before `marketInfos` is populated.
-
-          // `updateMarketData` rebuilds `markets` from `marketInfos`, so it may not update
-
-          // the currently viewed market. Patch both `marketDataMap` and `markets` directly.
-
-          useMarketStore.setState((state) => {
-
-            const nextMap = new Map(state.marketDataMap);
-
-            nextMap.set(marketId, freshData);
-
-
-
-            const nextMarkets = state.markets.map((m) => {
-
-              if (m.indexer !== marketId) return m;
-
-              return {
-
-                ...m,
-
-                creator: freshData.creator,
-
-                tradeOptions: freshData.status,
-
-                yesVotes: freshData.aVotes,
-
-                noVotes: freshData.bVotes,
-
-                marketBalance: freshData.marketBalance,
-
-                status: freshData.status,
-
-                startTime: freshData.startTime,
-
-                endTime: freshData.endTime,
-
-                closed: freshData.closed,
-
-                winningSide: freshData.winningSide,
-
-                totalSharesA: freshData.totalSharesA,
-
-                totalSharesB: freshData.totalSharesB,
-
-                positionCount: freshData.positionCount,
-
-              };
-
-            });
-
-
-
-            return { marketDataMap: nextMap, markets: nextMarkets };
-
-          });
-
-
-
-        }
-
-
-
+        await refreshMarketData();
       } catch (err) {
-
-
-
-        console.error("Failed to refetch market data after vote:", err);
-
-
-
+        console.error("Failed to refresh market data after vote:", err);
       }
 
-
-
-
-
-
-
       toast.success("Vote submitted successfully!");
-
-
 
     } catch (err: unknown) {
 
