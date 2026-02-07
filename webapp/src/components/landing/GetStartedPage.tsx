@@ -3,8 +3,9 @@ import { ArrowRight, Sparkles, TrendingUp, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Connector } from "@/tools/utils";
 import { useActiveAccount } from "thirdweb/react";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 interface GetStartedPageProps {
   onGetStarted?: () => void;
@@ -13,6 +14,7 @@ interface GetStartedPageProps {
 export function GetStartedPage({ onGetStarted }: GetStartedPageProps) {
   const account = useActiveAccount();
   const navigate = useNavigate();
+  const [showConnectNotice, setShowConnectNotice] = useState(true);
 
   // Redirect to main app when connected
   useEffect(() => {
@@ -23,6 +25,16 @@ export function GetStartedPage({ onGetStarted }: GetStartedPageProps) {
       navigate("/app");
     }
   }, [account, navigate, onGetStarted]);
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      setShowConnectNotice(false);
+    }, 6000);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, []);
   return (
     <div className="relative min-h-screen overflow-hidden bg-background">
       {/* Animated background elements */}
@@ -102,6 +114,17 @@ export function GetStartedPage({ onGetStarted }: GetStartedPageProps) {
 
       {/* Main content */}
       <div className="relative z-10 flex min-h-screen flex-col items-center justify-center px-6">
+        {showConnectNotice && (
+          <div className="mb-8 w-full max-w-xl">
+            <Alert variant="destructive" className="rounded-xl">
+              <AlertTitle>Wallet not connected</AlertTitle>
+              <AlertDescription>
+                Connect your wallet to participate. This message will disappear shortly.
+              </AlertDescription>
+            </Alert>
+          </div>
+        )}
+
         {/* Badge */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -111,7 +134,7 @@ export function GetStartedPage({ onGetStarted }: GetStartedPageProps) {
         >
           <div className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-4 py-2 backdrop-blur-sm">
             <Sparkles className="h-4 w-4 text-primary" />
-            <span className="font-mono text-sm text-primary">Next Generation Prediction Market</span>
+            <span className="font-mono text-sm text-primary">Next Gen Prediction Market</span>
           </div>
         </motion.div>
 
@@ -198,7 +221,7 @@ export function GetStartedPage({ onGetStarted }: GetStartedPageProps) {
         >
           {/* Glow behind button */}
           <div className="pointer-events-none absolute -inset-4 rounded-full bg-primary/20 blur-xl" />
-          <Connector />
+          {!showConnectNotice && <Connector />}
         </motion.div>
 
         {/* Bottom text */}
