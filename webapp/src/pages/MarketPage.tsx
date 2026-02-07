@@ -12,7 +12,7 @@ import { useMarketStore } from "@/store/marketStore";
 
 import { useMarketDataHydration } from "@/hooks/useMarketDataHydration";
 
-import { useVote, useTokenApprove, readPaymentToken, readTokenAllowance, isZeroAddress, fetchDataConstants, calculatePlatformFeePercentage, type VoteParams } from "@/tools/utils";
+import { useVote, useTokenApprove, readPaymentToken, readTokenAllowance, isZeroAddress, fetchDataConstants, calculatePlatformFeePercentage, fetchMarketDataFromBlockchain, type VoteParams } from "@/tools/utils";
 
 import { VoteModal } from "@/components/market/VoteModal";
 
@@ -49,7 +49,7 @@ export default function MarketPage() {
 
   // Hydrate market data - this ensures the store is populated even for deep-link access
   // This replicates the same data loading that Index.tsx does, ensuring consistency
-  const { isLoading: isHydrating, isHydrated, refresh: refreshMarketData } = useMarketDataHydration({
+  const { isLoading: isHydrating, isHydrated } = useMarketDataHydration({
     targetMarketId: targetMarketIndexer,
   });
 
@@ -509,10 +509,41 @@ export default function MarketPage() {
 
 
 
-      // Refetch fresh market data using the same hydration process
-      // This ensures consistency with the initial data load
+      // Refetch fresh marketData for this market so page reflects latest votes/balances.
+      // This directly patches the store for seamless UI update without page refresh.
       try {
-        await refreshMarketData();
+        const marketId = market.indexer!;
+        const marketDataArr = await fetchMarketDataFromBlockchain([marketId]);
+        if (marketDataArr.length > 0) {
+          const freshData = { ...marketDataArr[0], indexer: marketId };
+          // Patch both marketDataMap and markets array directly for immediate UI update
+          useMarketStore.setState((state) => {
+            const nextMap = new Map(state.marketDataMap);
+            nextMap.set(marketId, freshData);
+
+            const nextMarkets = state.markets.map((m) => {
+              if (m.indexer !== marketId) return m;
+              return {
+                ...m,
+                creator: freshData.creator,
+                tradeOptions: freshData.status,
+                yesVotes: freshData.aVotes,
+                noVotes: freshData.bVotes,
+                marketBalance: freshData.marketBalance,
+                status: freshData.status,
+                startTime: freshData.startTime,
+                endTime: freshData.endTime,
+                closed: freshData.closed,
+                winningSide: freshData.winningSide,
+                totalSharesA: freshData.totalSharesA,
+                totalSharesB: freshData.totalSharesB,
+                positionCount: freshData.positionCount,
+              };
+            });
+
+            return { marketDataMap: nextMap, markets: nextMarkets };
+          });
+        }
       } catch (err) {
         console.error("Failed to refresh market data after vote:", err);
       }
