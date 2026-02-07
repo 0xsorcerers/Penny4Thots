@@ -339,8 +339,10 @@ const MARKET_FETCH_LIMIT = 50;
  * Fetch markets from blockchain with a limit of 50 most recent markets
  * Markets are fetched in descending order (newest first)
  * Only fetches MarketInfo (immutable data)
+ *
+ * @param additionalMarketIds - Optional array of market IDs to include even if outside the 50 most recent
  */
-export const fetchMarketsFromBlockchain = async (): Promise<MarketInfoFormatted[]> => {
+export const fetchMarketsFromBlockchain = async (additionalMarketIds?: number[]): Promise<MarketInfoFormatted[]> => {
   const marketCount = await readMarketCount();
 
   // No markets
@@ -357,6 +359,16 @@ export const fetchMarketsFromBlockchain = async (): Promise<MarketInfoFormatted[
   const marketIds: number[] = [];
   for (let i = startIndex; i >= endIndex; i--) {
     marketIds.push(i);
+  }
+
+  // Include additional market IDs (e.g., from deep links) if not already in the range
+  if (additionalMarketIds && additionalMarketIds.length > 0) {
+    for (const additionalId of additionalMarketIds) {
+      // Only add if valid and not already in the list
+      if (additionalId >= 0 && additionalId < marketCount && !marketIds.includes(additionalId)) {
+        marketIds.push(additionalId);
+      }
+    }
   }
 
   const markets = await readMarketInfo(marketIds);

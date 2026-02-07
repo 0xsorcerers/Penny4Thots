@@ -45,6 +45,15 @@ The app now separates immutable market information from volatile market data to 
   - Can be updated frequently without fetching market info
   - Enables efficient state updates without stressing RPC endpoints
 
+### Deep-Link Support
+The app supports direct links to individual market pages (`/market/:id`). The `useMarketDataHydration` hook ensures:
+
+1. Market data is fully loaded before the page renders (same as normal flow)
+2. If the linked market is outside the 50 most recent markets, it's specifically included in the fetch
+3. After voting, the store is refreshed to show updated data immediately
+
+This ensures users arriving via deep-links get the same experience as users who navigate through the app normally.
+
 ## Design System
 
 - **Fonts**: Syne (headings), Outfit (body), Space Mono (code/tags)
