@@ -78,6 +78,7 @@ export default function MyThots() {
 
   const fetchAllMarketIds = useCallback(async () => {
     if (!account?.address) {
+      console.log("[MyThots] No account connected");
       setIsLoading(false);
       return;
     }
@@ -85,12 +86,15 @@ export default function MyThots() {
     try {
       setIsLoading(true);
       const userAddress = account.address as Address;
+      console.log("[MyThots] Fetching for address:", userAddress);
 
       setLoadingProgress("Fetching total count...");
       const count = await getUserTotalThots(userAddress);
+      console.log("[MyThots] Total thots count:", count);
       setTotalCount(count);
 
       if (count === 0) {
+        console.log("[MyThots] User has no thots");
         setAllMarketIds([]);
         setIsLoading(false);
         return;
@@ -104,7 +108,9 @@ export default function MyThots() {
         const finish = Math.min(start + BATCH_SIZE, count);
 
         setLoadingProgress(`Loading batch ${batch + 1}/${numBatches}...`);
+        console.log(`[MyThots] Fetching batch ${batch + 1}: start=${start}, finish=${finish}`);
         const batchIds = await getUserThots(userAddress, start, finish);
+        console.log("[MyThots] Batch IDs received:", batchIds);
         allIds.push(...batchIds);
 
         if (batch < numBatches - 1) {
@@ -112,12 +118,14 @@ export default function MyThots() {
         }
       }
 
+      console.log("[MyThots] All IDs before filter:", allIds);
       const validIds = [...new Set(allIds.filter((id) => id > 0))];
+      console.log("[MyThots] Valid IDs after filter:", validIds);
       validIds.sort((a, b) => b - a);
       setAllMarketIds(validIds);
       setCurrentPage(1);
     } catch (error) {
-      console.error("Error fetching user thots:", error);
+      console.error("[MyThots] Error fetching user thots:", error);
       setAllMarketIds([]);
     } finally {
       setIsLoading(false);
