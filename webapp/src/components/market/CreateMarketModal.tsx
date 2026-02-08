@@ -308,7 +308,7 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
                           <Label htmlFor="posterImage" className="font-outfit text-foreground">
                             <span className="flex items-center gap-2">
                               <ImageIcon className="h-4 w-4" />
-                              Poster Image URL (optional)
+                              Poster Image URL
                             </span>
                           </Label>
                           <Input

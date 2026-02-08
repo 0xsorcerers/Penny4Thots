@@ -174,7 +174,7 @@ export default function MyThots() {
 
         if (currentAllowance < voteParams.marketBalance) {
           toast.info("Approval required", {
-            description: "Please approve the token spending in your wallet",
+            description: "Approving the token spending in your wallet",
           });
 
           await approve(voteParams.paymentToken, voteParams.marketBalance);

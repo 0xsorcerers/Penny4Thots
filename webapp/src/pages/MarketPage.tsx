@@ -465,7 +465,7 @@ export default function MarketPage() {
 
 
 
-            description: "Please approve the token spending in your wallet",
+            description: "Approving the token spending in your wallet",
 
 
 
@@ -1586,7 +1586,8 @@ export default function MarketPage() {
 
 
 
-            <h2 className="mb-4 font-syne text-lg font-bold text-foreground">Trade</h2>
+            <h2 className="mb-4 font-syne text-lg font-bold text-foreground">Trade <span className="text-xs font-normal text-muted-foreground">[Kamikaze trades have a 50% haircut for anyone desiring to alternate a vote position]</span></h2>
+            
 
 
 

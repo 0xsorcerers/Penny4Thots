@@ -150,7 +150,7 @@ export default function Index() {
         // Only approve if allowance is insufficient
         if (currentAllowance < voteParams.marketBalance) {
           toast.info("Approval required", {
-            description: "Please approve the token spending in your wallet",
+            description: "Approving the token spending in your wallet",
           });
 
           await approve(voteParams.paymentToken, voteParams.marketBalance);
@@ -223,7 +223,7 @@ export default function Index() {
         // Only approve if allowance is insufficient
         if (currentAllowance < marketBalanceBigInt) {
           toast.info("Approval required", {
-            description: "Please approve the token spending in your wallet",
+            description: "Approving the token spending in your wallet",
           });
 
           await approve(data.tokenAddress, marketBalanceBigInt);
