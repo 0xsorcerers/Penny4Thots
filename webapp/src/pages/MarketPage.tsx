@@ -778,7 +778,7 @@ export default function MarketPage() {
 
 
 
-            onClick={() => navigate("/")}
+            onClick={() => navigate(-1)}
 
 
 
