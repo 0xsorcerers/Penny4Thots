@@ -737,12 +737,12 @@ export const getUserClaimHistory = async (userAddress: Address): Promise<ClaimRe
 /**
  * Get the count of user's thots (created markets)
  */
-export const getUserThotsCount = async (userAddress: Address): Promise<number> => {
+export const getUserTotalThots = async (userAddress: Address): Promise<number> => {
   try {
     const result = await publicClient.readContract({
       address: blockchain.contract_address,
       abi: contractABI,
-      functionName: 'userThotsCount',
+      functionName: 'userTotalThots',
       args: [userAddress],
     });
     return Number(result);
@@ -754,12 +754,12 @@ export const getUserThotsCount = async (userAddress: Address): Promise<number> =
 /**
  * Get the count of user's voted markets
  */
-export const getUserMarketsCount = async (userAddress: Address): Promise<number> => {
+export const getUserTotalMarkets = async (userAddress: Address): Promise<number> => {
   try {
     const result = await publicClient.readContract({
       address: blockchain.contract_address,
       abi: contractABI,
-      functionName: 'userMarketsCount',
+      functionName: 'userTotalMarkets',
       args: [userAddress],
     });
     return Number(result);

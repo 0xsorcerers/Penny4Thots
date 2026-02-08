@@ -1,9 +1,9 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { MessageCircle, ArrowLeft, Loader2, Sparkles } from "lucide-react";
+import { MessageCircle, ArrowLeft, Loader2, Sparkles, ChevronLeft, ChevronRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useActiveAccount } from "thirdweb/react";
-import { MarketCard } from "@/components/market/MarketCard";
+import { MarketCardYourThots } from "@/components/market/MarketCardYourThots";
 import { VoteModal } from "@/components/market/VoteModal";
 import { Button } from "@/components/ui/button";
 import type { Market } from "@/types/market";
@@ -11,7 +11,7 @@ import type { Address } from "viem";
 import { toast } from "sonner";
 import {
   getUserMarkets,
-  getUserMarketsCount,
+  getUserTotalMarkets,
   readMarketInfo,
   readMarketData,
   useVote,
@@ -25,11 +25,41 @@ import {
   type VoteParams,
 } from "@/tools/utils";
 
+const BATCH_SIZE = 200;
+const BATCH_DELAY_MS = 3000;
+const ITEMS_PER_PAGE = 30;
+const STORAGE_KEY = "penny4thots-yourthots-cache";
+
+interface CachedMarketInfo {
+  [key: number]: MarketInfoFormatted;
+}
+
+const getCache = (): CachedMarketInfo => {
+  try {
+    const cached = localStorage.getItem(STORAGE_KEY);
+    return cached ? JSON.parse(cached) : {};
+  } catch {
+    return {};
+  }
+};
+
+const setCache = (cache: CachedMarketInfo) => {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(cache));
+  } catch {
+    console.warn("Failed to save to localStorage");
+  }
+};
+
 export default function YourThots() {
   const navigate = useNavigate();
   const account = useActiveAccount();
+  const [allMarketIds, setAllMarketIds] = useState<number[]>([]);
   const [markets, setMarkets] = useState<Market[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadingProgress, setLoadingProgress] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
   const [isVoteModalOpen, setIsVoteModalOpen] = useState(false);
   const [voteModalData, setVoteModalData] = useState<{
     marketId: number;
@@ -39,11 +69,14 @@ export default function YourThots() {
     optionB?: string;
   } | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const cachedInfoRef = useRef<CachedMarketInfo>(getCache());
 
   const { vote, isPending: isVoting } = useVote();
   const { approve, isPending: isApproving } = useTokenApprove();
 
-  const fetchUserMarkets = useCallback(async () => {
+  const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+  const fetchAllMarketIds = useCallback(async () => {
     if (!account?.address) {
       setIsLoading(false);
       return;
@@ -53,42 +86,92 @@ export default function YourThots() {
       setIsLoading(true);
       const userAddress = account.address as Address;
 
-      // Get the count of user's voted markets
-      const count = await getUserMarketsCount(userAddress);
+      setLoadingProgress("Fetching total count...");
+      const count = await getUserTotalMarkets(userAddress);
+      setTotalCount(count);
 
       if (count === 0) {
-        setMarkets([]);
+        setAllMarketIds([]);
         setIsLoading(false);
         return;
       }
 
-      // Fetch the market IDs
-      const marketIds = await getUserMarkets(userAddress, 0, count);
+      const allIds: number[] = [];
+      const numBatches = Math.ceil(count / BATCH_SIZE);
 
-      // Filter out zeros and duplicates
-      const validIds = [...new Set(marketIds.filter((id) => id > 0))];
+      for (let batch = 0; batch < numBatches; batch++) {
+        const start = batch * BATCH_SIZE;
+        const finish = Math.min(start + BATCH_SIZE, count);
 
-      if (validIds.length === 0) {
-        setMarkets([]);
-        setIsLoading(false);
-        return;
+        setLoadingProgress(`Loading batch ${batch + 1}/${numBatches}...`);
+        const batchIds = await getUserMarkets(userAddress, start, finish);
+        allIds.push(...batchIds);
+
+        if (batch < numBatches - 1) {
+          await sleep(BATCH_DELAY_MS);
+        }
       }
 
-      // Fetch market info and data
-      const [infos, dataArray] = await Promise.all([
-        readMarketInfo(validIds),
-        readMarketData(validIds),
-      ]);
+      const validIds = [...new Set(allIds.filter((id) => id > 0))];
+      validIds.sort((a, b) => b - a);
+      setAllMarketIds(validIds);
+      setCurrentPage(1);
+    } catch (error) {
+      console.error("Error fetching user markets:", error);
+      setAllMarketIds([]);
+    } finally {
+      setIsLoading(false);
+      setLoadingProgress("");
+    }
+  }, [account?.address]);
 
-      // Create a map for data
-      const dataMap = new Map<number, MarketDataFormatted>();
-      dataArray.forEach((data, idx) => {
-        dataMap.set(validIds[idx], { ...data, indexer: validIds[idx] });
+  const loadMarketsForPage = useCallback(async (page: number, ids: number[]) => {
+    if (ids.length === 0) {
+      setMarkets([]);
+      return;
+    }
+
+    const startIdx = (page - 1) * ITEMS_PER_PAGE;
+    const endIdx = Math.min(startIdx + ITEMS_PER_PAGE, ids.length);
+    const pageIds = ids.slice(startIdx, endIdx);
+
+    if (pageIds.length === 0) {
+      setMarkets([]);
+      return;
+    }
+
+    const cache = cachedInfoRef.current;
+    const uncachedIds = pageIds.filter(id => !cache[id]);
+    const cachedInfos = pageIds.filter(id => cache[id]).map(id => cache[id]);
+
+    let newInfos: MarketInfoFormatted[] = [];
+    if (uncachedIds.length > 0) {
+      newInfos = await readMarketInfo(uncachedIds);
+      newInfos.forEach(info => {
+        cache[info.indexer] = info;
       });
+      cachedInfoRef.current = cache;
+      setCache(cache);
+    }
 
-      // Convert to Market format
-      const formattedMarkets: Market[] = infos.map((info: MarketInfoFormatted) => {
-        const data = dataMap.get(info.indexer);
+    const allInfos = [...cachedInfos, ...newInfos];
+    const dataArray = await readMarketData(pageIds);
+
+    const dataMap = new Map<number, MarketDataFormatted>();
+    dataArray.forEach((data, idx) => {
+      dataMap.set(pageIds[idx], { ...data, indexer: pageIds[idx] });
+    });
+
+    const infoMap = new Map<number, MarketInfoFormatted>();
+    allInfos.forEach(info => {
+      infoMap.set(info.indexer, info);
+    });
+
+    const formattedMarkets = pageIds
+      .map((id) => {
+        const info = infoMap.get(id);
+        const data = dataMap.get(id);
+        if (!info) return null;
         return {
           id: `penny4thot-${info.indexer}`,
           indexer: info.indexer,
@@ -113,21 +196,24 @@ export default function YourThots() {
           totalSharesA: data?.totalSharesA || "0",
           totalSharesB: data?.totalSharesB || "0",
           positionCount: data?.positionCount || 0,
-        };
-      });
+        } as Market;
+      })
+      .filter((m): m is Market => m !== null);
 
-      setMarkets(formattedMarkets);
-    } catch (error) {
-      console.error("Error fetching user markets:", error);
-      setMarkets([]);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [account?.address]);
+    setMarkets(formattedMarkets);
+  }, []);
 
   useEffect(() => {
-    fetchUserMarkets();
-  }, [fetchUserMarkets]);
+    fetchAllMarketIds();
+  }, [fetchAllMarketIds]);
+
+  useEffect(() => {
+    if (allMarketIds.length > 0) {
+      loadMarketsForPage(currentPage, allMarketIds);
+    }
+  }, [currentPage, allMarketIds, loadMarketsForPage]);
+
+  const totalPages = Math.ceil(allMarketIds.length / ITEMS_PER_PAGE);
 
   const handleVoteClick = (marketId: number) => {
     const market = markets.find((m) => m.indexer === marketId);
@@ -184,7 +270,7 @@ export default function YourThots() {
 
       await vote(voteParams);
       toast.success("Vote submitted successfully!");
-      await fetchUserMarkets();
+      await loadMarketsForPage(currentPage, allMarketIds);
     } catch (err: unknown) {
       console.error("Failed to vote:", err);
       const errorMessage = err instanceof Error ? err.message : String(err);
@@ -206,10 +292,10 @@ export default function YourThots() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Hero Header */}
+      {/* Hero Header - Violet/Purple theme for Your Thots */}
       <div className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-secondary/10 via-background to-accent/10" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,_var(--tw-gradient-stops))] from-secondary/5 via-transparent to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-br from-violet-500/10 via-background to-purple-500/10" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,_var(--tw-gradient-stops))] from-violet-500/5 via-transparent to-transparent" />
 
         <div className="relative mx-auto max-w-7xl px-4 pt-24 pb-12 sm:px-6 lg:px-8">
           <motion.button
@@ -227,8 +313,8 @@ export default function YourThots() {
             animate={{ opacity: 1, y: 0 }}
             className="flex items-center gap-4"
           >
-            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-secondary to-accent shadow-lg shadow-secondary/25">
-              <MessageCircle className="h-8 w-8 text-primary-foreground" />
+            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600 shadow-lg shadow-violet-500/25">
+              <MessageCircle className="h-8 w-8 text-white" />
             </div>
             <div>
               <h1 className="font-syne text-4xl font-bold text-foreground">Your Thots</h1>
@@ -244,11 +330,18 @@ export default function YourThots() {
             transition={{ delay: 0.2 }}
             className="mt-6 flex items-center gap-3"
           >
-            <div className="rounded-full bg-secondary/10 px-4 py-2">
-              <span className="font-mono text-sm text-secondary">
-                {markets.length} {markets.length === 1 ? "market" : "markets"}
+            <div className="rounded-full bg-violet-500/10 px-4 py-2">
+              <span className="font-mono text-sm text-violet-500">
+                {allMarketIds.length} {allMarketIds.length === 1 ? "market" : "markets"}
               </span>
             </div>
+            {totalPages > 1 && (
+              <div className="rounded-full bg-muted px-4 py-2">
+                <span className="font-mono text-sm text-muted-foreground">
+                  Page {currentPage} of {totalPages}
+                </span>
+              </div>
+            )}
           </motion.div>
         </div>
       </div>
@@ -262,10 +355,10 @@ export default function YourThots() {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border/50 bg-card/50 py-20"
+              className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-violet-500/30 bg-card/50 py-20"
             >
-              <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted">
-                <MessageCircle className="h-8 w-8 text-muted-foreground" />
+              <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-violet-500/10">
+                <MessageCircle className="h-8 w-8 text-violet-500" />
               </div>
               <h3 className="mb-2 font-syne text-xl font-bold text-foreground">
                 Connect Your Wallet
@@ -280,40 +373,96 @@ export default function YourThots() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border/50 bg-card/50 py-20"
+              className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-violet-500/30 bg-card/50 py-20"
             >
-              <Loader2 className="h-10 w-10 animate-spin text-secondary mb-4" />
-              <p className="font-outfit text-muted-foreground">Loading your voted markets...</p>
+              <Loader2 className="h-10 w-10 animate-spin text-violet-500 mb-4" />
+              <p className="font-outfit text-muted-foreground">{loadingProgress || "Loading your voted markets..."}</p>
             </motion.div>
           ) : markets.length > 0 ? (
-            <motion.div
-              key="grid"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
-            >
-              {markets.map((market, index) => (
-                <motion.div
-                  key={market.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.05 }}
-                >
-                  <MarketCard market={market} onVoteClick={handleVoteClick} />
-                </motion.div>
-              ))}
-            </motion.div>
+            <>
+              <motion.div
+                key="grid"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
+              >
+                {markets.map((market, index) => (
+                  <motion.div
+                    key={market.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.03 }}
+                  >
+                    <MarketCardYourThots market={market} onVoteClick={handleVoteClick} />
+                  </motion.div>
+                ))}
+              </motion.div>
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="mt-8 flex items-center justify-center gap-4">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                    className="border-violet-500/30 hover:bg-violet-500/10"
+                  >
+                    <ChevronLeft className="h-4 w-4 mr-1" />
+                    Previous
+                  </Button>
+                  <div className="flex items-center gap-2">
+                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                      let pageNum: number;
+                      if (totalPages <= 5) {
+                        pageNum = i + 1;
+                      } else if (currentPage <= 3) {
+                        pageNum = i + 1;
+                      } else if (currentPage >= totalPages - 2) {
+                        pageNum = totalPages - 4 + i;
+                      } else {
+                        pageNum = currentPage - 2 + i;
+                      }
+                      return (
+                        <Button
+                          key={pageNum}
+                          variant={currentPage === pageNum ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setCurrentPage(pageNum)}
+                          className={currentPage === pageNum
+                            ? "bg-violet-500 hover:bg-violet-600"
+                            : "border-violet-500/30 hover:bg-violet-500/10"
+                          }
+                        >
+                          {pageNum}
+                        </Button>
+                      );
+                    })}
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                    disabled={currentPage === totalPages}
+                    className="border-violet-500/30 hover:bg-violet-500/10"
+                  >
+                    Next
+                    <ChevronRight className="h-4 w-4 ml-1" />
+                  </Button>
+                </div>
+              )}
+            </>
           ) : (
             <motion.div
               key="empty"
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border/50 bg-card/50 py-20"
+              className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-violet-500/30 bg-card/50 py-20"
             >
-              <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-secondary/10">
-                <Sparkles className="h-8 w-8 text-secondary" />
+              <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-violet-500/10">
+                <Sparkles className="h-8 w-8 text-violet-500" />
               </div>
               <h3 className="mb-2 font-syne text-xl font-bold text-foreground">
                 No Votes Yet
@@ -324,7 +473,7 @@ export default function YourThots() {
               </p>
               <Button
                 onClick={() => navigate("/app")}
-                className="rounded-xl bg-secondary font-outfit font-semibold text-secondary-foreground"
+                className="rounded-xl bg-violet-500 hover:bg-violet-600 font-outfit font-semibold"
               >
                 Explore Markets
               </Button>
