@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   History as HistoryIcon,
@@ -8,6 +8,11 @@ import {
   Coins,
   ExternalLink,
   Sparkles,
+  Trophy,
+  TrendingUp,
+  TrendingDown,
+  Hash,
+  Layers,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useActiveAccount } from "thirdweb/react";
@@ -16,14 +21,40 @@ import {
   getUserClaimHistory,
   blockchain,
   truncateAddress,
+  readMarketInfo,
   type ClaimRecord,
+  type MarketInfoFormatted,
+  Side,
 } from "@/tools/utils";
+import { useMarketStore } from "@/store/marketStore";
+
+// Color palette for distinguishing markets
+const MARKET_COLORS = [
+  { bg: "from-emerald-500/20 to-teal-500/20", border: "border-emerald-500/30", accent: "text-emerald-400", glow: "shadow-emerald-500/20" },
+  { bg: "from-violet-500/20 to-purple-500/20", border: "border-violet-500/30", accent: "text-violet-400", glow: "shadow-violet-500/20" },
+  { bg: "from-amber-500/20 to-orange-500/20", border: "border-amber-500/30", accent: "text-amber-400", glow: "shadow-amber-500/20" },
+  { bg: "from-cyan-500/20 to-blue-500/20", border: "border-cyan-500/30", accent: "text-cyan-400", glow: "shadow-cyan-500/20" },
+  { bg: "from-rose-500/20 to-pink-500/20", border: "border-rose-500/30", accent: "text-rose-400", glow: "shadow-rose-500/20" },
+  { bg: "from-lime-500/20 to-green-500/20", border: "border-lime-500/30", accent: "text-lime-400", glow: "shadow-lime-500/20" },
+  { bg: "from-fuchsia-500/20 to-pink-500/20", border: "border-fuchsia-500/30", accent: "text-fuchsia-400", glow: "shadow-fuchsia-500/20" },
+  { bg: "from-sky-500/20 to-indigo-500/20", border: "border-sky-500/30", accent: "text-sky-400", glow: "shadow-sky-500/20" },
+];
+
+// Seeded random for consistent colors per market
+function getMarketColor(marketId: number) {
+  return MARKET_COLORS[marketId % MARKET_COLORS.length];
+}
+
+interface ClaimWithMarketInfo extends ClaimRecord {
+  marketInfo?: MarketInfoFormatted;
+}
 
 export default function History() {
   const navigate = useNavigate();
   const account = useActiveAccount();
-  const [claims, setClaims] = useState<ClaimRecord[]>([]);
+  const [claims, setClaims] = useState<ClaimWithMarketInfo[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const marketDataMap = useMarketStore((state) => state.marketDataMap);
 
   const fetchClaimHistory = useCallback(async () => {
     if (!account?.address) {
@@ -35,7 +66,30 @@ export default function History() {
       setIsLoading(true);
       const userAddress = account.address as Address;
       const history = await getUserClaimHistory(userAddress);
-      setClaims(history);
+
+      // Get unique market IDs from claims
+      const uniqueMarketIds = [...new Set(history.map(c => c.marketId))];
+
+      // Fetch market info for all unique markets
+      let marketInfoMap: Map<number, MarketInfoFormatted> = new Map();
+      if (uniqueMarketIds.length > 0) {
+        try {
+          const marketInfos = await readMarketInfo(uniqueMarketIds);
+          marketInfos.forEach(info => {
+            marketInfoMap.set(info.indexer, info);
+          });
+        } catch (err) {
+          console.error("Failed to fetch market info for claims:", err);
+        }
+      }
+
+      // Enrich claims with market info
+      const enrichedClaims: ClaimWithMarketInfo[] = history.map(claim => ({
+        ...claim,
+        marketInfo: marketInfoMap.get(claim.marketId),
+      }));
+
+      setClaims(enrichedClaims);
     } catch (error) {
       console.error("Error fetching claim history:", error);
       setClaims([]);
@@ -48,6 +102,23 @@ export default function History() {
     fetchClaimHistory();
   }, [fetchClaimHistory]);
 
+  // Calculate total claimed amount
+  const totalClaimed = useMemo(() => {
+    return claims.reduce((sum, claim) => sum + parseFloat(claim.amount), 0);
+  }, [claims]);
+
+  // Group claims by market for summary
+  const marketSummary = useMemo(() => {
+    const summary = new Map<number, { count: number; total: number; title: string }>();
+    claims.forEach(claim => {
+      const existing = summary.get(claim.marketId) || { count: 0, total: 0, title: claim.marketInfo?.title || `Market #${claim.marketId}` };
+      existing.count += 1;
+      existing.total += parseFloat(claim.amount);
+      summary.set(claim.marketId, existing);
+    });
+    return summary;
+  }, [claims]);
+
   const formatDate = (timestamp: number) => {
     const date = new Date(timestamp * 1000);
     return date.toLocaleDateString("en-US", {
@@ -59,28 +130,59 @@ export default function History() {
     });
   };
 
+  const formatRelativeTime = (timestamp: number) => {
+    const now = Date.now() / 1000;
+    const diff = now - timestamp;
+
+    if (diff < 60) return "Just now";
+    if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+    if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+    if (diff < 604800) return `${Math.floor(diff / 86400)}d ago`;
+    return formatDate(timestamp);
+  };
+
   const formatAmount = (amount: string) => {
     const num = parseFloat(amount);
     if (num < 0.0001) return "< 0.0001";
-    return num.toFixed(4);
+    if (num < 1) return num.toFixed(4);
+    if (num < 100) return num.toFixed(3);
+    return num.toFixed(2);
+  };
+
+  const getWinningSideLabel = (marketId: number, marketInfo?: MarketInfoFormatted) => {
+    const marketData = marketDataMap.get(marketId);
+    if (!marketData) return null;
+
+    if (marketData.winningSide === Side.A) {
+      return { side: "A", label: marketInfo?.optionA || "Yes", isYes: true };
+    } else if (marketData.winningSide === Side.B) {
+      return { side: "B", label: marketInfo?.optionB || "No", isYes: false };
+    }
+    return null;
   };
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Animated Background */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-1/2 -right-1/2 w-full h-full bg-gradient-to-bl from-primary/5 via-transparent to-transparent animate-pulse" style={{ animationDuration: '4s' }} />
+        <div className="absolute -bottom-1/2 -left-1/2 w-full h-full bg-gradient-to-tr from-accent/5 via-transparent to-transparent animate-pulse" style={{ animationDuration: '6s' }} />
+      </div>
+
       {/* Hero Header */}
       <div className="relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-accent/10 via-background to-primary/10" />
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_right,_var(--tw-gradient-stops))] from-accent/5 via-transparent to-transparent" />
 
-        <div className="relative mx-auto max-w-7xl px-4 pt-24 pb-12 sm:px-6 lg:px-8">
+        <div className="relative mx-auto max-w-7xl px-4 pt-24 pb-8 sm:px-6 lg:px-8">
           <motion.button
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
-            onClick={() => navigate("/app")}
+            onClick={() => navigate(-1)}
             className="mb-8 flex items-center gap-2 font-outfit text-muted-foreground hover:text-foreground transition-colors"
           >
             <ArrowLeft className="h-4 w-4" />
-            Back to Markets
+            Back
           </motion.button>
 
           <motion.div
@@ -88,34 +190,68 @@ export default function History() {
             animate={{ opacity: 1, y: 0 }}
             className="flex items-center gap-4"
           >
-            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-accent to-primary shadow-lg shadow-accent/25">
-              <HistoryIcon className="h-8 w-8 text-primary-foreground" />
+            <div className="relative">
+              <div className="absolute inset-0 bg-gradient-to-br from-accent to-primary rounded-2xl blur-xl opacity-50" />
+              <div className="relative flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-accent to-primary shadow-lg">
+                <Trophy className="h-8 w-8 text-primary-foreground" />
+              </div>
             </div>
             <div>
-              <h1 className="font-syne text-4xl font-bold text-foreground">History</h1>
+              <h1 className="font-syne text-4xl font-bold text-foreground">Claim History</h1>
               <p className="mt-1 font-outfit text-lg text-muted-foreground">
-                Your claim history
+                Your winning positions and rewards
               </p>
             </div>
           </motion.div>
 
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.2 }}
-            className="mt-6 flex items-center gap-3"
-          >
-            <div className="rounded-full bg-accent/10 px-4 py-2">
-              <span className="font-mono text-sm text-accent">
-                {claims.length} {claims.length === 1 ? "claim" : "claims"}
-              </span>
-            </div>
-          </motion.div>
+          {/* Stats Summary */}
+          {claims.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+              className="mt-8 grid grid-cols-2 sm:grid-cols-4 gap-4"
+            >
+              <div className="rounded-2xl border border-border/50 bg-card/50 backdrop-blur-sm p-4">
+                <div className="flex items-center gap-2 text-muted-foreground mb-1">
+                  <Layers className="h-4 w-4" />
+                  <span className="font-outfit text-sm">Total Claims</span>
+                </div>
+                <p className="font-mono text-2xl font-bold text-foreground">{claims.length}</p>
+              </div>
+
+              <div className="rounded-2xl border border-border/50 bg-card/50 backdrop-blur-sm p-4">
+                <div className="flex items-center gap-2 text-muted-foreground mb-1">
+                  <Coins className="h-4 w-4" />
+                  <span className="font-outfit text-sm">Total Earned</span>
+                </div>
+                <p className="font-mono text-2xl font-bold text-yes">{formatAmount(totalClaimed.toString())}</p>
+              </div>
+
+              <div className="rounded-2xl border border-border/50 bg-card/50 backdrop-blur-sm p-4">
+                <div className="flex items-center gap-2 text-muted-foreground mb-1">
+                  <Hash className="h-4 w-4" />
+                  <span className="font-outfit text-sm">Markets Won</span>
+                </div>
+                <p className="font-mono text-2xl font-bold text-foreground">{marketSummary.size}</p>
+              </div>
+
+              <div className="rounded-2xl border border-border/50 bg-card/50 backdrop-blur-sm p-4">
+                <div className="flex items-center gap-2 text-muted-foreground mb-1">
+                  <TrendingUp className="h-4 w-4" />
+                  <span className="font-outfit text-sm">Avg per Claim</span>
+                </div>
+                <p className="font-mono text-2xl font-bold text-accent">
+                  {formatAmount((totalClaimed / claims.length).toString())}
+                </p>
+              </div>
+            </motion.div>
+          )}
         </div>
       </div>
 
       {/* Content */}
-      <div className="mx-auto max-w-4xl px-4 pb-12 sm:px-6 lg:px-8">
+      <div className="relative mx-auto max-w-4xl px-4 pb-12 sm:px-6 lg:px-8">
         <AnimatePresence mode="wait">
           {!account?.address ? (
             <motion.div
@@ -154,64 +290,136 @@ export default function History() {
               exit={{ opacity: 0 }}
               className="space-y-4"
             >
-              {claims.map((claim, index) => (
-                <motion.div
-                  key={`${claim.marketId}-${claim.positionId}-${claim.timestamp}`}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.05 }}
-                  className="group relative overflow-hidden rounded-2xl border border-border/50 bg-card/80 backdrop-blur-sm p-6 transition-all hover:border-accent/30 hover:shadow-[0_0_30px_rgba(var(--accent),0.1)]"
-                >
-                  {/* Gradient accent line */}
-                  <div className="absolute top-0 left-0 h-1 w-full bg-gradient-to-r from-accent via-primary to-secondary opacity-50 group-hover:opacity-100 transition-opacity" />
+              {/* Timeline */}
+              <div className="relative">
+                {/* Timeline line */}
+                <div className="absolute left-6 top-0 bottom-0 w-px bg-gradient-to-b from-accent via-primary to-border hidden sm:block" />
 
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                    {/* Left side - Claim details */}
-                    <div className="flex items-start gap-4">
-                      <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-accent/20 to-primary/20 flex-shrink-0">
-                        <Coins className="h-6 w-6 text-accent" />
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="font-syne text-lg font-bold text-foreground">
-                            Market #{claim.marketId}
-                          </span>
-                          <span className="rounded-full bg-muted px-2 py-0.5 font-mono text-xs text-muted-foreground">
-                            Position #{claim.positionId}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <Clock className="h-3.5 w-3.5" />
-                          <span className="font-outfit">{formatDate(claim.timestamp)}</span>
-                        </div>
-                      </div>
-                    </div>
+                {claims.map((claim, index) => {
+                  const colorScheme = getMarketColor(claim.marketId);
+                  const winningSide = getWinningSideLabel(claim.marketId, claim.marketInfo);
 
-                    {/* Right side - Amount and token */}
-                    <div className="flex items-center gap-4">
-                      <div className="text-right">
-                        <p className="font-mono text-2xl font-bold text-yes">
-                          +{formatAmount(claim.amount)}
-                        </p>
-                        <div className="flex items-center justify-end gap-1.5 mt-1">
-                          <span className="font-outfit text-sm text-muted-foreground">
-                            {truncateAddress(claim.token)}
-                          </span>
+                  return (
+                    <motion.div
+                      key={`${claim.marketId}-${claim.positionId}-${claim.timestamp}`}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: index * 0.05 }}
+                      className="relative pl-0 sm:pl-16"
+                    >
+                      {/* Timeline dot */}
+                      <div className={`absolute left-4 top-6 hidden sm:flex h-5 w-5 items-center justify-center rounded-full bg-gradient-to-br ${colorScheme.bg} ${colorScheme.border} border-2 shadow-lg ${colorScheme.glow}`}>
+                        <div className={`h-2 w-2 rounded-full ${colorScheme.accent} bg-current`} />
+                      </div>
+
+                      <div
+                        className={`group relative overflow-hidden rounded-2xl border ${colorScheme.border} bg-gradient-to-br ${colorScheme.bg} backdrop-blur-sm p-6 transition-all hover:shadow-xl ${colorScheme.glow} cursor-pointer`}
+                        onClick={() => navigate(`/market/penny4thot-${claim.marketId}`)}
+                      >
+                        {/* Shimmer effect on hover */}
+                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity -translate-x-full group-hover:translate-x-full duration-1000" />
+
+                        {/* Header with market info */}
+                        <div className="flex flex-col gap-4 mb-4">
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1 min-w-0">
+                              {claim.marketInfo ? (
+                                <>
+                                  <h3 className="font-syne text-lg font-bold text-foreground truncate group-hover:text-primary transition-colors">
+                                    {claim.marketInfo.title}
+                                  </h3>
+                                  <p className="font-outfit text-sm text-muted-foreground mt-1 line-clamp-2">
+                                    {claim.marketInfo.subtitle}
+                                  </p>
+                                </>
+                              ) : (
+                                <h3 className="font-syne text-lg font-bold text-foreground">
+                                  Market #{claim.marketId}
+                                </h3>
+                              )}
+                            </div>
+
+                            {/* Amount badge */}
+                            <div className="flex flex-col items-end">
+                              <div className="rounded-xl bg-yes/20 px-4 py-2 backdrop-blur-sm">
+                                <p className="font-mono text-xl font-bold text-yes">
+                                  +{formatAmount(claim.amount)}
+                                </p>
+                              </div>
+                              <span className="font-outfit text-xs text-muted-foreground mt-1">
+                                {formatRelativeTime(claim.timestamp)}
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Tags row */}
+                          {claim.marketInfo?.tags && claim.marketInfo.tags.length > 0 && (
+                            <div className="flex flex-wrap gap-2">
+                              {claim.marketInfo.tags.slice(0, 3).map((tag) => (
+                                <span
+                                  key={tag}
+                                  className="rounded-full bg-muted/50 px-2 py-0.5 font-mono text-xs text-muted-foreground"
+                                >
+                                  {tag}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Details row */}
+                        <div className="flex flex-wrap items-center gap-3 text-sm">
+                          {/* Position ID */}
+                          <div className="flex items-center gap-1.5 rounded-lg bg-muted/30 px-2.5 py-1.5">
+                            <Hash className={`h-3.5 w-3.5 ${colorScheme.accent}`} />
+                            <span className="font-mono text-foreground/80">Position #{claim.positionId}</span>
+                          </div>
+
+                          {/* Winning side indicator */}
+                          {winningSide && (
+                            <div className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 ${winningSide.isYes ? 'bg-yes/20' : 'bg-no/20'}`}>
+                              {winningSide.isYes ? (
+                                <TrendingUp className="h-3.5 w-3.5 text-yes" />
+                              ) : (
+                                <TrendingDown className="h-3.5 w-3.5 text-no" />
+                              )}
+                              <span className={`font-outfit ${winningSide.isYes ? 'text-yes' : 'text-no'}`}>
+                                {winningSide.label} won
+                              </span>
+                            </div>
+                          )}
+
+                          {/* Timestamp */}
+                          <div className="flex items-center gap-1.5 rounded-lg bg-muted/30 px-2.5 py-1.5">
+                            <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+                            <span className="font-outfit text-foreground/80">{formatDate(claim.timestamp)}</span>
+                          </div>
+
+                          {/* Token link */}
                           <a
                             href={`${blockchain.blockExplorer}/address/${claim.token}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             onClick={(e) => e.stopPropagation()}
-                            className="text-muted-foreground hover:text-accent transition-colors"
+                            className="flex items-center gap-1.5 rounded-lg bg-muted/30 px-2.5 py-1.5 hover:bg-muted/50 transition-colors"
                           >
-                            <ExternalLink className="h-3.5 w-3.5" />
+                            <Coins className="h-3.5 w-3.5 text-muted-foreground" />
+                            <span className="font-mono text-xs text-muted-foreground">
+                              {truncateAddress(claim.token)}
+                            </span>
+                            <ExternalLink className="h-3 w-3 text-muted-foreground" />
                           </a>
                         </div>
+
+                        {/* Click hint */}
+                        <div className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <span className="font-outfit text-xs text-muted-foreground">Click to view market</span>
+                        </div>
                       </div>
-                    </div>
-                  </div>
-                </motion.div>
-              ))}
+                    </motion.div>
+                  );
+                })}
+              </div>
             </motion.div>
           ) : (
             <motion.div
@@ -221,8 +429,11 @@ export default function History() {
               exit={{ opacity: 0, scale: 0.95 }}
               className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border/50 bg-card/50 py-20"
             >
-              <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-accent/10">
-                <Sparkles className="h-8 w-8 text-accent" />
+              <div className="relative mb-4">
+                <div className="absolute inset-0 bg-gradient-to-br from-accent/20 to-primary/20 rounded-full blur-xl" />
+                <div className="relative flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-accent/10 to-primary/10">
+                  <Sparkles className="h-10 w-10 text-accent" />
+                </div>
               </div>
               <h3 className="mb-2 font-syne text-xl font-bold text-foreground">
                 No Claims Yet
@@ -231,6 +442,14 @@ export default function History() {
                 You haven't claimed any winnings yet. Vote on markets and claim your rewards when
                 they resolve!
               </p>
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => navigate("/app")}
+                className="rounded-xl bg-gradient-to-r from-accent to-primary px-6 py-3 font-outfit font-semibold text-primary-foreground shadow-lg hover:shadow-xl transition-shadow"
+              >
+                Explore Markets
+              </motion.button>
             </motion.div>
           )}
         </AnimatePresence>
