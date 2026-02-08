@@ -649,5 +649,124 @@ export const useTokenApprove = () => {
   return { approve, isPending, error };
 };
 
+// ============================================================================
+// User Profile Functions (for My Thots, Your Thots, History pages)
+// ============================================================================
+
+/**
+ * Get user's created thots (markets they created)
+ * Returns array of market IDs
+ */
+export const getUserThots = async (userAddress: Address, start: number, finish: number): Promise<number[]> => {
+  const result = await publicClient.readContract({
+    address: blockchain.contract_address,
+    abi: contractABI,
+    functionName: 'getUserThots',
+    args: [userAddress, BigInt(start), BigInt(finish)],
+  });
+
+  return (result as bigint[]).map((id) => Number(id));
+};
+
+/**
+ * Get user's voted markets (markets they participated in)
+ * Returns array of market IDs
+ */
+export const getUserMarkets = async (userAddress: Address, start: number, finish: number): Promise<number[]> => {
+  const result = await publicClient.readContract({
+    address: blockchain.contract_address,
+    abi: contractABI,
+    functionName: 'getUserMarkets',
+    args: [userAddress, BigInt(start), BigInt(finish)],
+  });
+
+  return (result as bigint[]).map((id) => Number(id));
+};
+
+/**
+ * ClaimRecord structure from the contract
+ */
+export interface ClaimRecord {
+  marketId: number;
+  token: Address;
+  amount: string;
+  timestamp: number;
+  positionId: number;
+}
+
+/**
+ * Get user's claim history
+ * Returns array of ClaimRecord
+ */
+export const getUserClaimHistory = async (userAddress: Address): Promise<ClaimRecord[]> => {
+  // The contract stores claim history as an array, we need to iterate
+  // We'll try to fetch up to 100 records (or until we hit an error/empty)
+  const claims: ClaimRecord[] = [];
+
+  for (let i = 0; i < 100; i++) {
+    try {
+      const result = await publicClient.readContract({
+        address: blockchain.contract_address,
+        abi: contractABI,
+        functionName: 'userClaimHistory',
+        args: [userAddress, BigInt(i)],
+      });
+
+      const [marketId, token, amount, timestamp, positionId] = result as [bigint, Address, bigint, bigint, bigint];
+
+      // If we get a zero timestamp, it means empty/end of array
+      if (Number(timestamp) === 0) break;
+
+      claims.push({
+        marketId: Number(marketId),
+        token,
+        amount: formatEther(amount),
+        timestamp: Number(timestamp),
+        positionId: Number(positionId),
+      });
+    } catch {
+      // If the call fails, we've reached the end of the array
+      break;
+    }
+  }
+
+  // Return in reverse order (newest first)
+  return claims.reverse();
+};
+
+/**
+ * Get the count of user's thots (created markets)
+ */
+export const getUserThotsCount = async (userAddress: Address): Promise<number> => {
+  try {
+    const result = await publicClient.readContract({
+      address: blockchain.contract_address,
+      abi: contractABI,
+      functionName: 'userThotsCount',
+      args: [userAddress],
+    });
+    return Number(result);
+  } catch {
+    return 0;
+  }
+};
+
+/**
+ * Get the count of user's voted markets
+ */
+export const getUserMarketsCount = async (userAddress: Address): Promise<number> => {
+  try {
+    const result = await publicClient.readContract({
+      address: blockchain.contract_address,
+      abi: contractABI,
+      functionName: 'userMarketsCount',
+      args: [userAddress],
+    });
+    return Number(result);
+  } catch {
+    return 0;
+  }
+};
+
 // Re-export useful viem utilities
 export { formatEther, parseEther, ZERO_ADDRESS };
