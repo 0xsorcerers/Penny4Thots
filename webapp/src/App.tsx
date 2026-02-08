@@ -8,6 +8,9 @@ import { client, wallets } from "@/tools/utils";
 import Welcome from "./pages/Welcome";
 import Index from "./pages/Index";
 import MarketPage from "./pages/MarketPage";
+import MyThots from "./pages/MyThots";
+import YourThots from "./pages/YourThots";
+import History from "./pages/History";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -33,6 +36,9 @@ const App = () => (
             <Route path="/" element={<Welcome />} />
             <Route path="/app" element={<Index />} />
             <Route path="/market/:id" element={<MarketPage />} />
+            <Route path="/my-thots" element={<MyThots />} />
+            <Route path="/your-thots" element={<YourThots />} />
+            <Route path="/history" element={<History />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

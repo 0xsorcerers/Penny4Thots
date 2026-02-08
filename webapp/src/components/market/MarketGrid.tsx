@@ -6,6 +6,7 @@ import { MarketCard } from "./MarketCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ProfileDropdown } from "@/components/profile/ProfileDropdown";
 
 // Fisher-Yates shuffle algorithm
 const shuffleArray = <T,>(array: T[]): T[] => {
@@ -121,6 +122,8 @@ export function MarketGrid({ markets, onCreateMarket, onVoteClick, onRefreshMark
                 Create Market
               </span>
             </Button>
+
+            <ProfileDropdown />
           </div>
         </motion.div>
 

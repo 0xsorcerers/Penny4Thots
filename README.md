@@ -20,6 +20,10 @@ Structure:
 ### Market Grid Header
 - **Create Market Button**: Standard button to create a new prediction market
 - **Refresh Markets Button**: Circular button with rotating refresh icon next to Create Market. Clears all markets from local cache and fetches fresh data from the blockchain on user request.
+- **Your Profile Dropdown**: Slick dropdown menu button with user profile icon. Provides access to:
+  - **My Thots**: View markets you've created (calls `getUserThots`)
+  - **Your Thots**: View markets you've voted on (calls `getUserMarkets`)
+  - **History**: View your claim history with detailed records (calls `getUserClaimHistory`)
 
 ### Market Card Button Flow
 - **Initial state**: Shows "Vote" button as the primary action
@@ -49,6 +53,11 @@ Structure:
 - `readPaymentToken(marketId)` - Reads payment token address for a market
 - `useWriteMarket()` - Hook for creating new markets on-chain
 - `useVote()` - Hook for voting on markets with amount
+- `getUserThots(address, start, finish)` - Gets array of market IDs the user created
+- `getUserMarkets(address, start, finish)` - Gets array of market IDs the user voted on
+- `getUserClaimHistory(address)` - Gets array of ClaimRecord for user's claim history
+- `getUserThotsCount(address)` - Gets count of user's created markets
+- `getUserMarketsCount(address)` - Gets count of user's voted markets
 
 ### Tag Display
 - Markets display first 3 tags directly on the card
