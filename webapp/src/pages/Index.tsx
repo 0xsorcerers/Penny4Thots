@@ -6,7 +6,7 @@ import { CreateMarketModal } from "@/components/market/CreateMarketModal";
 import { VoteModal } from "@/components/market/VoteModal";
 import { useMarketStore } from "@/store/marketStore";
 import { useActiveAccount } from "thirdweb/react";
-import { useWriteMarket, useVote, useTokenApprove, fetchMarketsFromBlockchain, fetchMarketDataFromBlockchain, readMarketCount, readPaymentToken, readTokenAllowance, toWei, isZeroAddress, blockchain, type VoteParams } from "@/tools/utils";
+import { useWriteMarket, useVote, useTokenApprove, fetchMarketsFromBlockchain, fetchMarketDataFromBlockchain, readMarketCount, readPaymentToken, readTokenAllowance, readTokenBalance, toWei, isZeroAddress, blockchain, formatEther, type VoteParams } from "@/tools/utils";
 import type { CreateMarketData } from "@/types/market";
 import type { Address } from "viem";
 import { toast } from "sonner";
@@ -124,7 +124,23 @@ export default function Index() {
     try {
       // Check if token payment is needed (feetype = true means token, false means ETH)
       if (voteParams.feetype) {
-        // Token payment - check allowance and approve only if necessary
+        // Token payment - check balance first
+        const userBalance = await readTokenBalance(
+          voteParams.paymentToken,
+          account.address as Address
+        );
+
+        // Check if user has sufficient balance
+        if (userBalance < voteParams.marketBalance) {
+          const balanceInEth = formatEther(userBalance);
+          const requiredInEth = formatEther(voteParams.marketBalance);
+          toast.error("Insufficient token balance", {
+            description: `You have ${balanceInEth} but need ${requiredInEth}`,
+          });
+          throw new Error(`Insufficient balance: have ${balanceInEth}, need ${requiredInEth}`);
+        }
+
+        // Balance is sufficient - now check allowance
         const currentAllowance = await readTokenAllowance(
           voteParams.paymentToken,
           account.address as Address,
@@ -134,7 +150,7 @@ export default function Index() {
         // Only approve if allowance is insufficient
         if (currentAllowance < voteParams.marketBalance) {
           toast.info("Approval required", {
-            description: "Please approve the token spending in your wallet",
+            description: "Approving the token spending in your wallet",
           });
 
           await approve(voteParams.paymentToken, voteParams.marketBalance);
@@ -181,6 +197,23 @@ export default function Index() {
 
       // Check token allowance if paying with token
       if (data.useToken) {
+        // First, check if user has sufficient balance
+        const userBalance = await readTokenBalance(
+          data.tokenAddress,
+          account.address as Address
+        );
+
+        // Check if user has sufficient balance
+        if (userBalance < marketBalanceBigInt) {
+          const balanceInEth = formatEther(userBalance);
+          const requiredInEth = formatEther(marketBalanceBigInt);
+          toast.error("Insufficient token balance", {
+            description: `You have ${balanceInEth} but need ${requiredInEth}`,
+          });
+          throw new Error(`Insufficient balance: have ${balanceInEth}, need ${requiredInEth}`);
+        }
+
+        // Balance is sufficient - now check allowance
         const currentAllowance = await readTokenAllowance(
           data.tokenAddress,
           account.address as Address,
@@ -190,7 +223,7 @@ export default function Index() {
         // Only approve if allowance is insufficient
         if (currentAllowance < marketBalanceBigInt) {
           toast.info("Approval required", {
-            description: "Please approve the token spending in your wallet",
+            description: "Approving the token spending in your wallet",
           });
 
           await approve(data.tokenAddress, marketBalanceBigInt);

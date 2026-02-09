@@ -118,16 +118,17 @@ export const wallets = [
   inAppWallet({
     auth: {
       options: [
-        "farcaster",
         "google",
         "x",
         "telegram",
         "facebook",
         "discord",
         "apple",
+        "farcaster",
         "phone",
         "email",
       ],
+      mode: "popup",
     },
   }),
 ];
@@ -141,7 +142,7 @@ export const blockchain = {
   rpc: 'https://ethereum-sepolia-rpc.publicnode.com',
   blockExplorer: 'https://sepolia.etherscan.io',
   decimals: 18,
-  contract_address: '0xD62e42045bD70Fc3B35dF85449479099F3259FB7' as Address,
+  contract_address: '0x259860c285D87EE1dEA106A6320BDc699b2a3537' as Address,
   symbol: 'sETH',
 };
 
@@ -168,7 +169,7 @@ export function Connector(): ReactElement {
   return (
     <ConnectButton
       client={client}
-      chain={sepolia}
+      chain={network}
       wallets={wallets}
       theme={darkTheme({
         colors: {
@@ -184,12 +185,12 @@ export function Connector(): ReactElement {
       connectModal={{
         size: "wide",
         title: "Connect to Penny4Thots",
-        titleIcon: "/logo-white-no-bkg.png",
+        titleIcon: "/logo-white-no-bkg.webp",
         welcomeScreen: {
           title: "Penny4Thots Prediction Markets",
           subtitle: "...if you can think it, it's important.",
           img: {
-            src: '/logo-white-no-bkg.png',
+            src: '/logo-white-no-bkg.webp',
             width: 200,
             height: 200,
           },
@@ -286,10 +287,12 @@ export interface DataConstants {
   staketax: number;
   lasttax: number;
   devtax: number;
+  gasfee: number;
   bps: number;
   decayWindowBps: number;
   decayProfitBps: number;
   kamikazeBurnBps: number;
+  maxFinalizeBatch: number;
   paused: boolean;
 }
 
@@ -311,10 +314,12 @@ export const fetchDataConstants = async (): Promise<DataConstants> => {
     staketax: Number(uintValues[5]),
     lasttax: Number(uintValues[6]),
     devtax: Number(uintValues[7]),
-    bps: Number(uintValues[8]),
-    decayWindowBps: Number(uintValues[9]),
-    decayProfitBps: Number(uintValues[10]),
-    kamikazeBurnBps: Number(uintValues[11]),
+    gasfee: Number(uintValues[8]),
+    bps: Number(uintValues[9]),
+    decayWindowBps: Number(uintValues[10]),
+    decayProfitBps: Number(uintValues[11]),
+    kamikazeBurnBps: Number(uintValues[12]),
+    maxFinalizeBatch: Number(uintValues[13]),
     paused: boolValues[0],
   };
 };
@@ -335,8 +340,10 @@ const MARKET_FETCH_LIMIT = 50;
  * Fetch markets from blockchain with a limit of 50 most recent markets
  * Markets are fetched in descending order (newest first)
  * Only fetches MarketInfo (immutable data)
+ *
+ * @param additionalMarketIds - Optional array of market IDs to include even if outside the 50 most recent
  */
-export const fetchMarketsFromBlockchain = async (): Promise<MarketInfoFormatted[]> => {
+export const fetchMarketsFromBlockchain = async (additionalMarketIds?: number[]): Promise<MarketInfoFormatted[]> => {
   const marketCount = await readMarketCount();
 
   // No markets
@@ -353,6 +360,16 @@ export const fetchMarketsFromBlockchain = async (): Promise<MarketInfoFormatted[
   const marketIds: number[] = [];
   for (let i = startIndex; i >= endIndex; i--) {
     marketIds.push(i);
+  }
+
+  // Include additional market IDs (e.g., from deep links) if not already in the range
+  if (additionalMarketIds && additionalMarketIds.length > 0) {
+    for (const additionalId of additionalMarketIds) {
+      // Only add if valid and not already in the list
+      if (additionalId >= 0 && additionalId < marketCount && !marketIds.includes(additionalId)) {
+        marketIds.push(additionalId);
+      }
+    }
   }
 
   const markets = await readMarketInfo(marketIds);
@@ -392,10 +409,6 @@ export const prepareWriteMarket = (params: WriteMarketParams) => {
   // Use the provided paymentToken, which should be set correctly by the caller
   const paymentTokenAddress: Address = params.paymentToken || ("0x0000000000000000000000000000000000000000" as Address);
 
-  // When feetype is false (ETH payment), include marketBalance in msg.value
-  // When feetype is true (token payment), no ETH sent (tokens transferred separately)
-  const msgValue = feetype ? 0n : params.marketBalance;
-
   return prepareContractCall({
     contract: penny4thotsContract,
     method: "function writeMarket(string[] calldata _info, uint256 _marketBalance, bool _signal, bool _feetype, address _paymentToken) external payable",
@@ -406,7 +419,6 @@ export const prepareWriteMarket = (params: WriteMarketParams) => {
       feetype,
       paymentTokenAddress,
     ],
-    value: msgValue,
   });
 };
 
@@ -415,7 +427,13 @@ export const useWriteMarket = () => {
   const { mutateAsync: sendTx, isPending, error } = useSendTransaction();
 
   const writeMarket = async (params: WriteMarketParams) => {
-    const transaction = prepareWriteMarket(params);
+    const dataConstants = await fetchDataConstants();
+    const gasfee = BigInt(dataConstants.gasfee);
+
+    const transaction = {
+      ...prepareWriteMarket(params),
+      value: (params.signal || false) ? gasfee : params.marketBalance,
+    };
     const result = await sendTx(transaction);
 
     // Wait for transaction to be mined/confirmed before returning
@@ -445,7 +463,6 @@ export const prepareVote = (params: VoteParams) => {
     contract: penny4thotsContract,
     method: "function vote(bool _signal, uint256 _market, uint256 _marketBalance) external payable",
     params: [params.signal, BigInt(params.marketId), params.marketBalance],
-    value: params.feetype ? 0n : params.marketBalance,
   });
 };
 
@@ -453,7 +470,13 @@ export const useVote = () => {
   const { mutateAsync: sendTx, isPending, error } = useSendTransaction();
 
   const vote = async (params: VoteParams) => {
-    const transaction = prepareVote(params);
+    const dataConstants = await fetchDataConstants();
+    const gasfee = BigInt(dataConstants.gasfee);
+
+    const transaction = {
+      ...prepareVote(params),
+      value: params.feetype ? gasfee : params.marketBalance,
+    };
     const result = await sendTx(transaction);
 
     await waitForReceipt({
@@ -572,6 +595,23 @@ export const readTokenAllowance = async (
 };
 
 /**
+ * Read the token balance for an address
+ */
+export const readTokenBalance = async (
+  tokenAddress: Address,
+  ownerAddress: Address
+): Promise<bigint> => {
+  const result = await publicClient.readContract({
+    address: tokenAddress,
+    abi: erc20ABI,
+    functionName: "balanceOf",
+    args: [ownerAddress],
+  });
+
+  return result as bigint;
+};
+
+/**
  * Prepare an ERC20 approve transaction
  */
 export const prepareTokenApprove = (tokenAddress: Address, amount: bigint) => {
@@ -608,6 +648,176 @@ export const useTokenApprove = () => {
   };
 
   return { approve, isPending, error };
+};
+
+// ============================================================================
+// User Profile Functions (for My Thots, Your Thots, History pages)
+// ============================================================================
+
+/**
+ * Get user's created thots (markets they created)
+ * Returns array of market IDs
+ */
+export const getUserThots = async (userAddress: Address, start: number, finish: number): Promise<number[]> => {
+  const result = await publicClient.readContract({
+    address: blockchain.contract_address,
+    abi: contractABI,
+    functionName: 'getUserThots',
+    args: [userAddress, BigInt(start), BigInt(finish)],
+  });
+
+  return (result as bigint[]).map((id) => Number(id));
+};
+
+/**
+ * Get user's voted markets (markets they participated in)
+ * Returns array of market IDs
+ */
+export const getUserMarkets = async (userAddress: Address, start: number, finish: number): Promise<number[]> => {
+  const result = await publicClient.readContract({
+    address: blockchain.contract_address,
+    abi: contractABI,
+    functionName: 'getUserMarkets',
+    args: [userAddress, BigInt(start), BigInt(finish)],
+  });
+
+  return (result as bigint[]).map((id) => Number(id));
+};
+
+/**
+ * ClaimRecord structure from the contract
+ */
+export interface ClaimRecord {
+  marketId: number;
+  token: Address;
+  amount: string;
+  timestamp: number;
+  positionId: number;
+}
+
+/**
+ * Get the total count of user's claim history
+ */
+export const getUserTotalClaimHistory = async (userAddress: Address): Promise<number> => {
+  try {
+    const result = await publicClient.readContract({
+      address: blockchain.contract_address,
+      abi: contractABI,
+      functionName: 'userTotalClaimHistory',
+      args: [userAddress],
+    });
+    return Number(result);
+  } catch {
+    return 0;
+  }
+};
+
+/**
+ * Get user's claims in a paginated way using getUserClaims(address, start, finish)
+ * Returns array of ClaimRecord for the specified range
+ */
+export const getUserClaims = async (
+  userAddress: Address,
+  start: number,
+  finish: number
+): Promise<ClaimRecord[]> => {
+  if (start >= finish) return [];
+
+  try {
+    const result = await publicClient.readContract({
+      address: blockchain.contract_address,
+      abi: contractABI,
+      functionName: 'getUserClaims',
+      args: [userAddress, BigInt(start), BigInt(finish)],
+    });
+
+    const rawClaims = result as Array<{
+      marketId: bigint;
+      token: Address;
+      amount: bigint;
+      timestamp: bigint;
+      positionId: bigint;
+    }>;
+
+    return rawClaims
+      .map((claim) => ({
+        marketId: Number(claim.marketId),
+        token: claim.token,
+        amount: formatEther(claim.amount),
+        timestamp: Number(claim.timestamp),
+        positionId: Number(claim.positionId),
+      }))
+      .filter((claim) => claim.timestamp > 0); // Filter out empty records
+  } catch (err) {
+    console.error('Error fetching user claims:', err);
+    return [];
+  }
+};
+
+/**
+ * Get user's claim history (convenience function that fetches all claims)
+ * Returns array of ClaimRecord in reverse order (newest first)
+ */
+export const getUserClaimHistory = async (userAddress: Address): Promise<ClaimRecord[]> => {
+  const total = await getUserTotalClaimHistory(userAddress);
+  if (total === 0) return [];
+
+  // Fetch all claims in one batch call
+  const claims = await getUserClaims(userAddress, 0, total);
+
+  // Return in reverse order (newest first)
+  return claims.reverse();
+};
+
+/**
+ * Get the count of user's thots (created markets)
+ */
+export const getUserTotalThots = async (userAddress: Address): Promise<number> => {
+  try {
+    const result = await publicClient.readContract({
+      address: blockchain.contract_address,
+      abi: contractABI,
+      functionName: 'userTotalThots',
+      args: [userAddress],
+    });
+    return Number(result);
+  } catch {
+    return 0;
+  }
+};
+
+/**
+ * Get the count of user's voted markets
+ */
+export const getUserTotalMarkets = async (userAddress: Address): Promise<number> => {
+  try {
+    const result = await publicClient.readContract({
+      address: blockchain.contract_address,
+      abi: contractABI,
+      functionName: 'userTotalMarkets',
+      args: [userAddress],
+    });
+    return Number(result);
+  } catch {
+    return 0;
+  }
+};
+
+/**
+ * Check if a market is claimable (closed and resolved with a winning side)
+ */
+export const isClaimable = async (marketId: number): Promise<boolean> => {
+  try {
+    const result = await publicClient.readContract({
+      address: blockchain.contract_address,
+      abi: contractABI,
+      functionName: 'isClaimable',
+      args: [BigInt(marketId)],
+    });
+    return result as boolean;
+  } catch {
+    return false;
+  }
 };
 
 // Re-export useful viem utilities

@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { MarketBalance } from "./MarketBalance";
+import { Connector } from "@/tools/utils";
+import { useActiveAccount } from "thirdweb/react";
 import {
   readPaymentToken,
   fetchMarketDataFromBlockchain,
@@ -47,6 +49,7 @@ export function VoteModal({
   optionA = "Yes",
   optionB = "No",
 }: VoteModalProps) {
+  const account = useActiveAccount();
   const [step, setStep] = useState<VoteStep>("select");
   const [selectedSignal, setSelectedSignal] = useState<boolean | null>(null);
   const [amount, setAmount] = useState("");
@@ -55,6 +58,9 @@ export function VoteModal({
   const [marketBalance, setMarketBalance] = useState<string>("0");
   const [isLoadingData, setIsLoadingData] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showConnectCta, setShowConnectCta] = useState(false);
+  const [connectCtaDelayMs] = useState(3000);
+  const [showProceedMessage, setShowProceedMessage] = useState(false);
   const [platformFeePercentage, setPlatformFeePercentage] = useState<number | null>(null);
 
   // Fetch token symbol from blockchain
@@ -82,10 +88,43 @@ export function VoteModal({
       setSelectedSignal(null);
       setAmount("");
       setError(null);
+      setShowConnectCta(false);
+      setShowProceedMessage(false);
       setTokenSymbol(null);
       fetchMarketPaymentData();
     }
   }, [isOpen, marketId, marketImage]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    if (!account) return;
+    if (!error) return;
+    if (!error.toLowerCase().includes("wallet not connected")) return;
+
+    setShowProceedMessage(true);
+    const timeoutId = window.setTimeout(() => {
+      setShowProceedMessage(false);
+    }, 3500);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [account, error, isOpen]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    if (!error) return;
+    if (!error.toLowerCase().includes("wallet not connected")) return;
+    if (showConnectCta) return;
+
+    const timeoutId = window.setTimeout(() => {
+      setShowConnectCta(true);
+    }, connectCtaDelayMs);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [connectCtaDelayMs, error, isOpen, showConnectCta]);
 
   const fetchMarketPaymentData = async () => {
     setIsLoadingData(true);
@@ -139,6 +178,8 @@ export function VoteModal({
     if (selectedSignal === null || !amount || parseFloat(amount) <= 0) return;
 
     setError(null);
+    setShowConnectCta(false);
+    setShowProceedMessage(false);
     const amountWei = BigInt(Math.floor(parseFloat(amount) * 1e18));
 
     try {
@@ -172,6 +213,7 @@ export function VoteModal({
 
   const isValid = amount && parseFloat(amount) > 0;
   const selectedOption = selectedSignal ? optionA : optionB;
+  const isWalletNotConnectedError = error?.toLowerCase().includes("wallet not connected") ?? false;
 
   if (!isOpen) return null;
 
@@ -423,10 +465,30 @@ export function VoteModal({
                       </div>
 
                       {/* Error */}
-                      {error && (
+                      {error && (!isWalletNotConnectedError || (!showConnectCta && !account)) && (
                         <div className="flex gap-3 rounded-xl bg-destructive/10 border border-destructive/20 p-3">
                           <AlertCircle className="h-5 w-5 text-destructive flex-shrink-0 mt-0.5" />
                           <p className="text-sm text-destructive">{error}</p>
+                        </div>
+                      )}
+
+                      {isWalletNotConnectedError && (
+                        <div className="pt-2">
+                          {account ? (
+                            <p className="text-center text-xs text-muted-foreground">
+                              {showProceedMessage ? "Connected. You can now vote." : ""}
+                            </p>
+                          ) : showConnectCta ? (
+                            <div className="flex justify-center">
+                              <div className="origin-center scale-90">
+                                <Connector />
+                              </div>
+                            </div>
+                          ) : (
+                            <p className="text-center text-xs text-muted-foreground">
+                              Get Started button will appear shortly…
+                            </p>
+                          )}
                         </div>
                       )}
 

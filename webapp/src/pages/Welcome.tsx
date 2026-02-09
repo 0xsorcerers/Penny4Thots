@@ -217,7 +217,7 @@ export default function Welcome() {
               />
               {/* Logo */}
               <img
-                src="/logo-white-no-bkg.png"
+                src="/logo-white-no-bkg.webp"
                 alt="Penny4Thots Logo"
                 className="h-full w-full object-contain drop-shadow-lg"
                 style={{ transform: "translateZ(20px)" }}
@@ -237,7 +237,7 @@ export default function Welcome() {
         >
           <div className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-4 py-2 backdrop-blur-sm">
             <Sparkles className="h-4 w-4 text-primary" />
-            <span className="font-mono text-sm text-primary">Web3 Prediction Market</span>
+            <span className="font-mono text-sm text-primary">Next Gen Prediction Market</span>
           </div>
         </motion.div>
 
