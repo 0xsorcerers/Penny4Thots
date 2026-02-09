@@ -803,5 +803,22 @@ export const getUserTotalMarkets = async (userAddress: Address): Promise<number>
   }
 };
 
+/**
+ * Check if a market is claimable (closed and resolved with a winning side)
+ */
+export const isClaimable = async (marketId: number): Promise<boolean> => {
+  try {
+    const result = await publicClient.readContract({
+      address: blockchain.contract_address,
+      abi: contractABI,
+      functionName: 'isClaimable',
+      args: [BigInt(marketId)],
+    });
+    return result as boolean;
+  } catch {
+    return false;
+  }
+};
+
 // Re-export useful viem utilities
 export { formatEther, parseEther, ZERO_ADDRESS };
