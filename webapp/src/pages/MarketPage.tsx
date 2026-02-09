@@ -1459,7 +1459,7 @@ export default function MarketPage() {
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={() => handleVoteClick(true)}
-                className="w-full relative overflow-hidden rounded-xl py-5 font-syne text-xl font-bold transition-all bg-gradient-to-r from-emerald-500/20 to-teal-500/20 text-emerald-500 hover:from-emerald-500 hover:to-teal-500 hover:text-white dark:from-emerald-500/30 dark:to-teal-500/30 dark:text-emerald-400 dark:hover:from-emerald-500 dark:hover:to-teal-500 dark:hover:text-white border border-emerald-500/30"
+                className="w-full relative overflow-hidden rounded-xl py-5 font-syne text-xl font-bold transition-all bg-gradient-to-r from-amber-700/20 to-yellow-600/20 text-amber-600 hover:from-amber-700 hover:to-yellow-600 hover:text-white dark:from-amber-700/30 dark:to-yellow-600/30 dark:text-amber-500 dark:hover:from-amber-700 dark:hover:to-yellow-600 dark:hover:text-white border border-amber-700/30"
               >
                 <span className="relative z-10 flex items-center justify-center gap-2">
                   <TrendingUp className="h-6 w-6" />
