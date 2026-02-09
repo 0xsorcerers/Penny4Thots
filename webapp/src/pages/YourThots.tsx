@@ -112,7 +112,7 @@ export default function YourThots() {
         }
       }
 
-      const validIds = [...new Set(allIds.filter((id) => id > 0))];
+      const validIds = [...new Set(allIds.filter((id) => id >= 0))];
       validIds.sort((a, b) => b - a);
       setAllMarketIds(validIds);
       setCurrentPage(1);
