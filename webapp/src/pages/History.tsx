@@ -18,7 +18,8 @@ import { useNavigate } from "react-router-dom";
 import { useActiveAccount } from "thirdweb/react";
 import type { Address } from "viem";
 import {
-  getUserClaimHistory,
+  getUserTotalClaimHistory,
+  getUserClaims,
   blockchain,
   truncateAddress,
   readMarketInfo,
@@ -65,13 +66,22 @@ export default function History() {
     try {
       setIsLoading(true);
       const userAddress = account.address as Address;
-      const history = await getUserClaimHistory(userAddress);
+
+      // First get total count
+      const totalClaims = await getUserTotalClaimHistory(userAddress);
+      if (totalClaims === 0) {
+        setClaims([]);
+        return;
+      }
+
+      // Fetch claims in one batch using the paginated function
+      const history = await getUserClaims(userAddress, 0, totalClaims);
 
       // Get unique market IDs from claims
       const uniqueMarketIds = [...new Set(history.map(c => c.marketId))];
 
       // Fetch market info for all unique markets
-      let marketInfoMap: Map<number, MarketInfoFormatted> = new Map();
+      const marketInfoMap: Map<number, MarketInfoFormatted> = new Map();
       if (uniqueMarketIds.length > 0) {
         try {
           const marketInfos = await readMarketInfo(uniqueMarketIds);
@@ -83,11 +93,13 @@ export default function History() {
         }
       }
 
-      // Enrich claims with market info
-      const enrichedClaims: ClaimWithMarketInfo[] = history.map(claim => ({
-        ...claim,
-        marketInfo: marketInfoMap.get(claim.marketId),
-      }));
+      // Enrich claims with market info and reverse for newest first
+      const enrichedClaims: ClaimWithMarketInfo[] = history
+        .map(claim => ({
+          ...claim,
+          marketInfo: marketInfoMap.get(claim.marketId),
+        }))
+        .reverse();
 
       setClaims(enrichedClaims);
     } catch (error) {

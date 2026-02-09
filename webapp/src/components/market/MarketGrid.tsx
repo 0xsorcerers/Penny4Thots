@@ -256,18 +256,16 @@ export function MarketGrid({ markets, onCreateMarket, onVoteClick, onRefreshMark
               exit={{ opacity: 0 }}
               className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
             >
-              <AnimatePresence>
-                {filteredMarkets.map((market, index) => (
-                  <motion.div
-                    key={market.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.05 }}
-                  >
-                    <MarketCard market={market} onVoteClick={onVoteClick} />
-                  </motion.div>
-                ))}
-              </AnimatePresence>
+                  {filteredMarkets.map((market, index) => (
+                <motion.div
+                  key={market.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.05 }}
+                >
+                  <MarketCard market={market} onVoteClick={onVoteClick} />
+                </motion.div>
+              ))}
             </motion.div>
           ) : (
             <motion.div
