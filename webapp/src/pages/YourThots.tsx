@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { MessageCircle, ArrowLeft, Loader2, Sparkles, ChevronLeft, ChevronRight } from "lucide-react";
+import { MessageCircle, ArrowLeft, Loader2, Sparkles, ChevronLeft, ChevronRight, RefreshCw } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useActiveAccount } from "thirdweb/react";
 import { MarketCardYourThots } from "@/components/market/MarketCardYourThots";
@@ -51,6 +51,14 @@ const setCache = (cache: CachedMarketInfo) => {
   }
 };
 
+const clearCache = () => {
+  try {
+    localStorage.removeItem(STORAGE_KEY);
+  } catch {
+    console.warn("Failed to clear localStorage");
+  }
+};
+
 export default function YourThots() {
   const navigate = useNavigate();
   const account = useActiveAccount();
@@ -69,6 +77,7 @@ export default function YourThots() {
     optionB?: string;
   } | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const cachedInfoRef = useRef<CachedMarketInfo>(getCache());
 
   const { vote, isPending: isVoting } = useVote();
@@ -290,6 +299,23 @@ export default function YourThots() {
     }
   };
 
+  const handleRefresh = useCallback(async () => {
+    if (isRefreshing || isLoading) return;
+    setIsRefreshing(true);
+    try {
+      // Clear local cache
+      clearCache();
+      cachedInfoRef.current = {};
+      // Reset state and refetch
+      setAllMarketIds([]);
+      setMarkets([]);
+      setCurrentPage(1);
+      await fetchAllMarketIds();
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [isRefreshing, isLoading, fetchAllMarketIds]);
+
   return (
     <div className="min-h-screen bg-background">
       {/* Hero Header - Violet/Purple theme for Your Thots */}
@@ -341,6 +367,22 @@ export default function YourThots() {
                   Page {currentPage} of {totalPages}
                 </span>
               </div>
+            )}
+            {account?.address && (
+              <button
+                onClick={handleRefresh}
+                disabled={isRefreshing || isLoading}
+                className="flex items-center gap-2 rounded-full bg-violet-500/10 px-4 py-2 font-outfit text-sm text-violet-500 hover:bg-violet-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                title="Refresh all data from blockchain"
+              >
+                <motion.div
+                  animate={{ rotate: isRefreshing || isLoading ? 360 : 0 }}
+                  transition={{ duration: 1, repeat: isRefreshing || isLoading ? Infinity : 0, ease: "linear" }}
+                >
+                  <RefreshCw className="h-4 w-4" />
+                </motion.div>
+                {isRefreshing ? "Refreshing..." : "Refresh"}
+              </button>
             )}
           </motion.div>
         </div>
