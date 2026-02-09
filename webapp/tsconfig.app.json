@@ -1,15 +1,15 @@
 {
   "compilerOptions": {
-    "target": "ES2020",
+    "target": "ES2021",
     "useDefineForClassFields": true,
-    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "lib": ["ES2021", "DOM", "DOM.Iterable"],
     "module": "ESNext",
     "skipLibCheck": true,
 
     /* Changed from Bundler to Node mode */
     "allowJs": true,             // <-- Allow importing JS files
     "checkJs": false,            // <-- Do not type-check JS files
-    "esModuleInterop": true,  
+    "esModuleInterop": true,
     "moduleResolution": "node",
     "allowImportingTsExtensions": true,
     "isolatedModules": true,
@@ -30,5 +30,6 @@
       "@/*": ["./src/*"]
     }
   },
-  "include": ["src"]
+  "include": ["src"],
+  "exclude": ["node_modules", "dist", "build"]
 }

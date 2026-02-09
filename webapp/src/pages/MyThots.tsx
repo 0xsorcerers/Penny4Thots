@@ -119,7 +119,7 @@ export default function MyThots() {
       }
 
       console.log("[MyThots] All IDs before filter:", allIds);
-      const validIds = [...new Set(allIds.filter((id) => id > 0))];
+      const validIds = [...new Set(allIds.filter((id) => id >= 0))];
       console.log("[MyThots] Valid IDs after filter:", validIds);
       validIds.sort((a, b) => b - a);
       setAllMarketIds(validIds);
