@@ -13,6 +13,7 @@ import {
   TrendingDown,
   Hash,
   Layers,
+  RefreshCw,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useActiveAccount } from "thirdweb/react";
@@ -55,6 +56,7 @@ export default function History() {
   const account = useActiveAccount();
   const [claims, setClaims] = useState<ClaimWithMarketInfo[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const marketDataMap = useMarketStore((state) => state.marketDataMap);
 
   const fetchClaimHistory = useCallback(async () => {
@@ -173,6 +175,17 @@ export default function History() {
     return null;
   };
 
+  const handleRefresh = useCallback(async () => {
+    if (isRefreshing || isLoading) return;
+    setIsRefreshing(true);
+    try {
+      setClaims([]);
+      await fetchClaimHistory();
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [isRefreshing, isLoading, fetchClaimHistory]);
+
   return (
     <div className="min-h-screen bg-background">
       {/* Animated Background */}
@@ -200,20 +213,38 @@ export default function History() {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="flex items-center gap-4"
+            className="flex items-center justify-between"
           >
-            <div className="relative">
-              <div className="absolute inset-0 bg-gradient-to-br from-accent to-primary rounded-2xl blur-xl opacity-50" />
-              <div className="relative flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-accent to-primary shadow-lg">
-                <Trophy className="h-8 w-8 text-primary-foreground" />
+            <div className="flex items-center gap-4">
+              <div className="relative">
+                <div className="absolute inset-0 bg-gradient-to-br from-accent to-primary rounded-2xl blur-xl opacity-50" />
+                <div className="relative flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-accent to-primary shadow-lg">
+                  <Trophy className="h-8 w-8 text-primary-foreground" />
+                </div>
+              </div>
+              <div>
+                <h1 className="font-syne text-4xl font-bold text-foreground">Claim History</h1>
+                <p className="mt-1 font-outfit text-lg text-muted-foreground">
+                  Your winning positions and rewards
+                </p>
               </div>
             </div>
-            <div>
-              <h1 className="font-syne text-4xl font-bold text-foreground">Claim History</h1>
-              <p className="mt-1 font-outfit text-lg text-muted-foreground">
-                Your winning positions and rewards
-              </p>
-            </div>
+            {account?.address && (
+              <button
+                onClick={handleRefresh}
+                disabled={isRefreshing || isLoading}
+                className="flex items-center gap-2 rounded-full bg-accent/10 px-4 py-2 font-outfit text-sm text-accent hover:bg-accent/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                title="Refresh claim history from blockchain"
+              >
+                <motion.div
+                  animate={{ rotate: isRefreshing || isLoading ? 360 : 0 }}
+                  transition={{ duration: 1, repeat: isRefreshing || isLoading ? Infinity : 0, ease: "linear" }}
+                >
+                  <RefreshCw className="h-4 w-4" />
+                </motion.div>
+                {isRefreshing ? "Refreshing..." : "Refresh"}
+              </button>
+            )}
           </motion.div>
 
           {/* Stats Summary */}
