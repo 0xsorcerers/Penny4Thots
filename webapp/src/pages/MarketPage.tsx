@@ -1055,17 +1055,6 @@ export default function MarketPage() {
             <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
 
               {/* Market Status Badge */}
-              {market.closed ? (
-                <span className="flex items-center gap-1.5 rounded-full bg-red-500/10 px-3 py-1 font-mono text-xs font-semibold text-red-500 dark:bg-red-500/20 dark:text-red-400">
-                  <CircleOff className="h-3.5 w-3.5" />
-                  Closed
-                </span>
-              ) : (
-                <span className="flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-3 py-1 font-mono text-xs font-semibold text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400">
-                  <CircleDot className="h-3.5 w-3.5" />
-                  Live
-                </span>
-              )}
 
               <span className="flex items-center gap-1.5">
 
@@ -1082,6 +1071,18 @@ export default function MarketPage() {
                 {totalVotes} {totalVotes === 1 ? "vote" : "votes"}
 
               </span>
+              
+              {market.closed ? (
+                <span className="flex items-center gap-1.5 rounded-full bg-red-500/10 px-3 py-1 font-mono text-xs font-semibold text-red-500 dark:bg-red-500/20 dark:text-red-400">
+                  <CircleOff className="h-3.5 w-3.5" />
+                  Closed
+                </span>
+              ) : (
+                <span className="flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-3 py-1 font-mono text-xs font-semibold text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400">
+                  <CircleDot className="h-3.5 w-3.5" />
+                  Live
+                </span>
+              )}
 
             </div>
 
