@@ -695,40 +695,74 @@ export interface ClaimRecord {
 }
 
 /**
- * Get user's claim history
- * Returns array of ClaimRecord
+ * Get the total count of user's claim history
+ */
+export const getUserTotalClaimHistory = async (userAddress: Address): Promise<number> => {
+  try {
+    const result = await publicClient.readContract({
+      address: blockchain.contract_address,
+      abi: contractABI,
+      functionName: 'userTotalClaimHistory',
+      args: [userAddress],
+    });
+    return Number(result);
+  } catch {
+    return 0;
+  }
+};
+
+/**
+ * Get user's claims in a paginated way using getUserClaims(address, start, finish)
+ * Returns array of ClaimRecord for the specified range
+ */
+export const getUserClaims = async (
+  userAddress: Address,
+  start: number,
+  finish: number
+): Promise<ClaimRecord[]> => {
+  if (start >= finish) return [];
+
+  try {
+    const result = await publicClient.readContract({
+      address: blockchain.contract_address,
+      abi: contractABI,
+      functionName: 'getUserClaims',
+      args: [userAddress, BigInt(start), BigInt(finish)],
+    });
+
+    const rawClaims = result as Array<{
+      marketId: bigint;
+      token: Address;
+      amount: bigint;
+      timestamp: bigint;
+      positionId: bigint;
+    }>;
+
+    return rawClaims
+      .map((claim) => ({
+        marketId: Number(claim.marketId),
+        token: claim.token,
+        amount: formatEther(claim.amount),
+        timestamp: Number(claim.timestamp),
+        positionId: Number(claim.positionId),
+      }))
+      .filter((claim) => claim.timestamp > 0); // Filter out empty records
+  } catch (err) {
+    console.error('Error fetching user claims:', err);
+    return [];
+  }
+};
+
+/**
+ * Get user's claim history (convenience function that fetches all claims)
+ * Returns array of ClaimRecord in reverse order (newest first)
  */
 export const getUserClaimHistory = async (userAddress: Address): Promise<ClaimRecord[]> => {
-  // The contract stores claim history as an array, we need to iterate
-  // We'll try to fetch up to 100 records (or until we hit an error/empty)
-  const claims: ClaimRecord[] = [];
+  const total = await getUserTotalClaimHistory(userAddress);
+  if (total === 0) return [];
 
-  for (let i = 0; i < 100; i++) {
-    try {
-      const result = await publicClient.readContract({
-        address: blockchain.contract_address,
-        abi: contractABI,
-        functionName: 'userClaimHistory',
-        args: [userAddress, BigInt(i)],
-      });
-
-      const [marketId, token, amount, timestamp, positionId] = result as [bigint, Address, bigint, bigint, bigint];
-
-      // If we get a zero timestamp, it means empty/end of array
-      if (Number(timestamp) === 0) break;
-
-      claims.push({
-        marketId: Number(marketId),
-        token,
-        amount: formatEther(amount),
-        timestamp: Number(timestamp),
-        positionId: Number(positionId),
-      });
-    } catch {
-      // If the call fails, we've reached the end of the array
-      break;
-    }
-  }
+  // Fetch all claims in one batch call
+  const claims = await getUserClaims(userAddress, 0, total);
 
   // Return in reverse order (newest first)
   return claims.reverse();
