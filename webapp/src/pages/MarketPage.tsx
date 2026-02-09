@@ -4,7 +4,7 @@ import { useParams, useNavigate } from "react-router-dom";
 
 import { motion, AnimatePresence } from "framer-motion";
 
-import { ArrowLeft, TrendingUp, TrendingDown, BarChart3, Users, Clock, Share2, Loader2 } from "lucide-react";
+import { ArrowLeft, TrendingUp, TrendingDown, BarChart3, Users, Clock, Share2, Loader2, CircleDot, CircleOff, Hourglass, Gift } from "lucide-react";
 
 import { useActiveAccount, useIsAutoConnecting } from "thirdweb/react";
 
@@ -12,7 +12,7 @@ import { useMarketStore } from "@/store/marketStore";
 
 import { useMarketDataHydration } from "@/hooks/useMarketDataHydration";
 
-import { useVote, useTokenApprove, readPaymentToken, readTokenAllowance, isZeroAddress, fetchDataConstants, calculatePlatformFeePercentage, fetchMarketDataFromBlockchain, type VoteParams } from "@/tools/utils";
+import { useVote, useTokenApprove, readPaymentToken, readTokenAllowance, isZeroAddress, fetchDataConstants, calculatePlatformFeePercentage, fetchMarketDataFromBlockchain, isClaimable, type VoteParams } from "@/tools/utils";
 
 import { VoteModal } from "@/components/market/VoteModal";
 
@@ -90,6 +90,8 @@ export default function MarketPage() {
 
 
   const [platformFeePercentage, setPlatformFeePercentage] = useState<number | null>(null);
+
+  const [marketClaimable, setMarketClaimable] = useState<boolean | null>(null);
 
 
 
@@ -188,17 +190,27 @@ export default function MarketPage() {
     }
 
 
-
   }, [market?.indexer]);
 
-
-
-
-
-
+  // Fetch claimable status when market is closed
+  useEffect(() => {
+    if (market?.indexer !== undefined && market?.closed) {
+      const checkClaimable = async () => {
+        try {
+          const claimable = await isClaimable(market.indexer!);
+          setMarketClaimable(claimable);
+        } catch (err) {
+          console.error("Failed to check if market is claimable:", err);
+          setMarketClaimable(false);
+        }
+      };
+      checkClaimable();
+    } else {
+      setMarketClaimable(null);
+    }
+  }, [market?.indexer, market?.closed]);
 
   // Log vote modal state for debugging
-
 
 
   useEffect(() => {
@@ -1040,43 +1052,36 @@ export default function MarketPage() {
 
             {/* Meta info */}
 
-
-
             <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
 
-
+              {/* Market Status Badge */}
+              {market.closed ? (
+                <span className="flex items-center gap-1.5 rounded-full bg-red-500/10 px-3 py-1 font-mono text-xs font-semibold text-red-500 dark:bg-red-500/20 dark:text-red-400">
+                  <CircleOff className="h-3.5 w-3.5" />
+                  Closed
+                </span>
+              ) : (
+                <span className="flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-3 py-1 font-mono text-xs font-semibold text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400">
+                  <CircleDot className="h-3.5 w-3.5" />
+                  Live
+                </span>
+              )}
 
               <span className="flex items-center gap-1.5">
-
-
 
                 <Clock className="h-4 w-4" />
 
-
-
                 Created {formatDate(market.createdAt)}
 
-
-
               </span>
-
-
 
               <span className="flex items-center gap-1.5">
 
-
-
                 <Users className="h-4 w-4" />
-
-
 
                 {totalVotes} {totalVotes === 1 ? "vote" : "votes"}
 
-
-
               </span>
-
-
 
             </div>
 
@@ -1446,113 +1451,49 @@ export default function MarketPage() {
 
 
 
-            {/* Vote Buttons */}
 
-
-
-            <div className="grid gap-4 sm:grid-cols-2">
-
-
-
+            {/* Vote/Claim Action Button */}
+            {!market.closed ? (
+              /* Live Market - Show Vote Button */
               <motion.button
-
-
-
                 whileHover={{ scale: 1.02 }}
-
-
-
                 whileTap={{ scale: 0.98 }}
-
-
-
                 onClick={() => handleVoteClick(true)}
-
-
-
-                className="relative overflow-hidden rounded-xl py-5 font-syne text-xl font-bold transition-all bg-yes/20 text-yes hover:bg-yes hover:text-yes-foreground"
-
-
-
+                className="w-full relative overflow-hidden rounded-xl py-5 font-syne text-xl font-bold transition-all bg-gradient-to-r from-emerald-500/20 to-teal-500/20 text-emerald-500 hover:from-emerald-500 hover:to-teal-500 hover:text-white dark:from-emerald-500/30 dark:to-teal-500/30 dark:text-emerald-400 dark:hover:from-emerald-500 dark:hover:to-teal-500 dark:hover:text-white border border-emerald-500/30"
               >
-
-
-
                 <span className="relative z-10 flex items-center justify-center gap-2">
-
-
-
                   <TrendingUp className="h-6 w-6" />
-
-
-
-                  {market.optionA}
-
-
-
+                  Vote
                 </span>
-
-
-
               </motion.button>
-
-
-
-
-
-
-
+            ) : marketClaimable === null ? (
+              /* Closed Market - Loading claimable status */
+              <div className="w-full rounded-xl py-5 bg-muted/30 flex items-center justify-center gap-2">
+                <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                <span className="font-outfit text-muted-foreground">Checking status...</span>
+              </div>
+            ) : marketClaimable ? (
+              /* Closed Market - Claimable - Show Claim Button */
               <motion.button
-
-
-
                 whileHover={{ scale: 1.02 }}
-
-
-
                 whileTap={{ scale: 0.98 }}
-
-
-
-                onClick={() => handleVoteClick(false)}
-
-
-
-                className="relative overflow-hidden rounded-xl py-5 font-syne text-xl font-bold transition-all bg-no/20 text-no hover:bg-no hover:text-no-foreground"
-
-
-
+                onClick={() => toast.info("Claim feature coming soon!")}
+                className="w-full relative overflow-hidden rounded-xl py-5 font-syne text-xl font-bold transition-all bg-gradient-to-r from-amber-500/20 to-orange-500/20 text-amber-500 hover:from-amber-500 hover:to-orange-500 hover:text-white dark:from-amber-500/30 dark:to-orange-500/30 dark:text-amber-400 dark:hover:from-amber-500 dark:hover:to-orange-500 dark:hover:text-white border border-amber-500/30"
               >
-
-
-
                 <span className="relative z-10 flex items-center justify-center gap-2">
-
-
-
-                  <TrendingDown className="h-6 w-6" />
-
-
-
-                  {market.optionB}
-
-
-
+                  <Gift className="h-6 w-6" />
+                  Claim Rewards
                 </span>
-
-
-
               </motion.button>
-
-
-
-            </div>
-
-
+            ) : (
+              /* Closed Market - Not Claimable - Show Resolving */
+              <div className="w-full rounded-xl py-5 bg-gradient-to-r from-slate-500/10 to-gray-500/10 border border-slate-500/20 flex items-center justify-center gap-2">
+                <Hourglass className="h-5 w-5 text-slate-400 dark:text-slate-500 animate-pulse" />
+                <span className="font-syne text-lg font-semibold text-slate-500 dark:text-slate-400">Resolving Market</span>
+              </div>
+            )}
 
           </motion.div>
-
-
 
 
 
