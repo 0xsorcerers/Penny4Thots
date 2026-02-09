@@ -118,16 +118,17 @@ export const wallets = [
   inAppWallet({
     auth: {
       options: [
-        "farcaster",
         "google",
         "x",
         "telegram",
         "facebook",
         "discord",
         "apple",
+        "farcaster",
         "phone",
         "email",
       ],
+      mode: "popup",
     },
   }),
 ];
