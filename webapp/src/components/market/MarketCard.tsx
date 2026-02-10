@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { TrendingUp, TrendingDown, BarChart3, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -7,7 +7,11 @@ import { cn } from "@/lib/utils";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useMarketStore } from "@/store/marketStore";
 import { VoteStats } from "./VoteStats";
+import { CountdownTimer } from "./CountdownTimer";
+import { MarketBalance } from "./MarketBalance";
+import { readPaymentToken } from "@/tools/utils";
 import { toast } from "sonner";
+import type { Address } from "viem";
 
 interface MarketCardProps {
   market: Market;
@@ -24,9 +28,25 @@ export function MarketCard({ market, onVoteClick }: MarketCardProps) {
   const [isHovered, setIsHovered] = useState(false);
   const [tradeMode, setTradeMode] = useState<"idle" | "active">("idle");
   const [showAllTags, setShowAllTags] = useState(false);
+  const [paymentToken, setPaymentToken] = useState<Address | null>(null);
 
   const totalVotes = market.yesVotes + market.noVotes;
   const yesPercentage = totalVotes > 0 ? (market.yesVotes / totalVotes) * 100 : 50;
+
+  // Fetch payment token for market balance display
+  useEffect(() => {
+    if (market.indexer !== undefined && market.marketBalance) {
+      const fetchToken = async () => {
+        try {
+          const token = await readPaymentToken(market.indexer!);
+          setPaymentToken(token);
+        } catch (err) {
+          console.error("Failed to fetch payment token:", err);
+        }
+      };
+      fetchToken();
+    }
+  }, [market.indexer, market.marketBalance]);
 
   const handleCardClick = () => {
     navigate(`/market/${market.id}`);
@@ -157,9 +177,15 @@ export function MarketCard({ market, onVoteClick }: MarketCardProps) {
           </div>
         </div>
 
-        {/* Vote Stats Tag */}
-        <div className="mb-4">
+        {/* Vote Stats Tag with Timer and Balance */}
+        <div className="mb-4 flex flex-wrap items-center gap-2">
           <VoteStats aVotes={market.yesVotes} bVotes={market.noVotes} />
+          {market.endTime && market.endTime > 0 && (
+            <CountdownTimer endTime={market.endTime} closed={market.closed} compact />
+          )}
+          {market.marketBalance && (
+            <MarketBalance marketBalance={market.marketBalance} paymentToken={paymentToken as Address} />
+          )}
         </div>
 
         {/* Vote/Trade Buttons */}

@@ -101,6 +101,7 @@ export interface WriteMarketParams {
   paymentToken?: Address;
   fee: bigint;
   signal?: boolean;
+  endTime?: number; // Unix timestamp in seconds, 0 for no timer
 }
 
 // ============================================================================
@@ -142,7 +143,7 @@ export const blockchain = {
   rpc: 'https://ethereum-sepolia-rpc.publicnode.com',
   blockExplorer: 'https://sepolia.etherscan.io',
   decimals: 18,
-  contract_address: '0x48766eC6C46a435016F0Be027e8c0F7Eb85dD326' as Address,
+  contract_address: '0x5cF9CCc7099185FC65C71D303671B8424a81d018' as Address,
   symbol: 'sETH',
 };
 
@@ -404,6 +405,7 @@ export const prepareWriteMarket = (params: WriteMarketParams) => {
 
   const feetype = params.feetype || false;
   const signal = params.signal || false; // true for token payment, false for ETH
+  const endTime = BigInt(params.endTime || 0); // Unix timestamp, 0 for no timer
 
   // Determine the correct payment token address
   // Use the provided paymentToken, which should be set correctly by the caller
@@ -411,13 +413,14 @@ export const prepareWriteMarket = (params: WriteMarketParams) => {
 
   return prepareContractCall({
     contract: penny4thotsContract,
-    method: "function writeMarket(string[] calldata _info, uint256 _marketBalance, bool _signal, bool _feetype, address _paymentToken) external payable",
+    method: "function writeMarket(string[] calldata _info, uint256 _marketBalance, bool _signal, bool _feetype, address _paymentToken, uint256 _endTime) external payable",
     params: [
       infoArray,
       params.marketBalance,
       signal, // _signal - true if token payment, false if ETH payment
       feetype,
       paymentTokenAddress,
+      endTime, // Unix timestamp for market end time
     ],
   });
 };

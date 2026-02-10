@@ -1,10 +1,14 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { TrendingUp, TrendingDown, Brain } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import type { Market } from "@/types/market";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { VoteStats } from "./VoteStats";
+import { CountdownTimer } from "./CountdownTimer";
+import { MarketBalance } from "./MarketBalance";
+import { readPaymentToken } from "@/tools/utils";
+import type { Address } from "viem";
 
 interface MarketCardMyThotsProps {
   market: Market;
@@ -19,9 +23,25 @@ export function MarketCardMyThots({ market, onVoteClick }: MarketCardMyThotsProp
   const navigate = useNavigate();
   const [isHovered, setIsHovered] = useState(false);
   const [showAllTags, setShowAllTags] = useState(false);
+  const [paymentToken, setPaymentToken] = useState<Address | null>(null);
 
   const totalVotes = market.yesVotes + market.noVotes;
   const yesPercentage = totalVotes > 0 ? (market.yesVotes / totalVotes) * 100 : 50;
+
+  // Fetch payment token for market balance display
+  useEffect(() => {
+    if (market.indexer !== undefined && market.marketBalance) {
+      const fetchToken = async () => {
+        try {
+          const token = await readPaymentToken(market.indexer!);
+          setPaymentToken(token);
+        } catch (err) {
+          console.error("Failed to fetch payment token:", err);
+        }
+      };
+      fetchToken();
+    }
+  }, [market.indexer, market.marketBalance]);
 
   const handleCardClick = () => {
     navigate(`/market/${market.id}`);
@@ -124,9 +144,15 @@ export function MarketCardMyThots({ market, onVoteClick }: MarketCardMyThotsProp
           </div>
         </div>
 
-        {/* Vote Stats Tag */}
-        <div className="mb-4">
+        {/* Vote Stats Tag with Timer and Balance */}
+        <div className="mb-4 flex flex-wrap items-center gap-2">
           <VoteStats aVotes={market.yesVotes} bVotes={market.noVotes} />
+          {market.endTime && market.endTime > 0 && (
+            <CountdownTimer endTime={market.endTime} closed={market.closed} compact />
+          )}
+          {market.marketBalance && (
+            <MarketBalance marketBalance={market.marketBalance} paymentToken={paymentToken as Address} />
+          )}
         </div>
 
         {/* Vote Button with emerald styling */}

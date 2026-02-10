@@ -473,6 +473,11 @@
 				"internalType": "address",
 				"name": "_paymentToken",
 				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "_endTime",
+				"type": "uint256"
 			}
 		],
 		"name": "writeMarket",
@@ -1809,5 +1814,5 @@
 		"stateMutability": "view",
 		"type": "function"
 	}
-  ]
+]
 }
