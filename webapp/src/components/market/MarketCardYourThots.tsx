@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { VoteStats } from "./VoteStats";
 import { CountdownTimer } from "./CountdownTimer";
 import { MarketBalance } from "./MarketBalance";
-import { readPaymentToken, isClaimable, getAllUserPositions, useBatchClaim } from "@/tools/utils";
+import { readPaymentToken, getClaimablePositions, getAllUserPositions, useBatchClaim } from "@/tools/utils";
 import type { Address } from "viem";
 import { useActiveAccount } from "thirdweb/react";
 import { toast } from "sonner";
@@ -50,44 +50,44 @@ export function MarketCardYourThots({ market, onVoteClick }: MarketCardYourThots
     }
   }, [market.indexer, market.marketBalance]);
 
-  // Check if market is claimable when it's closed
+  // Fetch user positions and check which are claimable when market is closed
   useEffect(() => {
-    if (market?.indexer !== undefined && market?.closed) {
-      const checkClaimable = async () => {
-        try {
-          const claimable = await isClaimable(market.indexer!);
-          setMarketClaimable(claimable);
-        } catch (err) {
-          console.error("Failed to check if market is claimable:", err);
-          setMarketClaimable(false);
-        }
-      };
-      checkClaimable();
-    } else {
-      setMarketClaimable(null);
-    }
-  }, [market?.indexer, market?.closed]);
-
-  // Fetch user positions when market is claimable and user is connected
-  useEffect(() => {
-    if (market?.indexer !== undefined && marketClaimable && account?.address) {
-      const fetchPositions = async () => {
+    if (market?.indexer !== undefined && market?.closed && account?.address) {
+      const fetchClaimablePositions = async () => {
         setIsLoadingPositions(true);
         try {
-          const positions = await getAllUserPositions(market.indexer!, account.address as `0x${string}`);
-          setUserPositions(positions);
+          // First get all user positions in this market
+          const allPositions = await getAllUserPositions(market.indexer!, account.address as `0x${string}`);
+
+          if (allPositions.length === 0) {
+            // User has no positions in this market
+            setUserPositions([]);
+            setMarketClaimable(true);
+          } else {
+            // Check which positions are actually claimable (winning positions)
+            const claimablePositions = await getClaimablePositions(market.indexer!, allPositions);
+            setUserPositions(claimablePositions);
+            setMarketClaimable(true);
+          }
         } catch (err) {
-          console.error("Failed to fetch user positions:", err);
+          console.error("Failed to fetch claimable positions:", err);
           setUserPositions([]);
+          setMarketClaimable(false);
         } finally {
           setIsLoadingPositions(false);
         }
       };
-      fetchPositions();
+      fetchClaimablePositions();
+    } else if (market?.closed && !account?.address) {
+      // Market is closed but user not connected
+      setMarketClaimable(true);
+      setUserPositions([]);
+      setIsLoadingPositions(false);
     } else {
+      setMarketClaimable(null);
       setUserPositions([]);
     }
-  }, [market?.indexer, marketClaimable, account?.address]);
+  }, [market?.indexer, market?.closed, account?.address]);
 
   const handleCardClick = () => {
     navigate(`/market/${market.id}`);
