@@ -37,6 +37,18 @@ Structure:
 - This ensures users see the full market details without having to scroll
 - Prevents the disorientation of landing on the bottom of the page
 
+### Batch Claim Feature
+When a market is closed and claimable:
+- The app fetches the user's position count using `userPositionCount(marketId, address)`
+- If positions exist, it retrieves all position IDs using `getUserPositions()` with pagination
+- For large position counts (>200), the data is fetched in batches of 200 with 3-second delays between calls
+- **Button Display**:
+  - Shows "Loading positions..." while fetching user positions
+  - Shows "No positions to claim" if user has no positions in the market
+  - Shows "Claim" for a single position
+  - Shows "Claim All (N)" when user has multiple positions (e.g., "Claim All (4)")
+- Clicking the claim button calls `batchClaim(marketId, positionIds[])` to claim all rewards in one transaction
+
 ### Market Data Format
 - **Tags**: Stored on-chain as comma-delimited strings (e.g., "crypto,bitcoin,prediction"). Max 7 tags.
 - **Market Fetching**: App fetches up to 50 most recent markets from blockchain in descending order (newest first)
@@ -58,6 +70,9 @@ Structure:
 - `getUserClaimHistory(address)` - Gets array of ClaimRecord for user's claim history
 - `getUserThotsCount(address)` - Gets count of user's created markets
 - `getUserMarketsCount(address)` - Gets count of user's voted markets
+- `getUserPositionCount(marketId, address)` - Gets count of user's positions in a specific market
+- `getAllUserPositions(marketId, address)` - Gets all position IDs for a user in a market (with pagination for large datasets)
+- `useBatchClaim()` - Hook for batch claiming rewards from multiple positions
 
 ### Tag Display
 - Markets display first 3 tags directly on the card

@@ -4,6 +4,22 @@ This file tracks all significant progress. Updated automatically after major cha
 
 ---
 
+## 2026-02-10
+
+### Feature: Batch Claim Implementation
+- Added `getUserPositionCount()` function to get user's position count in a market
+- Added `getUserPositionsInRange()` function to fetch positions with pagination
+- Added `getAllUserPositions()` function with smart pagination (200 limit per call, 3s delay between batches)
+- Added `useBatchClaim()` hook for batch claiming rewards from multiple positions
+- Updated MarketPage claim button with dynamic text:
+  - Shows "Loading positions..." while fetching
+  - Shows "No positions to claim" when user has no positions
+  - Shows "Claim" for single position
+  - Shows "Claim All (N)" for multiple positions (e.g., "Claim All (4)")
+- Full integration with `batchClaim(marketId, positionIds[])` smart contract function
+
+---
+
 ## 2026-02-09
 
 ### Git Sync Fix
