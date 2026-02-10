@@ -11,7 +11,7 @@ This file tracks all significant progress. Updated automatically after major cha
 - **Main Feed (MarketCard)**: Closed markets now show disabled "Closed" button instead of "Vote"
 - **Market Page**:
   - Checks `sharesFinalized` from contract to determine if market is still resolving
-  - Shows "Checking status..." while loading
+  - Shows "Penalty Window" while loading
   - Shows "Resolving Market" (gray, pulse animation) when `sharesFinalized = false`
   - Shows "Claim" / "Claim All (N)" when user has claimable positions
   - Shows disabled "Closed" button (dimmed) when user has no positions to claim

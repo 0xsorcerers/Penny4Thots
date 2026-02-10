@@ -1587,7 +1587,7 @@ export default function MarketPage() {
               /* Closed Market - Loading claimable status */
               <div className="w-full rounded-xl py-5 bg-muted/30 flex items-center justify-center gap-2">
                 <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-                <span className="font-outfit text-muted-foreground">Checking status...</span>
+                <span className="font-outfit text-muted-foreground">Penalty Window</span>
               </div>
             ) : !sharesFinalized ? (
               /* Closed Market - Shares not finalized - Show Resolving */
