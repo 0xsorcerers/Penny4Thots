@@ -1170,10 +1170,22 @@ export default function MarketPage() {
               </span>
               
               {market.closed ? (
-                <span className="flex items-center gap-1.5 rounded-full bg-red-500/10 px-3 py-1 font-mono text-xs font-semibold text-red-500 dark:bg-red-500/20 dark:text-red-400">
-                  <CircleOff className="h-3.5 w-3.5" />
-                  Closed
-                </span>
+                sharesFinalized === null ? (
+                  <span className="flex items-center gap-1.5 rounded-full bg-slate-500/10 px-3 py-1 font-mono text-xs font-semibold text-slate-500 dark:bg-slate-500/20 dark:text-slate-400">
+                    <CircleOff className="h-3.5 w-3.5" />
+                    Checking...
+                  </span>
+                ) : sharesFinalized === false ? (
+                  <span className="flex items-center gap-1.5 rounded-full bg-amber-500/10 px-3 py-1 font-mono text-xs font-semibold text-amber-600 dark:bg-amber-500/20 dark:text-amber-400">
+                    <CircleOff className="h-3.5 w-3.5" />
+                    Resolving
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-1.5 rounded-full bg-red-500/10 px-3 py-1 font-mono text-xs font-semibold text-red-500 dark:bg-red-500/20 dark:text-red-400">
+                    <CircleOff className="h-3.5 w-3.5" />
+                    Ended
+                  </span>
+                )
               ) : (
                 <span className="flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-3 py-1 font-mono text-xs font-semibold text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400">
                   <CircleDot className="h-3.5 w-3.5" />
@@ -1186,7 +1198,7 @@ export default function MarketPage() {
             {/* Countdown Timer - shown after status badge */}
             {market.endTime && market.endTime > 0 && (
               <div className="mt-4">
-                <CountdownTimerLarge endTime={market.endTime} closed={market.closed} />
+                <CountdownTimerLarge endTime={market.endTime} closed={market.closed} sharesFinalized={sharesFinalized} />
               </div>
             )}
 

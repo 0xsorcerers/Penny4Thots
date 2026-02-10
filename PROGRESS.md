@@ -15,6 +15,13 @@ This file tracks all significant progress. Updated automatically after major cha
   - Shows "Resolving Market" (gray, pulse animation) when `sharesFinalized = false`
   - Shows "Claim" / "Claim All (N)" when user has claimable positions
   - Shows disabled "Closed" button (dimmed) when user has no positions to claim
+  - Status badge shows:
+    - "Checking..." when sharesFinalized is loading
+    - "Resolving" (amber) when sharesFinalized = false
+    - "Ended" (red) when sharesFinalized = true
+  - Countdown Timer text shows:
+    - "Penalty Window" + "Voting is wrapping up." when sharesFinalized = false
+    - "Ended" + "Voting is over." when sharesFinalized = true
 - **My Thots Page**: Same button state logic as Market Page with emerald theme
 - **Your Thots Page**: Same button state logic as Market Page with violet theme
 

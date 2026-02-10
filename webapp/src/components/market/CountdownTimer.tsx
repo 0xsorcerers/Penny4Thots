@@ -5,6 +5,7 @@ import { Timer, Clock, Flame, AlertTriangle, CheckCircle2 } from "lucide-react";
 interface CountdownTimerProps {
   endTime: number; // Unix timestamp in seconds
   closed?: boolean;
+  sharesFinalized?: boolean | null; // For market page - null = loading, false = resolving, true = finalized
   compact?: boolean; // For market cards
   className?: string;
 }
@@ -145,7 +146,7 @@ export function CountdownTimer({ endTime, closed, compact = false, className = "
 }
 
 // Larger version for MarketPage
-export function CountdownTimerLarge({ endTime, closed, className = "" }: CountdownTimerProps) {
+export function CountdownTimerLarge({ endTime, closed, sharesFinalized, className = "" }: CountdownTimerProps) {
   const [timeRemaining, setTimeRemaining] = useState<TimeRemaining>(() => calculateTimeRemaining(endTime));
 
   useEffect(() => {
@@ -217,6 +218,39 @@ export function CountdownTimerLarge({ endTime, closed, className = "" }: Countdo
     </div>
   );
 
+  // Determine the status text based on market state
+  const getStatusText = () => {
+    if (!isEnded) return "Time Remaining";
+
+    // Market is closed, check sharesFinalized status
+    if (sharesFinalized === null) {
+      // Still loading
+      return "Checking status...";
+    } else if (sharesFinalized === false) {
+      // Market is resolving
+      return "Penalty Window";
+    } else {
+      // Shares are finalized
+      return "Ended";
+    }
+  };
+
+  const getStatusMessage = () => {
+    if (!isEnded) return null;
+
+    // Market is closed, check sharesFinalized status
+    if (sharesFinalized === null) {
+      // Still loading
+      return "Checking status...";
+    } else if (sharesFinalized === false) {
+      // Market is resolving
+      return "Voting is wrapping up.";
+    } else {
+      // Shares are finalized
+      return "Voting is over.";
+    }
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -232,7 +266,7 @@ export function CountdownTimerLarge({ endTime, closed, className = "" }: Countdo
           <Timer className={`h-5 w-5 ${getTextColor()}`} />
         )}
         <span className={`font-outfit text-sm font-semibold ${getTextColor()}`}>
-          {isEnded ? "Penalty Window" : "Time Remaining"}
+          {getStatusText()}
         </span>
       </div>
 
@@ -246,7 +280,7 @@ export function CountdownTimerLarge({ endTime, closed, className = "" }: Countdo
       ) : (
         <div className="flex items-center justify-center gap-2">
           <CheckCircle2 className="h-5 w-5 text-slate-400" />
-          <span className="font-outfit text-lg text-slate-400">Voting is wrapping up.</span>
+          <span className="font-outfit text-lg text-slate-400">{getStatusMessage()}</span>
         </div>
       )}
     </motion.div>
