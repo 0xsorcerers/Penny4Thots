@@ -1,14 +1,16 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { TrendingUp, TrendingDown, Brain } from "lucide-react";
+import { TrendingUp, TrendingDown, Brain, Loader2, Gift, Hourglass } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import type { Market } from "@/types/market";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { VoteStats } from "./VoteStats";
 import { CountdownTimer } from "./CountdownTimer";
 import { MarketBalance } from "./MarketBalance";
-import { readPaymentToken } from "@/tools/utils";
+import { readPaymentToken, isClaimable, getAllUserPositions, useBatchClaim } from "@/tools/utils";
 import type { Address } from "viem";
+import { useActiveAccount } from "thirdweb/react";
+import { toast } from "sonner";
 
 interface MarketCardMyThotsProps {
   market: Market;
@@ -21,9 +23,14 @@ const truncateOption = (option: string, maxLength: number = 9): string => {
 
 export function MarketCardMyThots({ market, onVoteClick }: MarketCardMyThotsProps) {
   const navigate = useNavigate();
+  const account = useActiveAccount();
   const [isHovered, setIsHovered] = useState(false);
   const [showAllTags, setShowAllTags] = useState(false);
   const [paymentToken, setPaymentToken] = useState<Address | null>(null);
+  const [marketClaimable, setMarketClaimable] = useState<boolean | null>(null);
+  const [userPositions, setUserPositions] = useState<number[]>([]);
+  const [isLoadingPositions, setIsLoadingPositions] = useState(false);
+  const { batchClaim, isPending: isClaiming } = useBatchClaim();
 
   const totalVotes = market.yesVotes + market.noVotes;
   const yesPercentage = totalVotes > 0 ? (market.yesVotes / totalVotes) * 100 : 50;
@@ -43,6 +50,45 @@ export function MarketCardMyThots({ market, onVoteClick }: MarketCardMyThotsProp
     }
   }, [market.indexer, market.marketBalance]);
 
+  // Check if market is claimable when it's closed
+  useEffect(() => {
+    if (market?.indexer !== undefined && market?.closed) {
+      const checkClaimable = async () => {
+        try {
+          const claimable = await isClaimable(market.indexer!);
+          setMarketClaimable(claimable);
+        } catch (err) {
+          console.error("Failed to check if market is claimable:", err);
+          setMarketClaimable(false);
+        }
+      };
+      checkClaimable();
+    } else {
+      setMarketClaimable(null);
+    }
+  }, [market?.indexer, market?.closed]);
+
+  // Fetch user positions when market is claimable and user is connected
+  useEffect(() => {
+    if (market?.indexer !== undefined && marketClaimable && account?.address) {
+      const fetchPositions = async () => {
+        setIsLoadingPositions(true);
+        try {
+          const positions = await getAllUserPositions(market.indexer!, account.address as `0x${string}`);
+          setUserPositions(positions);
+        } catch (err) {
+          console.error("Failed to fetch user positions:", err);
+          setUserPositions([]);
+        } finally {
+          setIsLoadingPositions(false);
+        }
+      };
+      fetchPositions();
+    } else {
+      setUserPositions([]);
+    }
+  }, [market?.indexer, marketClaimable, account?.address]);
+
   const handleCardClick = () => {
     navigate(`/market/${market.id}`);
   };
@@ -56,6 +102,42 @@ export function MarketCardMyThots({ market, onVoteClick }: MarketCardMyThotsProp
     e.stopPropagation();
     if (onVoteClick && market.indexer !== undefined) {
       onVoteClick(market.indexer, true);
+    }
+  };
+
+  const handleClaim = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!account?.address) {
+      toast.error("Please connect your wallet first");
+      return;
+    }
+
+    if (userPositions.length === 0) {
+      toast.error("No positions to claim");
+      return;
+    }
+
+    try {
+      toast.info("Processing claim...", {
+        description: `Claiming ${userPositions.length} position${userPositions.length > 1 ? 's' : ''}`,
+      });
+
+      await batchClaim({
+        marketId: market.indexer!,
+        positionIds: userPositions,
+      });
+
+      toast.success("Claim successful!", {
+        description: `You have successfully claimed your rewards from ${userPositions.length} position${userPositions.length > 1 ? 's' : ''}`,
+      });
+
+      // Clear positions after successful claim
+      setUserPositions([]);
+    } catch (err) {
+      console.error("Claim failed:", err);
+      toast.error("Claim failed", {
+        description: err instanceof Error ? err.message : "Please try again",
+      });
     }
   };
 
@@ -156,14 +238,53 @@ export function MarketCardMyThots({ market, onVoteClick }: MarketCardMyThotsProp
         </div>
 
         {/* Vote Button with emerald styling */}
-        <motion.button
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          onClick={handleVoteClick}
-          className="flex w-full items-center justify-center gap-2 rounded-xl py-2.5 font-outfit text-sm font-medium transition-all bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25 border border-emerald-500/30 hover:border-emerald-500/50"
-        >
-          Vote on Your Thot
-        </motion.button>
+        {!market.closed ? (
+          <motion.button
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            onClick={handleVoteClick}
+            className="flex w-full items-center justify-center gap-2 rounded-xl py-2.5 font-outfit text-sm font-medium transition-all bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25 border border-emerald-500/30 hover:border-emerald-500/50"
+          >
+            Vote on Your Thot
+          </motion.button>
+        ) : marketClaimable === null ? (
+          <div className="flex w-full items-center justify-center gap-2 rounded-xl py-2.5 bg-muted/30">
+            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+            <span className="font-outfit text-xs text-muted-foreground">Checking status...</span>
+          </div>
+        ) : marketClaimable ? (
+          isLoadingPositions ? (
+            <div className="flex w-full items-center justify-center gap-2 rounded-xl py-2.5 bg-muted/30">
+              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+              <span className="font-outfit text-xs text-muted-foreground">Loading positions...</span>
+            </div>
+          ) : userPositions.length === 0 ? (
+            <div className="flex w-full items-center justify-center gap-2 rounded-xl py-2.5 bg-gradient-to-r from-slate-500/10 to-gray-500/10 border border-slate-500/20">
+              <Gift className="h-4 w-4 text-slate-400 dark:text-slate-500" />
+              <span className="font-outfit text-xs text-slate-500 dark:text-slate-400">No positions to claim</span>
+            </div>
+          ) : (
+            <motion.button
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              onClick={handleClaim}
+              disabled={isClaiming}
+              className="flex w-full items-center justify-center gap-2 rounded-xl py-2.5 font-outfit text-sm font-medium transition-all bg-emerald-600/25 text-emerald-300 hover:bg-emerald-600/35 border border-emerald-500/40 hover:border-emerald-500/60 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isClaiming ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Gift className="h-4 w-4" />
+              )}
+              {isClaiming ? "Claiming..." : userPositions.length > 1 ? `Claim All (${userPositions.length})` : "Claim"}
+            </motion.button>
+          )
+        ) : (
+          <div className="flex w-full items-center justify-center gap-2 rounded-xl py-2.5 bg-gradient-to-r from-slate-500/10 to-gray-500/10 border border-slate-500/20">
+            <Hourglass className="h-4 w-4 text-slate-400 dark:text-slate-500 animate-pulse" />
+            <span className="font-outfit text-xs text-slate-500 dark:text-slate-400">Resolving Market</span>
+          </div>
+        )}
       </div>
 
       {/* Hover glow effect */}
