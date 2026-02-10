@@ -12,7 +12,7 @@ import { useMarketStore } from "@/store/marketStore";
 
 import { useMarketDataHydration } from "@/hooks/useMarketDataHydration";
 
-import { useVote, useTokenApprove, readPaymentToken, readTokenAllowance, isZeroAddress, fetchDataConstants, calculatePlatformFeePercentage, fetchMarketDataFromBlockchain, isClaimable, type VoteParams } from "@/tools/utils";
+import { useVote, useTokenApprove, readPaymentToken, readTokenAllowance, isZeroAddress, fetchDataConstants, calculatePlatformFeePercentage, fetchMarketDataFromBlockchain, isClaimable, getAllUserPositions, useBatchClaim, type VoteParams } from "@/tools/utils";
 
 import { VoteModal } from "@/components/market/VoteModal";
 
@@ -65,6 +65,8 @@ export default function MarketPage() {
 
   const { approve, isPending: isApproving } = useTokenApprove();
 
+  const { batchClaim, isPending: isClaiming } = useBatchClaim();
+
 
 
 
@@ -94,6 +96,10 @@ export default function MarketPage() {
   const [platformFeePercentage, setPlatformFeePercentage] = useState<number | null>(null);
 
   const [marketClaimable, setMarketClaimable] = useState<boolean | null>(null);
+
+  const [userPositions, setUserPositions] = useState<number[]>([]);
+
+  const [isLoadingPositions, setIsLoadingPositions] = useState(false);
 
 
 
@@ -211,6 +217,27 @@ export default function MarketPage() {
       setMarketClaimable(null);
     }
   }, [market?.indexer, market?.closed]);
+
+  // Fetch user positions when market is claimable and user is connected
+  useEffect(() => {
+    if (market?.indexer !== undefined && marketClaimable && account?.address) {
+      const fetchPositions = async () => {
+        setIsLoadingPositions(true);
+        try {
+          const positions = await getAllUserPositions(market.indexer!, account.address as `0x${string}`);
+          setUserPositions(positions);
+        } catch (err) {
+          console.error("Failed to fetch user positions:", err);
+          setUserPositions([]);
+        } finally {
+          setIsLoadingPositions(false);
+        }
+      };
+      fetchPositions();
+    } else {
+      setUserPositions([]);
+    }
+  }, [market?.indexer, marketClaimable, account?.address]);
 
   // Log vote modal state for debugging
 
@@ -389,6 +416,45 @@ export default function MarketPage() {
 
   };
 
+  const handleClaim = async () => {
+    if (!account?.address) {
+      toast.error("Please connect your wallet first");
+      return;
+    }
+
+    if (!market || market.indexer === undefined) {
+      toast.error("Market data not loaded");
+      return;
+    }
+
+    if (userPositions.length === 0) {
+      toast.error("No positions to claim");
+      return;
+    }
+
+    try {
+      toast.info("Processing claim...", {
+        description: `Claiming ${userPositions.length} position${userPositions.length > 1 ? 's' : ''}`,
+      });
+
+      await batchClaim({
+        marketId: market.indexer,
+        positionIds: userPositions,
+      });
+
+      toast.success("Claim successful!", {
+        description: `You have successfully claimed your rewards from ${userPositions.length} position${userPositions.length > 1 ? 's' : ''}`,
+      });
+
+      // Clear positions after successful claim
+      setUserPositions([]);
+    } catch (err) {
+      console.error("Claim failed:", err);
+      toast.error("Claim failed", {
+        description: err instanceof Error ? err.message : "Please try again",
+      });
+    }
+  };
 
 
 
@@ -1484,17 +1550,34 @@ export default function MarketPage() {
               </div>
             ) : marketClaimable ? (
               /* Closed Market - Claimable - Show Claim Button */
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => toast.info("Claim feature coming soon!")}
-                className="w-full relative overflow-hidden rounded-xl py-5 font-syne text-xl font-bold transition-all bg-gradient-to-r from-amber-500/20 to-orange-500/20 text-amber-500 hover:from-amber-500 hover:to-orange-500 hover:text-white dark:from-amber-500/30 dark:to-orange-500/30 dark:text-amber-400 dark:hover:from-amber-500 dark:hover:to-orange-500 dark:hover:text-white border border-amber-500/30"
-              >
-                <span className="relative z-10 flex items-center justify-center gap-2">
-                  <Gift className="h-6 w-6" />
-                  Claim Rewards
-                </span>
-              </motion.button>
+              isLoadingPositions ? (
+                <div className="w-full rounded-xl py-5 bg-muted/30 flex items-center justify-center gap-2">
+                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                  <span className="font-outfit text-muted-foreground">Loading positions...</span>
+                </div>
+              ) : userPositions.length === 0 ? (
+                <div className="w-full rounded-xl py-5 bg-gradient-to-r from-slate-500/10 to-gray-500/10 border border-slate-500/20 flex items-center justify-center gap-2">
+                  <Gift className="h-5 w-5 text-slate-400 dark:text-slate-500" />
+                  <span className="font-syne text-lg font-semibold text-slate-500 dark:text-slate-400">No positions to claim</span>
+                </div>
+              ) : (
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={handleClaim}
+                  disabled={isClaiming}
+                  className="w-full relative overflow-hidden rounded-xl py-5 font-syne text-xl font-bold transition-all bg-gradient-to-r from-amber-500/20 to-orange-500/20 text-amber-500 hover:from-amber-500 hover:to-orange-500 hover:text-white dark:from-amber-500/30 dark:to-orange-500/30 dark:text-amber-400 dark:hover:from-amber-500 dark:hover:to-orange-500 dark:hover:text-white border border-amber-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <span className="relative z-10 flex items-center justify-center gap-2">
+                    {isClaiming ? (
+                      <Loader2 className="h-6 w-6 animate-spin" />
+                    ) : (
+                      <Gift className="h-6 w-6" />
+                    )}
+                    {isClaiming ? "Claiming..." : userPositions.length > 1 ? `Claim All (${userPositions.length})` : "Claim"}
+                  </span>
+                </motion.button>
+              )
             ) : (
               /* Closed Market - Not Claimable - Show Resolving */
               <div className="w-full rounded-xl py-5 bg-gradient-to-r from-slate-500/10 to-gray-500/10 border border-slate-500/20 flex items-center justify-center gap-2">

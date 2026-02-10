@@ -823,5 +823,128 @@ export const isClaimable = async (marketId: number): Promise<boolean> => {
   }
 };
 
+// ============================================================================
+// User Position Functions (for claiming)
+// ============================================================================
+
+const POSITION_FETCH_LIMIT = 200;
+
+/**
+ * Get the count of user's positions in a specific market
+ */
+export const getUserPositionCount = async (marketId: number, userAddress: Address): Promise<number> => {
+  try {
+    const result = await publicClient.readContract({
+      address: blockchain.contract_address,
+      abi: contractABI,
+      functionName: 'userPositionCount',
+      args: [BigInt(marketId), userAddress],
+    });
+    return Number(result);
+  } catch (err) {
+    console.error('Error fetching user position count:', err);
+    return 0;
+  }
+};
+
+/**
+ * Get user's positions in a market for a given range
+ * Returns array of position IDs
+ */
+export const getUserPositionsInRange = async (
+  marketId: number,
+  userAddress: Address,
+  start: number,
+  finish: number
+): Promise<number[]> => {
+  if (start >= finish) return [];
+
+  try {
+    const result = await publicClient.readContract({
+      address: blockchain.contract_address,
+      abi: contractABI,
+      functionName: 'getUserPositions',
+      args: [BigInt(marketId), userAddress, BigInt(start), BigInt(finish)],
+    });
+
+    return (result as bigint[]).map((id) => Number(id));
+  } catch (err) {
+    console.error('Error fetching user positions:', err);
+    return [];
+  }
+};
+
+/**
+ * Delay utility for rate-limiting blockchain calls
+ */
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+/**
+ * Get all user positions in a market with pagination
+ * Uses 200 position limit per call with 3 second delay between calls for large datasets
+ */
+export const getAllUserPositions = async (
+  marketId: number,
+  userAddress: Address
+): Promise<number[]> => {
+  const positionCount = await getUserPositionCount(marketId, userAddress);
+
+  if (positionCount === 0) return [];
+
+  const allPositions: number[] = [];
+  const callsRequired = Math.ceil(positionCount / POSITION_FETCH_LIMIT);
+
+  for (let i = 0; i < callsRequired; i++) {
+    const start = i * POSITION_FETCH_LIMIT;
+    const finish = Math.min(start + POSITION_FETCH_LIMIT, positionCount);
+
+    const positions = await getUserPositionsInRange(marketId, userAddress, start, finish);
+    allPositions.push(...positions);
+
+    // Add 3 second delay between calls if there are more calls to make
+    if (i < callsRequired - 1) {
+      await delay(3000);
+    }
+  }
+
+  return allPositions;
+};
+
+// ============================================================================
+// Batch Claim Functions
+// ============================================================================
+
+export interface BatchClaimParams {
+  marketId: number;
+  positionIds: number[];
+}
+
+export const prepareBatchClaim = (params: BatchClaimParams) => {
+  return prepareContractCall({
+    contract: penny4thotsContract,
+    method: "function batchClaim(uint256 _market, uint256[] calldata _posIds) external",
+    params: [BigInt(params.marketId), params.positionIds.map(id => BigInt(id))],
+  });
+};
+
+export const useBatchClaim = () => {
+  const { mutateAsync: sendTx, isPending, error } = useSendTransaction();
+
+  const batchClaim = async (params: BatchClaimParams) => {
+    const transaction = prepareBatchClaim(params);
+    const result = await sendTx(transaction);
+
+    await waitForReceipt({
+      client,
+      chain: sepolia,
+      transactionHash: result.transactionHash,
+    });
+
+    return result;
+  };
+
+  return { batchClaim, isPending, error };
+};
+
 // Re-export useful viem utilities
 export { formatEther, parseEther, ZERO_ADDRESS };
