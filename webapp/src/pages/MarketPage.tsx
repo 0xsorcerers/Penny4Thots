@@ -12,7 +12,7 @@ import { useMarketStore } from "@/store/marketStore";
 
 import { useMarketDataHydration } from "@/hooks/useMarketDataHydration";
 
-import { useVote, useTokenApprove, readPaymentToken, readTokenAllowance, isZeroAddress, fetchDataConstants, calculatePlatformFeePercentage, fetchMarketDataFromBlockchain, isClaimable, getAllUserPositions, useBatchClaim, type VoteParams } from "@/tools/utils";
+import { useVote, useTokenApprove, readPaymentToken, readTokenAllowance, isZeroAddress, fetchDataConstants, calculatePlatformFeePercentage, fetchMarketDataFromBlockchain, getClaimablePositions, getAllUserPositions, useBatchClaim, type VoteParams } from "@/tools/utils";
 
 import { VoteModal } from "@/components/market/VoteModal";
 
@@ -200,44 +200,44 @@ export default function MarketPage() {
 
   }, [market?.indexer]);
 
-  // Fetch claimable status when market is closed
+  // Fetch user positions and check which are claimable when market is closed
   useEffect(() => {
-    if (market?.indexer !== undefined && market?.closed) {
-      const checkClaimable = async () => {
-        try {
-          const claimable = await isClaimable(market.indexer!);
-          setMarketClaimable(claimable);
-        } catch (err) {
-          console.error("Failed to check if market is claimable:", err);
-          setMarketClaimable(false);
-        }
-      };
-      checkClaimable();
-    } else {
-      setMarketClaimable(null);
-    }
-  }, [market?.indexer, market?.closed]);
-
-  // Fetch user positions when market is claimable and user is connected
-  useEffect(() => {
-    if (market?.indexer !== undefined && marketClaimable && account?.address) {
-      const fetchPositions = async () => {
+    if (market?.indexer !== undefined && market?.closed && account?.address) {
+      const fetchClaimablePositions = async () => {
         setIsLoadingPositions(true);
         try {
-          const positions = await getAllUserPositions(market.indexer!, account.address as `0x${string}`);
-          setUserPositions(positions);
+          // First get all user positions in this market
+          const allPositions = await getAllUserPositions(market.indexer!, account.address as `0x${string}`);
+
+          if (allPositions.length === 0) {
+            // User has no positions in this market
+            setUserPositions([]);
+            setMarketClaimable(true); // Market is claimable but user has no positions
+          } else {
+            // Check which positions are actually claimable (winning positions)
+            const claimablePositions = await getClaimablePositions(market.indexer!, allPositions);
+            setUserPositions(claimablePositions);
+            setMarketClaimable(true);
+          }
         } catch (err) {
-          console.error("Failed to fetch user positions:", err);
+          console.error("Failed to fetch claimable positions:", err);
           setUserPositions([]);
+          setMarketClaimable(false);
         } finally {
           setIsLoadingPositions(false);
         }
       };
-      fetchPositions();
+      fetchClaimablePositions();
+    } else if (market?.closed && !account?.address) {
+      // Market is closed but user not connected
+      setMarketClaimable(true);
+      setUserPositions([]);
+      setIsLoadingPositions(false);
     } else {
+      setMarketClaimable(null);
       setUserPositions([]);
     }
-  }, [market?.indexer, marketClaimable, account?.address]);
+  }, [market?.indexer, market?.closed, account?.address]);
 
   // Log vote modal state for debugging
 

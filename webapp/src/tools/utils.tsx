@@ -143,7 +143,7 @@ export const blockchain = {
   rpc: 'https://ethereum-sepolia-rpc.publicnode.com',
   blockExplorer: 'https://sepolia.etherscan.io',
   decimals: 18,
-  contract_address: '0x5cF9CCc7099185FC65C71D303671B8424a81d018' as Address,
+  contract_address: '0xc85701E22D40F4CaC03d34B9D9245E1B909B9aa1' as Address,
   symbol: 'sETH',
 };
 
@@ -807,19 +807,24 @@ export const getUserTotalMarkets = async (userAddress: Address): Promise<number>
 };
 
 /**
- * Check if a market is claimable (closed and resolved with a winning side)
+ * Check which positions are claimable for a user in a market
+ * Returns array of position IDs that have winning positions (can be claimed)
+ * If returned array is empty, user has no claimable positions in that market
  */
-export const isClaimable = async (marketId: number): Promise<boolean> => {
+export const getClaimablePositions = async (marketId: number, positionIds: number[]): Promise<number[]> => {
+  if (positionIds.length === 0) return [];
+
   try {
     const result = await publicClient.readContract({
       address: blockchain.contract_address,
       abi: contractABI,
       functionName: 'isClaimable',
-      args: [BigInt(marketId)],
+      args: [BigInt(marketId), positionIds.map(id => BigInt(id))],
     });
-    return result as boolean;
-  } catch {
-    return false;
+    return (result as bigint[]).map(id => Number(id));
+  } catch (err) {
+    console.error('Error checking claimable positions:', err);
+    return [];
   }
 };
 
