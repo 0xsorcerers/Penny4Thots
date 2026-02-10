@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { TrendingUp, TrendingDown, BarChart3, X } from "lucide-react";
+import { TrendingUp, TrendingDown, BarChart3, X, CircleOff } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import type { Market } from "@/types/market";
 import { cn } from "@/lib/utils";
@@ -193,7 +193,18 @@ export function MarketCard({ market, onVoteClick }: MarketCardProps) {
 
         {/* Vote/Trade Buttons */}
         <AnimatePresence mode="wait">
-          {tradeMode === "idle" ? (
+          {market.closed ? (
+            <motion.div
+              key="closed"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="flex w-full items-center justify-center gap-2 rounded-xl py-2.5 font-outfit text-sm font-medium bg-muted/40 text-muted-foreground cursor-not-allowed opacity-60"
+            >
+              <CircleOff className="h-4 w-4" />
+              Closed
+            </motion.div>
+          ) : tradeMode === "idle" ? (
             <motion.button
               key="vote"
               initial={{ opacity: 0 }}

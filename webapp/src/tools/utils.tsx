@@ -951,5 +951,32 @@ export const useBatchClaim = () => {
   return { batchClaim, isPending, error };
 };
 
+// ============================================================================
+// Market Lock Functions (for checking if shares are finalized)
+// ============================================================================
+
+export interface MarketLock {
+  finalizedUpTo: number;
+  sharesFinalized: boolean;
+}
+
+/**
+ * Get the market lock info for a specific market
+ * Returns the finalization status including whether shares are finalized
+ */
+export const readMarketLock = async (marketId: number): Promise<MarketLock> => {
+  const result = await publicClient.readContract({
+    address: blockchain.contract_address,
+    abi: contractABI,
+    functionName: 'allMarketLocks',
+    args: [BigInt(marketId)],
+  }) as [bigint, boolean];
+
+  return {
+    finalizedUpTo: Number(result[0]),
+    sharesFinalized: result[1],
+  };
+};
+
 // Re-export useful viem utilities
 export { formatEther, parseEther, ZERO_ADDRESS };
