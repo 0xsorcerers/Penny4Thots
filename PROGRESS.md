@@ -6,6 +6,18 @@ This file tracks all significant progress. Updated automatically after major cha
 
 ## 2026-02-10
 
+### Feature: Closed Market Button States
+- Added `readMarketLock()` function to fetch `sharesFinalized` status from `allMarketLocks()` contract function
+- **Main Feed (MarketCard)**: Closed markets now show disabled "Closed" button instead of "Vote"
+- **Market Page**:
+  - Checks `sharesFinalized` from contract to determine if market is still resolving
+  - Shows "Checking status..." while loading
+  - Shows "Resolving Market" (gray, pulse animation) when `sharesFinalized = false`
+  - Shows "Claim" / "Claim All (N)" when user has claimable positions
+  - Shows disabled "Closed" button (dimmed) when user has no positions to claim
+- **My Thots Page**: Same button state logic as Market Page with emerald theme
+- **Your Thots Page**: Same button state logic as Market Page with violet theme
+
 ### Feature: Batch Claim Implementation
 - Added `getUserPositionCount()` function to get user's position count in a market
 - Added `getUserPositionsInRange()` function to fetch positions with pagination

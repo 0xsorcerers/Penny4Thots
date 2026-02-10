@@ -1,13 +1,13 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { TrendingUp, TrendingDown, Brain, Loader2, Gift, Hourglass } from "lucide-react";
+import { TrendingUp, TrendingDown, Brain, Loader2, Gift, Hourglass, CircleOff } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import type { Market } from "@/types/market";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { VoteStats } from "./VoteStats";
 import { CountdownTimer } from "./CountdownTimer";
 import { MarketBalance } from "./MarketBalance";
-import { readPaymentToken, getClaimablePositions, getAllUserPositions, useBatchClaim } from "@/tools/utils";
+import { readPaymentToken, getClaimablePositions, getAllUserPositions, useBatchClaim, readMarketLock } from "@/tools/utils";
 import type { Address } from "viem";
 import { useActiveAccount } from "thirdweb/react";
 import { toast } from "sonner";
@@ -28,6 +28,7 @@ export function MarketCardMyThots({ market, onVoteClick }: MarketCardMyThotsProp
   const [showAllTags, setShowAllTags] = useState(false);
   const [paymentToken, setPaymentToken] = useState<Address | null>(null);
   const [marketClaimable, setMarketClaimable] = useState<boolean | null>(null);
+  const [sharesFinalized, setSharesFinalized] = useState<boolean | null>(null);
   const [userPositions, setUserPositions] = useState<number[]>([]);
   const [isLoadingPositions, setIsLoadingPositions] = useState(false);
   const { batchClaim, isPending: isClaiming } = useBatchClaim();
@@ -56,7 +57,19 @@ export function MarketCardMyThots({ market, onVoteClick }: MarketCardMyThotsProp
       const fetchClaimablePositions = async () => {
         setIsLoadingPositions(true);
         try {
-          // First get all user positions in this market
+          // First check if shares are finalized
+          const marketLock = await readMarketLock(market.indexer!);
+          setSharesFinalized(marketLock.sharesFinalized);
+
+          if (!marketLock.sharesFinalized) {
+            // Market is still resolving, no need to fetch positions
+            setUserPositions([]);
+            setMarketClaimable(false);
+            setIsLoadingPositions(false);
+            return;
+          }
+
+          // Shares are finalized, get all user positions in this market
           const allPositions = await getAllUserPositions(market.indexer!, account.address as `0x${string}`);
 
           if (allPositions.length === 0) {
@@ -73,18 +86,33 @@ export function MarketCardMyThots({ market, onVoteClick }: MarketCardMyThotsProp
           console.error("Failed to fetch claimable positions:", err);
           setUserPositions([]);
           setMarketClaimable(false);
+          setSharesFinalized(null);
         } finally {
           setIsLoadingPositions(false);
         }
       };
       fetchClaimablePositions();
     } else if (market?.closed && !account?.address) {
-      // Market is closed but user not connected
-      setMarketClaimable(true);
-      setUserPositions([]);
-      setIsLoadingPositions(false);
+      // Market is closed but user not connected - check sharesFinalized
+      const checkSharesFinalized = async () => {
+        if (market?.indexer !== undefined) {
+          try {
+            const marketLock = await readMarketLock(market.indexer);
+            setSharesFinalized(marketLock.sharesFinalized);
+            setMarketClaimable(marketLock.sharesFinalized);
+          } catch (err) {
+            console.error("Failed to check shares finalized:", err);
+            setSharesFinalized(null);
+            setMarketClaimable(false);
+          }
+        }
+        setUserPositions([]);
+        setIsLoadingPositions(false);
+      };
+      checkSharesFinalized();
     } else {
       setMarketClaimable(null);
+      setSharesFinalized(null);
       setUserPositions([]);
     }
   }, [market?.indexer, market?.closed, account?.address]);
@@ -247,43 +275,41 @@ export function MarketCardMyThots({ market, onVoteClick }: MarketCardMyThotsProp
           >
             Vote on Your Thot
           </motion.button>
-        ) : marketClaimable === null ? (
+        ) : marketClaimable === null || sharesFinalized === null ? (
           <div className="flex w-full items-center justify-center gap-2 rounded-xl py-2.5 bg-muted/30">
             <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
             <span className="font-outfit text-xs text-muted-foreground">Checking status...</span>
           </div>
-        ) : marketClaimable ? (
-          isLoadingPositions ? (
-            <div className="flex w-full items-center justify-center gap-2 rounded-xl py-2.5 bg-muted/30">
-              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-              <span className="font-outfit text-xs text-muted-foreground">Loading positions...</span>
-            </div>
-          ) : userPositions.length === 0 ? (
-            <div className="flex w-full items-center justify-center gap-2 rounded-xl py-2.5 bg-gradient-to-r from-slate-500/10 to-gray-500/10 border border-slate-500/20">
-              <Gift className="h-4 w-4 text-slate-400 dark:text-slate-500" />
-              <span className="font-outfit text-xs text-slate-500 dark:text-slate-400">No positions to claim</span>
-            </div>
-          ) : (
-            <motion.button
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              onClick={handleClaim}
-              disabled={isClaiming}
-              className="flex w-full items-center justify-center gap-2 rounded-xl py-2.5 font-outfit text-sm font-medium transition-all bg-emerald-600/25 text-emerald-300 hover:bg-emerald-600/35 border border-emerald-500/40 hover:border-emerald-500/60 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isClaiming ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Gift className="h-4 w-4" />
-              )}
-              {isClaiming ? "Claiming..." : userPositions.length > 1 ? `Claim All (${userPositions.length})` : "Claim"}
-            </motion.button>
-          )
-        ) : (
+        ) : !sharesFinalized ? (
           <div className="flex w-full items-center justify-center gap-2 rounded-xl py-2.5 bg-gradient-to-r from-slate-500/10 to-gray-500/10 border border-slate-500/20">
             <Hourglass className="h-4 w-4 text-slate-400 dark:text-slate-500 animate-pulse" />
             <span className="font-outfit text-xs text-slate-500 dark:text-slate-400">Resolving Market</span>
           </div>
+        ) : isLoadingPositions ? (
+          <div className="flex w-full items-center justify-center gap-2 rounded-xl py-2.5 bg-muted/30">
+            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+            <span className="font-outfit text-xs text-muted-foreground">Loading positions...</span>
+          </div>
+        ) : userPositions.length === 0 ? (
+          <div className="flex w-full items-center justify-center gap-2 rounded-xl py-2.5 bg-gradient-to-r from-slate-500/10 to-gray-500/10 border border-slate-500/20 opacity-60">
+            <CircleOff className="h-4 w-4 text-slate-400 dark:text-slate-500" />
+            <span className="font-outfit text-xs text-slate-500 dark:text-slate-400">Closed</span>
+          </div>
+        ) : (
+          <motion.button
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            onClick={handleClaim}
+            disabled={isClaiming}
+            className="flex w-full items-center justify-center gap-2 rounded-xl py-2.5 font-outfit text-sm font-medium transition-all bg-emerald-600/25 text-emerald-300 hover:bg-emerald-600/35 border border-emerald-500/40 hover:border-emerald-500/60 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isClaiming ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Gift className="h-4 w-4" />
+            )}
+            {isClaiming ? "Claiming..." : userPositions.length > 1 ? `Claim All (${userPositions.length})` : "Claim"}
+          </motion.button>
         )}
       </div>
 

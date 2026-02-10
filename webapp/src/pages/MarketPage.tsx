@@ -12,7 +12,7 @@ import { useMarketStore } from "@/store/marketStore";
 
 import { useMarketDataHydration } from "@/hooks/useMarketDataHydration";
 
-import { useVote, useTokenApprove, readPaymentToken, readTokenAllowance, isZeroAddress, fetchDataConstants, calculatePlatformFeePercentage, fetchMarketDataFromBlockchain, getClaimablePositions, getAllUserPositions, useBatchClaim, type VoteParams } from "@/tools/utils";
+import { useVote, useTokenApprove, readPaymentToken, readTokenAllowance, isZeroAddress, fetchDataConstants, calculatePlatformFeePercentage, fetchMarketDataFromBlockchain, getClaimablePositions, getAllUserPositions, useBatchClaim, readMarketLock, type VoteParams } from "@/tools/utils";
 
 import { VoteModal } from "@/components/market/VoteModal";
 
@@ -96,6 +96,8 @@ export default function MarketPage() {
   const [platformFeePercentage, setPlatformFeePercentage] = useState<number | null>(null);
 
   const [marketClaimable, setMarketClaimable] = useState<boolean | null>(null);
+
+  const [sharesFinalized, setSharesFinalized] = useState<boolean | null>(null);
 
   const [userPositions, setUserPositions] = useState<number[]>([]);
 
@@ -206,7 +208,19 @@ export default function MarketPage() {
       const fetchClaimablePositions = async () => {
         setIsLoadingPositions(true);
         try {
-          // First get all user positions in this market
+          // First check if shares are finalized
+          const marketLock = await readMarketLock(market.indexer!);
+          setSharesFinalized(marketLock.sharesFinalized);
+
+          if (!marketLock.sharesFinalized) {
+            // Market is still resolving, no need to fetch positions
+            setUserPositions([]);
+            setMarketClaimable(false);
+            setIsLoadingPositions(false);
+            return;
+          }
+
+          // Shares are finalized, now get all user positions in this market
           const allPositions = await getAllUserPositions(market.indexer!, account.address as `0x${string}`);
 
           if (allPositions.length === 0) {
@@ -223,18 +237,33 @@ export default function MarketPage() {
           console.error("Failed to fetch claimable positions:", err);
           setUserPositions([]);
           setMarketClaimable(false);
+          setSharesFinalized(null);
         } finally {
           setIsLoadingPositions(false);
         }
       };
       fetchClaimablePositions();
     } else if (market?.closed && !account?.address) {
-      // Market is closed but user not connected
-      setMarketClaimable(true);
-      setUserPositions([]);
-      setIsLoadingPositions(false);
+      // Market is closed but user not connected - check sharesFinalized
+      const checkSharesFinalized = async () => {
+        if (market?.indexer !== undefined) {
+          try {
+            const marketLock = await readMarketLock(market.indexer);
+            setSharesFinalized(marketLock.sharesFinalized);
+            setMarketClaimable(marketLock.sharesFinalized);
+          } catch (err) {
+            console.error("Failed to check shares finalized:", err);
+            setSharesFinalized(null);
+            setMarketClaimable(false);
+          }
+        }
+        setUserPositions([]);
+        setIsLoadingPositions(false);
+      };
+      checkSharesFinalized();
     } else {
       setMarketClaimable(null);
+      setSharesFinalized(null);
       setUserPositions([]);
     }
   }, [market?.indexer, market?.closed, account?.address]);
@@ -1542,25 +1571,31 @@ export default function MarketPage() {
                   Vote
                 </span>
               </motion.button>
-            ) : marketClaimable === null ? (
+            ) : marketClaimable === null || sharesFinalized === null ? (
               /* Closed Market - Loading claimable status */
               <div className="w-full rounded-xl py-5 bg-muted/30 flex items-center justify-center gap-2">
                 <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
                 <span className="font-outfit text-muted-foreground">Checking status...</span>
               </div>
-            ) : marketClaimable ? (
-              /* Closed Market - Claimable - Show Claim Button */
-              isLoadingPositions ? (
-                <div className="w-full rounded-xl py-5 bg-muted/30 flex items-center justify-center gap-2">
-                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-                  <span className="font-outfit text-muted-foreground">Loading positions...</span>
-                </div>
-              ) : userPositions.length === 0 ? (
-                <div className="w-full rounded-xl py-5 bg-gradient-to-r from-slate-500/10 to-gray-500/10 border border-slate-500/20 flex items-center justify-center gap-2">
-                  <Gift className="h-5 w-5 text-slate-400 dark:text-slate-500" />
-                  <span className="font-syne text-lg font-semibold text-slate-500 dark:text-slate-400">No positions to claim</span>
-                </div>
-              ) : (
+            ) : !sharesFinalized ? (
+              /* Closed Market - Shares not finalized - Show Resolving */
+              <div className="w-full rounded-xl py-5 bg-gradient-to-r from-slate-500/10 to-gray-500/10 border border-slate-500/20 flex items-center justify-center gap-2">
+                <Hourglass className="h-5 w-5 text-slate-400 dark:text-slate-500 animate-pulse" />
+                <span className="font-syne text-lg font-semibold text-slate-500 dark:text-slate-400">Resolving Market</span>
+              </div>
+            ) : isLoadingPositions ? (
+              /* Closed Market - Loading positions */
+              <div className="w-full rounded-xl py-5 bg-muted/30 flex items-center justify-center gap-2">
+                <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                <span className="font-outfit text-muted-foreground">Loading positions...</span>
+              </div>
+            ) : userPositions.length === 0 ? (
+              /* Closed Market - No positions to claim - Show Closed */
+              <div className="w-full rounded-xl py-5 bg-gradient-to-r from-slate-500/10 to-gray-500/10 border border-slate-500/20 flex items-center justify-center gap-2 opacity-60">
+                <CircleOff className="h-5 w-5 text-slate-400 dark:text-slate-500" />
+                <span className="font-syne text-lg font-semibold text-slate-500 dark:text-slate-400">Closed</span>
+              </div>
+            ) : (
                 <motion.button
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
@@ -1577,13 +1612,6 @@ export default function MarketPage() {
                     {isClaiming ? "Claiming..." : userPositions.length > 1 ? `Claim All (${userPositions.length})` : "Claim"}
                   </span>
                 </motion.button>
-              )
-            ) : (
-              /* Closed Market - Not Claimable - Show Resolving */
-              <div className="w-full rounded-xl py-5 bg-gradient-to-r from-slate-500/10 to-gray-500/10 border border-slate-500/20 flex items-center justify-center gap-2">
-                <Hourglass className="h-5 w-5 text-slate-400 dark:text-slate-500 animate-pulse" />
-                <span className="font-syne text-lg font-semibold text-slate-500 dark:text-slate-400">Resolving Market</span>
-              </div>
             )}
 
           </motion.div>

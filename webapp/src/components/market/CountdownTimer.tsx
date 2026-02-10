@@ -232,7 +232,7 @@ export function CountdownTimerLarge({ endTime, closed, className = "" }: Countdo
           <Timer className={`h-5 w-5 ${getTextColor()}`} />
         )}
         <span className={`font-outfit text-sm font-semibold ${getTextColor()}`}>
-          {isEnded ? "Market Ended" : "Time Remaining"}
+          {isEnded ? "Penalty Window" : "Time Remaining"}
         </span>
       </div>
 
@@ -246,7 +246,7 @@ export function CountdownTimerLarge({ endTime, closed, className = "" }: Countdo
       ) : (
         <div className="flex items-center justify-center gap-2">
           <CheckCircle2 className="h-5 w-5 text-slate-400" />
-          <span className="font-outfit text-lg text-slate-400">Voting Closed</span>
+          <span className="font-outfit text-lg text-slate-400">Voting is wrapping up.</span>
         </div>
       )}
     </motion.div>
