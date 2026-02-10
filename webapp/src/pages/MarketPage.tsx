@@ -20,6 +20,8 @@ import { VoteStats } from "@/components/market/VoteStats";
 
 import { MarketBalance } from "@/components/market/MarketBalance";
 
+import { CountdownTimerLarge } from "@/components/market/CountdownTimer";
+
 import { Button } from "@/components/ui/button";
 
 import { cn } from "@/lib/utils";
@@ -1085,6 +1087,13 @@ export default function MarketPage() {
               )}
 
             </div>
+
+            {/* Countdown Timer - shown after status badge */}
+            {market.endTime && market.endTime > 0 && (
+              <div className="mt-4">
+                <CountdownTimerLarge endTime={market.endTime} closed={market.closed} />
+              </div>
+            )}
 
 
 

@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Plus, Image as ImageIcon, ThumbsUp, ThumbsDown } from "lucide-react";
+import { X, Plus, Image as ImageIcon, ThumbsUp, ThumbsDown, Calendar, Clock, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -16,7 +16,7 @@ import { Abi } from "viem";
 interface CreateMarketModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (data: CreateMarketData & { marketBalance: string; initialVote: "YES" | "NO"; useToken: boolean; tokenAddress: Address }) => Promise<void>;
+  onSubmit: (data: CreateMarketData & { marketBalance: string; initialVote: "YES" | "NO"; useToken: boolean; tokenAddress: Address; endTime: number }) => Promise<void>;
   isLoading?: boolean;
 }
 
@@ -48,6 +48,45 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
   const [tokenSymbol, setTokenSymbol] = useState<string | null>(null);
   const [tokenInputError, setTokenInputError] = useState(false);
   const [platformFeePercentage, setPlatformFeePercentage] = useState<number | null>(null);
+
+  // End time state for countdown timer
+  const [endDate, setEndDate] = useState("");
+  const [endTimeInput, setEndTimeInput] = useState("");
+  const [endTimeError, setEndTimeError] = useState<string | null>(null);
+
+  // Calculate minimum date/time (1 hour from now)
+  const getMinDateTime = useMemo(() => {
+    const now = new Date();
+    now.setHours(now.getHours() + 1);
+    return {
+      date: now.toISOString().split("T")[0],
+      time: now.toTimeString().slice(0, 5),
+      timestamp: Math.floor(now.getTime() / 1000),
+    };
+  }, []);
+
+  // Validate end time (must be at least 1 hour from when the call is made)
+  const validateEndTime = useCallback(() => {
+    if (!endDate || !endTimeInput) {
+      setEndTimeError(null);
+      return 0;
+    }
+
+    const selectedDateTime = new Date(`${endDate}T${endTimeInput}`);
+    const nowPlusOneHour = new Date();
+    nowPlusOneHour.setHours(nowPlusOneHour.getHours() + 1);
+
+    if (selectedDateTime < nowPlusOneHour) {
+      setEndTimeError("End time must be at least 1 hour from now");
+      return 0;
+    }
+
+    setEndTimeError(null);
+    return Math.floor(selectedDateTime.getTime() / 1000);
+  }, [endDate, endTimeInput]);
+
+  // Get current end time as unix timestamp
+  const endTimeTimestamp = useMemo(() => validateEndTime(), [validateEndTime]);
 
   // Fetch token symbol from blockchain
   const fetchTokenSymbol = useCallback(async (address: string) => {
@@ -145,6 +184,9 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
     if (!marketBalance || !initialVote) return;
     if (useToken && !tokenAddress) return;
 
+    // Calculate endTime at submission time to ensure accuracy
+    const finalEndTime = validateEndTime();
+
     const posterImage =
       formData.posterImage ||
       PLACEHOLDER_IMAGES[Math.floor(Math.random() * PLACEHOLDER_IMAGES.length)];
@@ -162,6 +204,7 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
         optionB: formData.optionB,
         useToken,
         tokenAddress: (useToken ? tokenAddress : ZERO_ADDRESS) as Address,
+        endTime: finalEndTime,
       });
 
       // Only reset form on successful submission
@@ -181,6 +224,9 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
       setUseToken(false);
       setTokenAddress("");
       setTokenSymbol(null);
+      setEndDate("");
+      setEndTimeInput("");
+      setEndTimeError(null);
       setStep("details");
     } catch {
       // Don't reset form or close modal on error
@@ -196,6 +242,9 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
     setTokenAddress("");
     setTokenSymbol(null);
     setTokenInputError(false);
+    setEndDate("");
+    setEndTimeInput("");
+    setEndTimeError(null);
     onClose();
   };
 
@@ -421,6 +470,81 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
                               </p>
                             </div>
                           </div>
+                        </div>
+
+                        {/* Market End Time */}
+                        <div className="space-y-3">
+                          <Label className="font-outfit text-foreground flex items-center gap-2">
+                            <Calendar className="h-4 w-4 text-primary" />
+                            Market End Time
+                          </Label>
+                          <p className="text-xs text-muted-foreground -mt-1">
+                            When should voting close? (Minimum 1 hour from now)
+                          </p>
+                          <div className="grid grid-cols-2 gap-3">
+                            <div className="space-y-2">
+                              <Label htmlFor="endDate" className="text-xs font-outfit text-muted-foreground flex items-center gap-1">
+                                <Calendar className="h-3 w-3" />
+                                Date
+                              </Label>
+                              <Input
+                                id="endDate"
+                                type="date"
+                                value={endDate}
+                                onChange={(e) => setEndDate(e.target.value)}
+                                min={getMinDateTime.date}
+                                className={`rounded-xl border-border/50 bg-background font-outfit text-sm ${
+                                  endTimeError ? "border-destructive/50" : ""
+                                }`}
+                              />
+                            </div>
+
+                            <div className="space-y-2">
+                              <Label htmlFor="endTime" className="text-xs font-outfit text-muted-foreground flex items-center gap-1">
+                                <Clock className="h-3 w-3" />
+                                Time
+                              </Label>
+                              <Input
+                                id="endTime"
+                                type="time"
+                                value={endTimeInput}
+                                onChange={(e) => setEndTimeInput(e.target.value)}
+                                className={`rounded-xl border-border/50 bg-background font-outfit text-sm ${
+                                  endTimeError ? "border-destructive/50" : ""
+                                }`}
+                              />
+                            </div>
+                          </div>
+
+                          {/* Error/Info Display */}
+                          <AnimatePresence>
+                            {endTimeError && (
+                              <motion.div
+                                initial={{ opacity: 0, y: -5 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -5 }}
+                                className="flex items-center gap-2 text-xs text-destructive"
+                              >
+                                <AlertCircle className="h-3.5 w-3.5" />
+                                {endTimeError}
+                              </motion.div>
+                            )}
+                            {endDate && endTimeInput && !endTimeError && (
+                              <motion.div
+                                initial={{ opacity: 0, y: -5 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -5 }}
+                                className="flex items-center gap-2 text-xs text-primary"
+                              >
+                                <Clock className="h-3.5 w-3.5" />
+                                Market will end: {new Date(`${endDate}T${endTimeInput}`).toLocaleString()}
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
+
+                          <p className="text-xs text-muted-foreground/70">
+                            Leave empty for no time limit (manual close by admin)
+                          </p>
                         </div>
                       </div>
                     </div>
