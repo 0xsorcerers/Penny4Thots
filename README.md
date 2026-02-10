@@ -49,6 +49,18 @@ When a market is closed and claimable:
   - Shows "Claim All (N)" when user has multiple positions (e.g., "Claim All (4)")
 - Clicking the claim button calls `batchClaim(marketId, positionIds[])` to claim all rewards in one transaction
 
+### Market Card States
+- **Active Markets (Main Feed)**: Show "Vote" button normally
+- **Closed Markets on Main Feed**: Dimmed with reduced opacity (60%) and grayscale filter to indicate they're inactive
+- **My Thots Page**:
+  - Active markets: Show "Vote on Your Thot" button
+  - Closed & claimable: Show "Claim" or "Claim All (N)" button
+  - Closed & resolving: Show "Resolving Market" message
+- **Your Thots Page**:
+  - Active markets: Show "Vote Again" button
+  - Closed & claimable: Show "Claim" or "Claim All (N)" button
+  - Closed & resolving: Show "Resolving Market" message
+
 ### Market Data Format
 - **Tags**: Stored on-chain as comma-delimited strings (e.g., "crypto,bitcoin,prediction"). Max 7 tags.
 - **Market Fetching**: App fetches up to 50 most recent markets from blockchain in descending order (newest first)

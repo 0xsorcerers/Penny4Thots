@@ -18,6 +18,21 @@ This file tracks all significant progress. Updated automatically after major cha
   - Shows "Claim All (N)" for multiple positions (e.g., "Claim All (4)")
 - Full integration with `batchClaim(marketId, positionIds[])` smart contract function
 
+### Feature: Market Card Enhancements
+- **Main Feed (MarketCard)**: Closed markets now dimmed with 60% opacity and grayscale filter for visual distinction
+- **My Thots Page (MarketCardMyThots)**:
+  - Vote button replaced with dynamic state-based buttons
+  - Active markets: "Vote on Your Thot"
+  - Closed & claimable: "Claim" or "Claim All (N)" button
+  - Closed & resolving: "Resolving Market" message
+  - Fetches user positions automatically when market is claimable
+- **Your Thots Page (MarketCardYourThots)**:
+  - Vote button replaced with dynamic state-based buttons
+  - Active markets: "Vote Again"
+  - Closed & claimable: "Claim" or "Claim All (N)" button
+  - Closed & resolving: "Resolving Market" message
+  - Fetches user positions automatically when market is claimable
+
 ---
 
 ## 2026-02-09
