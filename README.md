@@ -101,6 +101,31 @@ The market data has been updated to include the new shares system and market lif
   - `totalSharesB` - Total shares issued for option B
   - `positionCount` - Number of total positions/trades in the market
 
+### Market Timer Feature
+Markets can have an end time that determines when voting closes:
+
+**Create Market Modal**:
+- Date and time picker in the market creation step
+- Minimum 1 hour from the current time (validated at submission time)
+- Leave empty for no time limit (manual close by admin)
+- Shows user-friendly preview of the selected end date/time
+
+**Countdown Timer Display**:
+- Beautiful animated countdown timer component with urgency-based styling:
+  - **Normal (>3 days)**: Cyan theme with timer icon
+  - **Warning (1-3 days)**: Amber theme with clock icon
+  - **Urgent (<24 hours)**: Orange theme with animated warning icon
+  - **Critical (<1 hour)**: Red pulsing theme with animated flame icon
+  - **Ended**: Slate theme with checkmark icon
+- Compact version on market cards (next to vote stats and balance)
+- Large version on MarketPage (after status badge with animated time blocks)
+- Timer automatically updates every second
+
+**Market Cards**:
+- CountdownTimer displayed next to VoteStats on all market cards
+- MarketBalance shown on Index, MyThots, and YourThots pages
+- Payment token symbol fetched for each market to display correct currency
+
 ### Payment Method Selection
 Both the Create Market dialog feature flexible payment method selection:
 
