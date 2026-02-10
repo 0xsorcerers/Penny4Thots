@@ -97,7 +97,10 @@ export function MarketCard({ market, onVoteClick }: MarketCardProps) {
       onHoverStart={() => setIsHovered(true)}
       onHoverEnd={() => setIsHovered(false)}
       onClick={handleCardClick}
-      className="group relative cursor-pointer overflow-hidden rounded-2xl border border-border/50 bg-card/80 backdrop-blur-sm transition-all duration-300 hover:border-primary/30 hover:shadow-[0_0_30px_rgba(var(--primary),0.1)] hover:bg-card"
+      className={cn(
+        "group relative cursor-pointer overflow-hidden rounded-2xl border border-border/50 bg-card/80 backdrop-blur-sm transition-all duration-300 hover:border-primary/30 hover:shadow-[0_0_30px_rgba(var(--primary),0.1)] hover:bg-card",
+        market.closed && "opacity-60 grayscale hover:opacity-70"
+      )}
     >
       {/* Background image with overlay */}
       <div className="absolute inset-0">
