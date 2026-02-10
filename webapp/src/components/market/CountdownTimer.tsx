@@ -231,7 +231,7 @@ export function CountdownTimerLarge({ endTime, closed, sharesFinalized, classNam
       return "Penalty Window";
     } else {
       // Shares are finalized
-      return "Ended";
+      return "Market Closed";
     }
   };
 
@@ -241,7 +241,7 @@ export function CountdownTimerLarge({ endTime, closed, sharesFinalized, classNam
     // Market is closed, check sharesFinalized status
     if (sharesFinalized === null) {
       // Still loading
-      return "Penalty Window";
+      return "Voting is wrapping up.";
     } else if (sharesFinalized === false) {
       // Market is resolving
       return "Voting is wrapping up.";
