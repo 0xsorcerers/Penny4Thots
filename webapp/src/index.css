@@ -6,6 +6,10 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Import background images as data URLs */
+@import url('./assets/images/light-flora.webp');
+@import url('./assets/images/dark-flora.webp');
+
 /* Definition of the design system. All colors, gradients, fonts, etc should be defined here.
 All colors MUST be HSL.
 */
@@ -155,7 +159,7 @@ html {
   /* Light theme floral textured background - elegant and distinctive */
   :root body {
     background-color: hsl(220 20% 96%);
-    background-image: url('./../../public/light-flora.webp');
+    background-image: url('./assets/images/light-flora.webp');
     background-attachment: fixed;
     background-size: 400px 400px;
     background-repeat: repeat;
@@ -184,7 +188,7 @@ html {
   /* Dark theme floral textured background - matching light theme style */
   .dark body {
     background-color: hsl(220 20% 3%);
-    background-image: url('./../../public/dark-flora.webp');
+    background-image: url('./assets/images/dark-flora.webp');
     background-attachment: fixed;
     background-size: 400px 400px;
     background-repeat: repeat;
