@@ -23,7 +23,7 @@ html {
 @layer base {
   :root {
     /* Premium Glassmorphism Light Theme - Refined, legible, professional */
-    --background: 220 20% 96%;
+    --background: 220 20% 95%;
     --foreground: 222 47% 11%;
 
     /* Glass cards - translucent white */
@@ -152,36 +152,23 @@ html {
     @apply bg-background text-foreground;
   }
 
-  /* Light theme textured background - elegant linen/paper texture */
+  /* Light theme textured background - elegant paper texture with visible grain */
   :root body {
-    background-color: hsl(var(--background));
+    background-color: hsl(220 20% 95%);
     background-image:
+      /* Fine grid pattern - more visible */
+      linear-gradient(hsl(220 13% 88% / 0.5) 1px, transparent 1px),
+      linear-gradient(90deg, hsl(220 13% 88% / 0.5) 1px, transparent 1px),
       /* Subtle noise texture overlay */
-      url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E"),
-      /* Diagonal crosshatch pattern */
-      repeating-linear-gradient(
-        45deg,
-        transparent,
-        transparent 2px,
-        hsl(220 20% 92% / 0.4) 2px,
-        hsl(220 20% 92% / 0.4) 3px
-      ),
-      repeating-linear-gradient(
-        -45deg,
-        transparent,
-        transparent 2px,
-        hsl(220 20% 92% / 0.3) 2px,
-        hsl(220 20% 92% / 0.3) 3px
-      ),
-      /* Soft color gradient orbs */
-      radial-gradient(ellipse 80% 50% at 20% 40%, hsl(32 95% 44% / 0.06) 0%, transparent 50%),
-      radial-gradient(ellipse 60% 40% at 80% 20%, hsl(172 66% 30% / 0.05) 0%, transparent 50%),
-      radial-gradient(ellipse 70% 50% at 50% 90%, hsl(220 60% 50% / 0.04) 0%, transparent 50%),
+      url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E"),
+      /* Soft color accent in corner */
+      radial-gradient(ellipse 50% 30% at 0% 0%, hsl(32 95% 44% / 0.08) 0%, transparent 70%),
+      radial-gradient(ellipse 40% 25% at 100% 100%, hsl(172 66% 30% / 0.06) 0%, transparent 70%),
       /* Base background */
-      hsl(var(--background));
+      hsl(220 20% 95%);
     background-attachment: fixed;
-    background-size: 200px 200px, auto, auto, auto, auto, auto, auto;
-    background-blend-mode: overlay, normal, normal, normal, normal, normal, normal;
+    background-size: 32px 32px, 32px 32px, 150px 150px, auto, auto, auto;
+    background-blend-mode: normal, normal, soft-light, normal, normal, normal;
   }
 
   /* Textured page wrapper for main pages */
@@ -195,10 +182,16 @@ html {
     inset: 0;
     pointer-events: none;
     background-image:
-      /* Fine dot pattern */
-      radial-gradient(circle at 1px 1px, hsl(220 13% 78% / 0.35) 1px, transparent 0);
-    background-size: 24px 24px;
-    opacity: 0.6;
+      /* Diagonal line texture */
+      repeating-linear-gradient(
+        -45deg,
+        transparent,
+        transparent 4px,
+        hsl(220 13% 85% / 0.25) 4px,
+        hsl(220 13% 85% / 0.25) 5px
+      );
+    background-size: 8px 8px;
+    opacity: 0.8;
     z-index: 0;
   }
 
