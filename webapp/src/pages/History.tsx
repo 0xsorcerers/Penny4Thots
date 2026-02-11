@@ -187,15 +187,15 @@ export default function History() {
   }, [isRefreshing, isLoading, fetchClaimHistory]);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background textured-bg">
       {/* Animated Background */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+      <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
         <div className="absolute -top-1/2 -right-1/2 w-full h-full bg-gradient-to-bl from-primary/5 via-transparent to-transparent animate-pulse" style={{ animationDuration: '4s' }} />
         <div className="absolute -bottom-1/2 -left-1/2 w-full h-full bg-gradient-to-tr from-accent/5 via-transparent to-transparent animate-pulse" style={{ animationDuration: '6s' }} />
       </div>
 
       {/* Hero Header */}
-      <div className="relative overflow-hidden">
+      <div className="relative overflow-hidden z-10">
         <div className="absolute inset-0 bg-gradient-to-br from-accent/10 via-background to-primary/10" />
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_right,_var(--tw-gradient-stops))] from-accent/5 via-transparent to-transparent" />
 
@@ -294,7 +294,7 @@ export default function History() {
       </div>
 
       {/* Content */}
-      <div className="relative mx-auto max-w-4xl px-4 pb-12 sm:px-6 lg:px-8">
+      <div className="relative z-10 mx-auto max-w-4xl px-4 pb-12 sm:px-6 lg:px-8">
         <AnimatePresence mode="wait">
           {!account?.address ? (
             <motion.div

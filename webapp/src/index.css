@@ -22,74 +22,74 @@ html {
 
 @layer base {
   :root {
-    /* Premium Glassmorphism Light Theme - Refined, airy, sophisticated */
-    --background: 220 25% 97%;
-    --foreground: 220 30% 15%;
+    /* Premium Glassmorphism Light Theme - Refined, legible, professional */
+    --background: 220 20% 96%;
+    --foreground: 222 47% 11%;
 
-    /* Glass cards - translucent white with subtle warmth */
+    /* Glass cards - translucent white */
     --card: 0 0% 100%;
-    --card-foreground: 220 30% 15%;
+    --card-foreground: 222 47% 11%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 220 30% 15%;
+    --popover-foreground: 222 47% 11%;
 
-    /* Rich amber gold - premium, warm, inviting */
-    --primary: 38 95% 50%;
-    --primary-foreground: 220 30% 10%;
+    /* Deep amber/bronze - warm, premium, high contrast */
+    --primary: 32 95% 44%;
+    --primary-foreground: 0 0% 100%;
 
-    /* Soft cool gray with blue undertone */
-    --secondary: 220 15% 94%;
-    --secondary-foreground: 220 30% 15%;
+    /* Soft warm gray */
+    --secondary: 220 14% 93%;
+    --secondary-foreground: 222 47% 11%;
 
-    /* Refined muted tones */
-    --muted: 220 20% 92%;
-    --muted-foreground: 220 15% 45%;
+    /* Refined muted tones - darker for legibility */
+    --muted: 220 14% 90%;
+    --muted-foreground: 220 9% 38%;
 
-    /* Teal accent - sophisticated contrast */
-    --accent: 168 75% 38%;
+    /* Deep teal accent - strong contrast */
+    --accent: 172 66% 30%;
     --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 72% 55%;
+    --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
 
-    /* Success green */
-    --success: 152 65% 42%;
+    /* Success - deeper green */
+    --success: 158 64% 32%;
     --success-foreground: 0 0% 100%;
 
-    /* Glass borders - subtle, refined */
-    --border: 220 20% 90%;
-    --input: 220 15% 95%;
-    --ring: 38 95% 50%;
+    /* Glass borders - slightly darker for definition */
+    --border: 220 13% 85%;
+    --input: 220 14% 92%;
+    --ring: 32 95% 44%;
 
     --radius: 1rem;
 
-    /* Prediction market colors - Premium edition */
-    --yes: 152 70% 40%;
+    /* Prediction market colors - high contrast */
+    --yes: 158 64% 32%;
     --yes-foreground: 0 0% 100%;
-    --no: 0 72% 55%;
+    --no: 0 72% 51%;
     --no-foreground: 0 0% 100%;
 
     /* Gradient for shimmer effect */
-    --shimmer-start: 38 95% 50%;
-    --shimmer-mid: 168 75% 38%;
-    --shimmer-end: 220 60% 55%;
+    --shimmer-start: 32 95% 44%;
+    --shimmer-mid: 172 66% 30%;
+    --shimmer-end: 220 60% 50%;
 
-    --sidebar-background: 220 20% 96%;
-    --sidebar-foreground: 220 30% 15%;
-    --sidebar-primary: 38 95% 50%;
-    --sidebar-primary-foreground: 220 30% 10%;
-    --sidebar-accent: 220 15% 92%;
-    --sidebar-accent-foreground: 220 30% 15%;
-    --sidebar-border: 220 20% 90%;
-    --sidebar-ring: 38 95% 50%;
+    --sidebar-background: 220 14% 94%;
+    --sidebar-foreground: 222 47% 11%;
+    --sidebar-primary: 32 95% 44%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 220 14% 90%;
+    --sidebar-accent-foreground: 222 47% 11%;
+    --sidebar-border: 220 13% 85%;
+    --sidebar-ring: 32 95% 44%;
 
-    /* Chalk color for light theme */
-    --chalk: 220 15% 25%;
+    /* Chalk color for light theme - darker for legibility */
+    --chalk: 222 47% 11%;
 
     /* Glassmorphism specific variables */
     --glass-bg: 0 0% 100% / 0.7;
     --glass-border: 0 0% 100% / 0.5;
-    --glass-shadow: 220 30% 15% / 0.08;
+    --glass-shadow: 222 47% 11% / 0.08;
   }
 
   .dark {
@@ -152,19 +152,64 @@ html {
     @apply bg-background text-foreground;
   }
 
-  /* Light theme background gradient - subtle, sophisticated */
+  /* Light theme textured background - elegant linen/paper texture */
   :root body {
-    background:
-      radial-gradient(ellipse 80% 50% at 20% 40%, hsl(38 95% 50% / 0.06) 0%, transparent 50%),
-      radial-gradient(ellipse 60% 40% at 80% 20%, hsl(168 75% 38% / 0.05) 0%, transparent 50%),
-      radial-gradient(ellipse 70% 50% at 50% 90%, hsl(220 60% 55% / 0.04) 0%, transparent 50%),
+    background-color: hsl(var(--background));
+    background-image:
+      /* Subtle noise texture overlay */
+      url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E"),
+      /* Diagonal crosshatch pattern */
+      repeating-linear-gradient(
+        45deg,
+        transparent,
+        transparent 2px,
+        hsl(220 20% 92% / 0.4) 2px,
+        hsl(220 20% 92% / 0.4) 3px
+      ),
+      repeating-linear-gradient(
+        -45deg,
+        transparent,
+        transparent 2px,
+        hsl(220 20% 92% / 0.3) 2px,
+        hsl(220 20% 92% / 0.3) 3px
+      ),
+      /* Soft color gradient orbs */
+      radial-gradient(ellipse 80% 50% at 20% 40%, hsl(32 95% 44% / 0.06) 0%, transparent 50%),
+      radial-gradient(ellipse 60% 40% at 80% 20%, hsl(172 66% 30% / 0.05) 0%, transparent 50%),
+      radial-gradient(ellipse 70% 50% at 50% 90%, hsl(220 60% 50% / 0.04) 0%, transparent 50%),
+      /* Base background */
       hsl(var(--background));
     background-attachment: fixed;
+    background-size: 200px 200px, auto, auto, auto, auto, auto, auto;
+    background-blend-mode: overlay, normal, normal, normal, normal, normal, normal;
+  }
+
+  /* Textured page wrapper for main pages */
+  .textured-bg {
+    position: relative;
+  }
+
+  .textured-bg::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background-image:
+      /* Fine dot pattern */
+      radial-gradient(circle at 1px 1px, hsl(220 13% 78% / 0.35) 1px, transparent 0);
+    background-size: 24px 24px;
+    opacity: 0.6;
+    z-index: 0;
   }
 
   /* Dark theme keeps its existing background */
   .dark body {
     background: hsl(var(--background));
+    background-image: none;
+  }
+
+  .dark .textured-bg::before {
+    display: none;
   }
 
   /* Custom scrollbar styling for light theme */
