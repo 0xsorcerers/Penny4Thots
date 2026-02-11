@@ -132,10 +132,13 @@ The market data has been updated to include the new shares system and market lif
 Markets can have an end time that determines when voting closes:
 
 **Create Market Modal**:
-- Date and time picker in the market creation step
+- Date and time picker in the market creation step - **now required**
 - Minimum 1 hour from the current time (validated at submission time)
-- Leave empty for no time limit (manual close by admin)
-- Shows user-friendly preview of the selected end date/time
+- Date picker pops up automatically when clicking the date or time input for easy access
+- "Forgo & Auto-Set to 1.5 Hours From Submission" button: Click to automatically set the date/time to 1.5 hours from form submission
+- When using forgo, the system will set the exact time at submission (not at form load)
+- Form cannot proceed to next step without setting a date and time
+- Clear visual feedback shows validation error if date is missing
 
 **Countdown Timer Display**:
 - Beautiful animated countdown timer component with urgency-based styling:
