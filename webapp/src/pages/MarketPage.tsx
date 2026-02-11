@@ -807,7 +807,7 @@ export default function MarketPage() {
 
 
 
-    <div className="relative min-h-screen bg-background textured-bg">
+    <div className="relative min-h-screen textured-bg">
 
 
 
@@ -839,7 +839,7 @@ export default function MarketPage() {
 
 
 
-        <div className="absolute inset-0 bg-gradient-to-b from-background/40 via-background/70 to-background" />
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-background/50 to-background/80 dark:from-background/40 dark:via-background/70 dark:to-background" />
 
 
 

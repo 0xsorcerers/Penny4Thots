@@ -317,10 +317,10 @@ export default function YourThots() {
   }, [isRefreshing, isLoading, fetchAllMarketIds]);
 
   return (
-    <div className="min-h-screen bg-background textured-bg">
+    <div className="min-h-screen textured-bg">
       {/* Hero Header - Violet/Purple theme for Your Thots */}
       <div className="relative overflow-hidden z-10">
-        <div className="absolute inset-0 bg-gradient-to-br from-violet-500/10 via-background to-purple-500/10" />
+        <div className="absolute inset-0 bg-gradient-to-br from-violet-500/10 via-transparent to-purple-500/10" />
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,_var(--tw-gradient-stops))] from-violet-500/5 via-transparent to-transparent" />
 
         <div className="relative mx-auto max-w-7xl px-4 pt-24 pb-12 sm:px-6 lg:px-8">

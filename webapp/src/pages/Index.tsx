@@ -279,7 +279,7 @@ export default function Index() {
   }
 
   return (
-    <div className="min-h-screen bg-background textured-bg">
+    <div className="min-h-screen textured-bg">
       <Header onConnect={handleConnect} isConnected={isConnected} />
       <div className="relative z-10">
         <MarketGrid

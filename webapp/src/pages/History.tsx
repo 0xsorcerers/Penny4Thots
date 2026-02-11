@@ -187,7 +187,7 @@ export default function History() {
   }, [isRefreshing, isLoading, fetchClaimHistory]);
 
   return (
-    <div className="min-h-screen bg-background textured-bg">
+    <div className="min-h-screen textured-bg">
       {/* Animated Background */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
         <div className="absolute -top-1/2 -right-1/2 w-full h-full bg-gradient-to-bl from-primary/5 via-transparent to-transparent animate-pulse" style={{ animationDuration: '4s' }} />
@@ -196,7 +196,7 @@ export default function History() {
 
       {/* Hero Header */}
       <div className="relative overflow-hidden z-10">
-        <div className="absolute inset-0 bg-gradient-to-br from-accent/10 via-background to-primary/10" />
+        <div className="absolute inset-0 bg-gradient-to-br from-accent/10 via-transparent to-primary/10" />
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_right,_var(--tw-gradient-stops))] from-accent/5 via-transparent to-transparent" />
 
         <div className="relative mx-auto max-w-7xl px-4 pt-24 pb-8 sm:px-6 lg:px-8">
