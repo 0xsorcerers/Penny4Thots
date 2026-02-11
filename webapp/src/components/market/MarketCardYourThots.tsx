@@ -267,14 +267,23 @@ export function MarketCardYourThots({ market, onVoteClick }: MarketCardYourThots
 
         {/* Vote Again Button with violet styling */}
         {!market.closed ? (
-          <motion.button
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            onClick={handleVoteClick}
-            className="flex w-full items-center justify-center gap-2 rounded-xl py-2.5 font-outfit text-sm font-medium transition-all bg-violet-500/15 text-violet-400 hover:bg-violet-500/25 border border-violet-500/30 hover:border-violet-500/50"
-          >
-            Vote Again
-          </motion.button>
+          (() => {
+            // Check if timer has expired but market is not closed
+            const now = Math.floor(Date.now() / 1000);
+            const timerExpired = market.endTime && market.endTime > 0 && now >= market.endTime;
+            const buttonText = timerExpired ? "Late vote" : "Vote Again";
+
+            return (
+              <motion.button
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                onClick={handleVoteClick}
+                className="flex w-full items-center justify-center gap-2 rounded-xl py-2.5 font-outfit text-sm font-medium transition-all bg-violet-500/15 text-violet-400 hover:bg-violet-500/25 border border-violet-500/30 hover:border-violet-500/50"
+              >
+                {buttonText}
+              </motion.button>
+            );
+          })()
         ) : marketClaimable === null || sharesFinalized === null ? (
           <div className="flex w-full items-center justify-center gap-2 rounded-xl py-2.5 bg-muted/30">
             <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />

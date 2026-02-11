@@ -205,16 +205,25 @@ export function MarketCard({ market, onVoteClick }: MarketCardProps) {
               Closed
             </motion.div>
           ) : tradeMode === "idle" ? (
-            <motion.button
-              key="vote"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={handleVoteClick}
-              className="flex w-full items-center justify-center gap-2 rounded-xl py-2.5 font-outfit text-sm font-medium transition-all bg-primary/10 text-primary hover:bg-primary/20"
-            >
-              Vote
-            </motion.button>
+            (() => {
+              // Check if timer has expired but market is not closed
+              const now = Math.floor(Date.now() / 1000);
+              const timerExpired = market.endTime && market.endTime > 0 && now >= market.endTime;
+              const buttonText = timerExpired ? "Late vote" : "Vote";
+
+              return (
+                <motion.button
+                  key="vote"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  onClick={handleVoteClick}
+                  className="flex w-full items-center justify-center gap-2 rounded-xl py-2.5 font-outfit text-sm font-medium transition-all bg-primary/10 text-primary hover:bg-primary/20"
+                >
+                  {buttonText}
+                </motion.button>
+              );
+            })()
           ) : tradeMode === "active" ? (
             <motion.button
               key="trade"
