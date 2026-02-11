@@ -807,7 +807,7 @@ export default function MarketPage() {
 
 
 
-    <div className="relative min-h-screen bg-background">
+    <div className="relative min-h-screen bg-background textured-bg">
 
 
 

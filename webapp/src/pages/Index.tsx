@@ -279,15 +279,17 @@ export default function Index() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background textured-bg">
       <Header onConnect={handleConnect} isConnected={isConnected} />
-      <MarketGrid
-        markets={markets}
-        onCreateMarket={() => setIsCreateModalOpen(true)}
-        onVoteClick={handleVoteClick}
-        onRefreshMarkets={handleRefreshAllMarkets}
-        isLoading={isLoadingFromBlockchain}
-      />
+      <div className="relative z-10">
+        <MarketGrid
+          markets={markets}
+          onCreateMarket={() => setIsCreateModalOpen(true)}
+          onVoteClick={handleVoteClick}
+          onRefreshMarkets={handleRefreshAllMarkets}
+          isLoading={isLoadingFromBlockchain}
+        />
+      </div>
       <CreateMarketModal
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
