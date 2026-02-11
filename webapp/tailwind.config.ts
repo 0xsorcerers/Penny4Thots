@@ -76,6 +76,16 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+        glass: {
+          DEFAULT: "hsl(0 0% 100% / 0.75)",
+          muted: "hsl(0 0% 100% / 0.6)",
+          strong: "hsl(0 0% 100% / 0.85)",
+        },
+      },
+      backdropBlur: {
+        glass: "12px",
+        "glass-sm": "8px",
+        "glass-lg": "16px",
       },
       borderRadius: {
         lg: "var(--radius)",

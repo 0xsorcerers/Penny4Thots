@@ -22,68 +22,74 @@ html {
 
 @layer base {
   :root {
-    /* Fresh Tropical Light Theme - Vibrant, contemporary, elegant */
-    --background: 150 40% 95%;
-    --foreground: 200 25% 10%;
+    /* Premium Glassmorphism Light Theme - Refined, airy, sophisticated */
+    --background: 220 25% 97%;
+    --foreground: 220 30% 15%;
 
-    --card: 150 25% 97%;
-    --card-foreground: 200 25% 10%;
+    /* Glass cards - translucent white with subtle warmth */
+    --card: 0 0% 100%;
+    --card-foreground: 220 30% 15%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 200 25% 10%;
+    --popover-foreground: 220 30% 15%;
 
-    /* Vibrant tropical emerald - fresh and lively */
-    --primary: 155 90% 42%;
-    --primary-foreground: 0 0% 100%;
+    /* Rich amber gold - premium, warm, inviting */
+    --primary: 38 95% 50%;
+    --primary-foreground: 220 30% 10%;
 
-    /* Soft tropical lime - gentle accent */
-    --secondary: 95 80% 55%;
-    --secondary-foreground: 200 25% 10%;
+    /* Soft cool gray with blue undertone */
+    --secondary: 220 15% 94%;
+    --secondary-foreground: 220 30% 15%;
 
-    /* Muted tropical neutrals with hint of cyan */
-    --muted: 150 25% 88%;
-    --muted-foreground: 200 20% 42%;
+    /* Refined muted tones */
+    --muted: 220 20% 92%;
+    --muted-foreground: 220 15% 45%;
 
-    /* Vibrant tropical coral - warm energy */
-    --accent: 10 85% 54%;
+    /* Teal accent - sophisticated contrast */
+    --accent: 168 75% 38%;
     --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 84% 60%;
+    --destructive: 0 72% 55%;
     --destructive-foreground: 0 0% 100%;
 
-    /* Tropical sky blue */
-    --success: 200 75% 48%;
+    /* Success green */
+    --success: 152 65% 42%;
     --success-foreground: 0 0% 100%;
 
-    /* Light tropical borders */
-    --border: 150 30% 88%;
-    --input: 150 25% 93%;
-    --ring: 155 90% 42%;
+    /* Glass borders - subtle, refined */
+    --border: 220 20% 90%;
+    --input: 220 15% 95%;
+    --ring: 38 95% 50%;
 
     --radius: 1rem;
 
-    /* Prediction market colors - Tropical edition */
-    --yes: 155 90% 42%;
+    /* Prediction market colors - Premium edition */
+    --yes: 152 70% 40%;
     --yes-foreground: 0 0% 100%;
-    --no: 0 84% 60%;
+    --no: 0 72% 55%;
     --no-foreground: 0 0% 100%;
 
     /* Gradient for shimmer effect */
-    --shimmer-start: 155 90% 42%;
-    --shimmer-mid: 10 85% 54%;
-    --shimmer-end: 200 75% 48%;
+    --shimmer-start: 38 95% 50%;
+    --shimmer-mid: 168 75% 38%;
+    --shimmer-end: 220 60% 55%;
 
-    --sidebar-background: 150 35% 94%;
-    --sidebar-foreground: 200 25% 10%;
-    --sidebar-primary: 155 90% 42%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 95 80% 55%;
-    --sidebar-accent-foreground: 200 25% 10%;
-    --sidebar-border: 150 30% 88%;
-    --sidebar-ring: 155 90% 42%;
+    --sidebar-background: 220 20% 96%;
+    --sidebar-foreground: 220 30% 15%;
+    --sidebar-primary: 38 95% 50%;
+    --sidebar-primary-foreground: 220 30% 10%;
+    --sidebar-accent: 220 15% 92%;
+    --sidebar-accent-foreground: 220 30% 15%;
+    --sidebar-border: 220 20% 90%;
+    --sidebar-ring: 38 95% 50%;
 
-    /* Chalk/Cream color for light theme dialog text visibility */
-    --chalk: 40 30% 87%;
+    /* Chalk color for light theme */
+    --chalk: 220 15% 25%;
+
+    /* Glassmorphism specific variables */
+    --glass-bg: 0 0% 100% / 0.7;
+    --glass-border: 0 0% 100% / 0.5;
+    --glass-shadow: 220 30% 15% / 0.08;
   }
 
   .dark {
@@ -146,6 +152,21 @@ html {
     @apply bg-background text-foreground;
   }
 
+  /* Light theme background gradient - subtle, sophisticated */
+  :root body {
+    background:
+      radial-gradient(ellipse 80% 50% at 20% 40%, hsl(38 95% 50% / 0.06) 0%, transparent 50%),
+      radial-gradient(ellipse 60% 40% at 80% 20%, hsl(168 75% 38% / 0.05) 0%, transparent 50%),
+      radial-gradient(ellipse 70% 50% at 50% 90%, hsl(220 60% 55% / 0.04) 0%, transparent 50%),
+      hsl(var(--background));
+    background-attachment: fixed;
+  }
+
+  /* Dark theme keeps its existing background */
+  .dark body {
+    background: hsl(var(--background));
+  }
+
   /* Custom scrollbar styling for light theme */
   ::-webkit-scrollbar {
     width: 5px;
@@ -188,5 +209,87 @@ html {
 
   .dark ::-webkit-scrollbar-thumb:hover {
     background: hsl(var(--primary));
+  }
+}
+
+/* Glassmorphism utilities - only active in light mode */
+@layer utilities {
+  .glass {
+    background: hsl(0 0% 100% / 0.75);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid hsl(0 0% 100% / 0.6);
+    box-shadow:
+      0 4px 24px -4px hsl(220 30% 15% / 0.08),
+      0 1px 2px hsl(220 30% 15% / 0.04),
+      inset 0 1px 0 hsl(0 0% 100% / 0.8);
+  }
+
+  .glass-subtle {
+    background: hsl(0 0% 100% / 0.6);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid hsl(0 0% 100% / 0.4);
+    box-shadow:
+      0 2px 12px -2px hsl(220 30% 15% / 0.06),
+      inset 0 1px 0 hsl(0 0% 100% / 0.6);
+  }
+
+  .glass-prominent {
+    background: hsl(0 0% 100% / 0.85);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid hsl(0 0% 100% / 0.7);
+    box-shadow:
+      0 8px 32px -8px hsl(220 30% 15% / 0.12),
+      0 2px 4px hsl(220 30% 15% / 0.04),
+      inset 0 1px 0 hsl(0 0% 100% / 0.9);
+  }
+
+  /* Glass hover effect for interactive elements */
+  .glass-hover {
+    transition: all 0.2s ease;
+  }
+
+  .glass-hover:hover {
+    background: hsl(0 0% 100% / 0.85);
+    box-shadow:
+      0 8px 32px -8px hsl(220 30% 15% / 0.12),
+      0 2px 4px hsl(220 30% 15% / 0.06),
+      inset 0 1px 0 hsl(0 0% 100% / 0.9);
+    transform: translateY(-1px);
+  }
+
+  /* Disable glass effects in dark mode */
+  .dark .glass,
+  .dark .glass-subtle,
+  .dark .glass-prominent {
+    background: hsl(var(--card));
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    border-color: hsl(var(--border));
+    box-shadow: 0 1px 3px hsl(0 0% 0% / 0.2);
+  }
+
+  .dark .glass-hover:hover {
+    background: hsl(var(--card));
+    box-shadow: 0 4px 12px hsl(0 0% 0% / 0.3);
+  }
+
+  /* Premium light-mode card styling */
+  :root .card-glass {
+    background: hsl(0 0% 100% / 0.75);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid hsl(220 20% 90% / 0.8);
+    box-shadow:
+      0 4px 24px -4px hsl(220 30% 15% / 0.08),
+      0 1px 2px hsl(220 30% 15% / 0.04);
+  }
+
+  .dark .card-glass {
+    background: hsl(var(--card));
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
   }
 }
