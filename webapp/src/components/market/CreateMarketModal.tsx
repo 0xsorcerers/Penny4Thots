@@ -54,6 +54,7 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
   const [endDate, setEndDate] = useState("");
   const [endTimeInput, setEndTimeInput] = useState("");
   const [endTimeError, setEndTimeError] = useState<string | null>(null);
+  const [isForgoingTime, setIsForgoingTime] = useState(false);
 
   // Calculate minimum date/time (1 hour from now)
   const getMinDateTime = useMemo(() => {
@@ -67,13 +68,16 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
   }, []);
 
   // Validate end time (must be at least 1 hour from when the call is made)
-  const validateEndTime = useCallback(() => {
-    if (!endDate || !endTimeInput) {
+  const validateEndTime = useCallback((customDate?: string, customTime?: string) => {
+    const dateToUse = customDate ?? endDate;
+    const timeToUse = customTime ?? endTimeInput;
+
+    if (!dateToUse || !timeToUse) {
       setEndTimeError(null);
       return 0;
     }
 
-    const selectedDateTime = new Date(`${endDate}T${endTimeInput}`);
+    const selectedDateTime = new Date(`${dateToUse}T${timeToUse}`);
     const nowPlusOneHour = new Date();
     nowPlusOneHour.setHours(nowPlusOneHour.getHours() + 1);
 
@@ -159,6 +163,21 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
     }
   };
 
+  // Handle forgo time - sets date/time to 1.5 hours from now
+  const handleForgoTime = () => {
+    const futureTime = new Date();
+    futureTime.setHours(futureTime.getHours() + 1);
+    futureTime.setMinutes(futureTime.getMinutes() + 30);
+
+    const date = futureTime.toISOString().split("T")[0];
+    const time = futureTime.toTimeString().slice(0, 5);
+
+    setEndDate(date);
+    setEndTimeInput(time);
+    setIsForgoingTime(true);
+    setEndTimeError(null);
+  };
+
   // Handle payment method toggle
   const handleTogglePayment = () => {
     setUseToken(!useToken);
@@ -198,7 +217,10 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
     formData.description.trim() &&
     formData.tags.length > 0 &&
     !posterImageError &&
-    (formData.posterImage === "" || posterImageError === null);
+    (formData.posterImage === "" || posterImageError === null) &&
+    endDate &&
+    endTimeInput &&
+    !endTimeError;
 
   const handleNextStep = (e: React.FormEvent) => {
     e.preventDefault();
@@ -255,6 +277,7 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
       setEndDate("");
       setEndTimeInput("");
       setEndTimeError(null);
+      setIsForgoingTime(false);
       setStep("details");
     } catch {
       // Don't reset form or close modal on error
@@ -273,6 +296,7 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
     setEndDate("");
     setEndTimeInput("");
     setEndTimeError(null);
+    setIsForgoingTime(false);
     onClose();
   };
 
@@ -519,7 +543,7 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
                         <div className="space-y-3">
                           <Label className="font-outfit text-foreground flex items-center gap-2">
                             <Calendar className="h-4 w-4 text-primary" />
-                            Market End Time
+                            Market End Time *
                           </Label>
                           <p className="text-xs text-muted-foreground -mt-1">
                             When should voting close? (Minimum 1 hour from now)
@@ -534,9 +558,13 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
                                 id="endDate"
                                 type="date"
                                 value={endDate}
-                                onChange={(e) => setEndDate(e.target.value)}
+                                onChange={(e) => {
+                                  setEndDate(e.target.value);
+                                  setIsForgoingTime(false);
+                                }}
+                                onFocus={(e) => e.currentTarget.showPicker?.()}
                                 min={getMinDateTime.date}
-                                className={`rounded-xl border-border/50 bg-background font-outfit text-sm ${
+                                className={`rounded-xl border-border/50 bg-background font-outfit text-sm cursor-pointer ${
                                   endTimeError ? "border-destructive/50" : ""
                                 }`}
                               />
@@ -551,13 +579,27 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
                                 id="endTime"
                                 type="time"
                                 value={endTimeInput}
-                                onChange={(e) => setEndTimeInput(e.target.value)}
-                                className={`rounded-xl border-border/50 bg-background font-outfit text-sm ${
+                                onChange={(e) => {
+                                  setEndTimeInput(e.target.value);
+                                  setIsForgoingTime(false);
+                                }}
+                                onFocus={(e) => e.currentTarget.showPicker?.()}
+                                className={`rounded-xl border-border/50 bg-background font-outfit text-sm cursor-pointer ${
                                   endTimeError ? "border-destructive/50" : ""
                                 }`}
                               />
                             </div>
                           </div>
+
+                          {/* Forgo Button */}
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={handleForgoTime}
+                            className="w-full rounded-xl border-border/50 font-outfit text-sm"
+                          >
+                            Forgo & Auto-Set to 1.5 Hours From Submission
+                          </Button>
 
                           {/* Error/Info Display */}
                           <AnimatePresence>
@@ -580,14 +622,21 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
                                 className="flex items-center gap-2 text-xs text-primary"
                               >
                                 <Clock className="h-3.5 w-3.5" />
-                                Market will end: {new Date(`${endDate}T${endTimeInput}`).toLocaleString()}
+                                {isForgoingTime ? "Will auto-set to 1.5h from submission" : `Market will end: ${new Date(`${endDate}T${endTimeInput}`).toLocaleString()}`}
+                              </motion.div>
+                            )}
+                            {!endDate && (
+                              <motion.div
+                                initial={{ opacity: 0, y: -5 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -5 }}
+                                className="flex items-center gap-2 text-xs text-destructive"
+                              >
+                                <AlertCircle className="h-3.5 w-3.5" />
+                                Please set a market end date and time
                               </motion.div>
                             )}
                           </AnimatePresence>
-
-                          <p className="text-xs text-muted-foreground/70">
-                            Leave empty for no time limit (manual close by admin)
-                          </p>
                         </div>
                       </div>
                     </div>
