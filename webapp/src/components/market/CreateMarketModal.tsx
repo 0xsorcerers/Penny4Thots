@@ -48,6 +48,7 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
   const [tokenSymbol, setTokenSymbol] = useState<string | null>(null);
   const [tokenInputError, setTokenInputError] = useState(false);
   const [platformFeePercentage, setPlatformFeePercentage] = useState<number | null>(null);
+  const [posterImageError, setPosterImageError] = useState<string | null>(null);
 
   // End time state for countdown timer
   const [endDate, setEndDate] = useState("");
@@ -103,6 +104,27 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
       console.error("Failed to fetch token symbol:", err);
       setTokenSymbol(null);
       setTokenInputError(true);
+    }
+  }, []);
+
+  // Validate image URL
+  const validateImageUrl = useCallback((url: string) => {
+    if (!url.trim()) {
+      setPosterImageError(null);
+      return;
+    }
+
+    try {
+      const urlObj = new URL(url);
+      const isValidImageExtension = /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(urlObj.pathname);
+
+      if (!isValidImageExtension) {
+        setPosterImageError("URL must end with a valid image extension (.jpg, .png, .gif, .webp, .svg)");
+      } else {
+        setPosterImageError(null);
+      }
+    } catch {
+      setPosterImageError("Please enter a valid image URL");
     }
   }, []);
 
@@ -170,7 +192,13 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
     }
   };
 
-  const isDetailsValid = formData.title.trim() && formData.subtitle.trim() && formData.description.trim();
+  const isDetailsValid =
+    formData.title.trim() &&
+    formData.subtitle.trim() &&
+    formData.description.trim() &&
+    formData.tags.length > 0 &&
+    !posterImageError &&
+    (formData.posterImage === "" || posterImageError === null);
 
   const handleNextStep = (e: React.FormEvent) => {
     e.preventDefault();
@@ -363,10 +391,21 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
                           <Input
                             id="posterImage"
                             value={formData.posterImage}
-                            onChange={(e) => setFormData({ ...formData, posterImage: e.target.value })}
+                            onChange={(e) => {
+                              setFormData({ ...formData, posterImage: e.target.value });
+                              validateImageUrl(e.target.value);
+                            }}
                             placeholder="https://example.com/image.jpg"
-                            className="rounded-xl border-border/50 bg-background font-outfit"
+                            className={`rounded-xl border-border/50 bg-background font-outfit ${
+                              posterImageError ? "border-destructive/50" : ""
+                            }`}
                           />
+                          {posterImageError && (
+                            <p className="text-xs text-destructive font-semibold">{posterImageError}</p>
+                          )}
+                          {formData.posterImage && !posterImageError && (
+                            <p className="text-xs text-success font-semibold">Valid image URL ✓</p>
+                          )}
                           <p className="text-xs text-muted-foreground">
                             Try Pinterest for lots of free images. (HINT: copy image address, not page URL 😉)
                           </p>
@@ -375,7 +414,7 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
                         {/* Tags */}
                         <div className="space-y-2">
                           <Label className="font-outfit text-foreground">
-                            Tags ({formData.tags.length}/7)
+                            Tags ({formData.tags.length}/7) *
                           </Label>
                           <div className="flex gap-2">
                             <Input
@@ -396,6 +435,10 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
                               <Plus className="h-4 w-4" />
                             </Button>
                           </div>
+
+                          {formData.tags.length === 0 && (
+                            <p className="text-xs text-destructive font-semibold">At least one tag is required</p>
+                          )}
 
                           {/* Tag list */}
                           {formData.tags.length > 0 && (
