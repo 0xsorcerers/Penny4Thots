@@ -143,7 +143,7 @@ export const blockchain = {
   rpc: 'https://0xrpc.io/sep',
   blockExplorer: 'https://sepolia.etherscan.io',
   decimals: 18,
-  contract_address: '0x642021aF461DbEa43b7BD5dEa4423ECC608ef27E' as Address,
+  contract_address: '0x71A4487E881b54562f82f2D891c2fa4fb41D65F2' as Address,
   symbol: 'sETH',
 };
 
