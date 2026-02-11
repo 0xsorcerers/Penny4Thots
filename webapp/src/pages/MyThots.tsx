@@ -325,10 +325,10 @@ export default function MyThots() {
   }, [isRefreshing, isLoading, fetchAllMarketIds]);
 
   return (
-    <div className="min-h-screen bg-background textured-bg">
+    <div className="min-h-screen textured-bg">
       {/* Hero Header - Emerald/Teal theme for My Thots */}
       <div className="relative overflow-hidden z-10">
-        <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 via-background to-teal-500/10" />
+        <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 via-transparent to-teal-500/10" />
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-emerald-500/5 via-transparent to-transparent" />
 
         <div className="relative mx-auto max-w-7xl px-4 pt-24 pb-12 sm:px-6 lg:px-8">
