@@ -55,6 +55,9 @@ export function CountdownTimer({ endTime, closed, compact = false, className = "
 
   // Format time display
   const formatTime = () => {
+    if (timeRemaining.total === 0 && !closed) {
+      return "Closing";
+    }
     if (closed || timeRemaining.total === 0) {
       return "Ended";
     }
