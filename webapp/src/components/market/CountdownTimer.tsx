@@ -225,32 +225,32 @@ export function CountdownTimerLarge({ endTime, closed, sharesFinalized, classNam
   const getStatusText = () => {
     if (!isEnded) return "Time Remaining";
 
-    // Market is closed, check sharesFinalized status
-    if (sharesFinalized === null) {
-      // Still loading
+    // Market timer has ended, check closed and sharesFinalized status
+    if (!closed) {
+      // Timer ended but market not yet closed
       return "Penalty Window";
-    } else if (sharesFinalized === false) {
-      // Market is resolving
-      return "Penalty Window";
+    } else if (!sharesFinalized) {
+      // Market is closed but shares not finalized (resolving)
+      return "Market Resolving";
     } else {
-      // Shares are finalized
-      return "Market Closed";
+      // Market is closed and shares are finalized
+      return "Market Resolved";
     }
   };
 
   const getStatusMessage = () => {
     if (!isEnded) return null;
 
-    // Market is closed, check sharesFinalized status
-    if (sharesFinalized === null) {
-      // Still loading
+    // Market timer has ended, check closed and sharesFinalized status
+    if (!closed) {
+      // Timer ended but market not yet closed
       return "Voting is wrapping up.";
-    } else if (sharesFinalized === false) {
-      // Market is resolving
-      return "Voting is wrapping up.";
+    } else if (!sharesFinalized) {
+      // Market is closed but shares not finalized
+      return "Voting is now closed.";
     } else {
-      // Shares are finalized
-      return "Voting is over.";
+      // Market is closed and shares are finalized
+      return "This market is closed.";
     }
   };
 
