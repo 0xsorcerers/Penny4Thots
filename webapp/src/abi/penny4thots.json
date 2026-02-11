@@ -75,31 +75,6 @@
 			{
 				"indexed": true,
 				"internalType": "uint256",
-				"name": "market",
-				"type": "uint256"
-			},
-			{
-				"indexed": true,
-				"internalType": "address",
-				"name": "paymentToken",
-				"type": "address"
-			},
-			{
-				"indexed": false,
-				"internalType": "uint256",
-				"name": "amount",
-				"type": "uint256"
-			}
-		],
-		"name": "DustSwept",
-		"type": "event"
-	},
-	{
-		"anonymous": false,
-		"inputs": [
-			{
-				"indexed": true,
-				"internalType": "uint256",
 				"name": "marketId",
 				"type": "uint256"
 			},
@@ -1410,19 +1385,6 @@
 		"inputs": [
 			{
 				"internalType": "uint256",
-				"name": "market",
-				"type": "uint256"
-			}
-		],
-		"name": "sweepDust",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "uint256",
 				"name": "",
 				"type": "uint256"
 			},
@@ -1748,19 +1710,6 @@
 	{
 		"inputs": [
 			{
-				"internalType": "uint256",
-				"name": "_amount",
-				"type": "uint256"
-			}
-		],
-		"name": "withdraw",
-		"outputs": [],
-		"stateMutability": "payable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
 				"internalType": "string[]",
 				"name": "_info",
 				"type": "string[]"
@@ -1796,5 +1745,5 @@
 		"stateMutability": "payable",
 		"type": "function"
 	}
- ]
+  ]
 }
