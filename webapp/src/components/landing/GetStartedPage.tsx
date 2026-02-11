@@ -36,7 +36,7 @@ export function GetStartedPage({ onGetStarted }: GetStartedPageProps) {
     };
   }, []);
   return (
-    <div className="relative min-h-screen overflow-hidden bg-background">
+    <div className="relative min-h-screen overflow-hidden textured-bg">
       {/* Animated background elements */}
       <div className="pointer-events-none absolute inset-0">
         {/* Primary glow orb */}
