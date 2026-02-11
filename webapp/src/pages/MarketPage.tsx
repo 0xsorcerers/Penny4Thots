@@ -895,7 +895,7 @@ export default function MarketPage() {
 
 
 
-            className="rounded-xl border border-border/50 bg-card/80 backdrop-blur-sm hover:bg-card"
+            className="rounded-xl border border-white/50 bg-white/70 backdrop-blur-xl hover:bg-white/80 shadow-[0_2px_12px_-2px_hsl(220_30%_15%/0.08)] dark:border-border/50 dark:bg-card/80 dark:backdrop-blur-sm dark:hover:bg-card dark:shadow-none"
 
 
 
@@ -955,7 +955,7 @@ export default function MarketPage() {
 
 
 
-            className="rounded-xl border border-border/50 bg-card/80 backdrop-blur-sm hover:bg-card"
+            className="rounded-xl border border-white/50 bg-white/70 backdrop-blur-xl hover:bg-white/80 shadow-[0_2px_12px_-2px_hsl(220_30%_15%/0.08)] dark:border-border/50 dark:bg-card/80 dark:backdrop-blur-sm dark:hover:bg-card dark:shadow-none"
 
 
 
@@ -1232,7 +1232,7 @@ export default function MarketPage() {
 
 
 
-            className="mb-8 overflow-hidden rounded-2xl border border-border/50"
+            className="mb-8 overflow-hidden rounded-2xl border border-white/60 shadow-[0_8px_32px_-8px_hsl(220_30%_15%/0.15)] dark:border-border/50 dark:shadow-none"
 
 
 
@@ -1288,7 +1288,7 @@ export default function MarketPage() {
 
 
 
-            className="mb-8 rounded-2xl border border-border/50 bg-card/50 p-6 backdrop-blur-sm"
+            className="mb-8 rounded-2xl border border-white/60 bg-white/70 p-6 backdrop-blur-xl shadow-[0_4px_24px_-4px_hsl(220_30%_15%/0.1),inset_0_1px_0_hsl(0_0%_100%/0.8)] dark:border-border/50 dark:bg-card/50 dark:backdrop-blur-sm dark:shadow-none"
 
 
 
@@ -1332,7 +1332,7 @@ export default function MarketPage() {
 
 
 
-            className="mb-8 rounded-2xl border border-border/50 bg-card/50 p-6 backdrop-blur-sm"
+            className="mb-8 rounded-2xl border border-white/60 bg-white/70 p-6 backdrop-blur-xl shadow-[0_4px_24px_-4px_hsl(220_30%_15%/0.1),inset_0_1px_0_hsl(0_0%_100%/0.8)] dark:border-border/50 dark:bg-card/50 dark:backdrop-blur-sm dark:shadow-none"
 
 
 
@@ -1652,7 +1652,7 @@ export default function MarketPage() {
 
 
 
-            className="rounded-2xl border border-border/50 bg-card/50 p-6 backdrop-blur-sm"
+            className="rounded-2xl border border-white/60 bg-white/70 p-6 backdrop-blur-xl shadow-[0_4px_24px_-4px_hsl(220_30%_15%/0.1),inset_0_1px_0_hsl(0_0%_100%/0.8)] dark:border-border/50 dark:bg-card/50 dark:backdrop-blur-sm dark:shadow-none"
 
 
 
