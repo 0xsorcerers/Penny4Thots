@@ -155,7 +155,7 @@ html {
   /* Light theme floral textured background - elegant and distinctive */
   :root body {
     background-color: hsl(220 20% 96%);
-    background-image: url('/textures/floral-pattern.webp');
+    background-image: url('/light-flora.webp');
     background-attachment: fixed;
     background-size: 400px 400px;
     background-repeat: repeat;
@@ -181,14 +181,27 @@ html {
     z-index: 0;
   }
 
-  /* Dark theme keeps its existing background */
+  /* Dark theme floral textured background - matching light theme style */
   .dark body {
-    background: hsl(var(--background));
-    background-image: none;
+    background-color: hsl(220 20% 3%);
+    background-image: url('/dark-flora.webp');
+    background-attachment: fixed;
+    background-size: 400px 400px;
+    background-repeat: repeat;
   }
 
   .dark .textured-bg::before {
-    display: none;
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(
+      135deg,
+      hsl(220 20% 0% / 0.15) 0%,
+      hsl(220 20% 0% / 0.05) 50%,
+      hsl(220 20% 0% / 0.15) 100%
+    );
+    z-index: 0;
   }
 
   /* Custom scrollbar styling for light theme */
