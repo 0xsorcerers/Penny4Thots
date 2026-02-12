@@ -291,8 +291,8 @@ export function MarketCardMyThots({ market, onVoteClick }: MarketCardMyThotsProp
           </div>
         ) : !sharesFinalized ? (
           <div className="flex w-full items-center justify-center gap-2 rounded-xl py-2.5 bg-gradient-to-r from-slate-500/10 to-gray-500/10 border border-slate-500/20">
-            <Hourglass className="h-4 w-4 text-slate-400 dark:text-slate-500 animate-pulse" />
-            <span className="font-outfit text-xs text-slate-500 dark:text-slate-400">Resolving Market</span>
+            <Hourglass className="h-4 w-4 text-slate-600 dark:text-slate-400 animate-pulse" />
+            <span className="font-outfit text-xs text-slate-600 dark:text-slate-400">Resolving Market</span>
           </div>
         ) : isLoadingPositions ? (
           <div className="flex w-full items-center justify-center gap-2 rounded-xl py-2.5 bg-muted/30">
@@ -301,8 +301,8 @@ export function MarketCardMyThots({ market, onVoteClick }: MarketCardMyThotsProp
           </div>
         ) : userPositions.length === 0 ? (
           <div className="flex w-full items-center justify-center gap-2 rounded-xl py-2.5 bg-gradient-to-r from-slate-500/10 to-gray-500/10 border border-slate-500/20 opacity-60">
-            <CircleOff className="h-4 w-4 text-slate-400 dark:text-slate-500" />
-            <span className="font-outfit text-xs text-slate-500 dark:text-slate-400">Closed</span>
+            <CircleOff className="h-4 w-4 text-slate-600 dark:text-slate-500" />
+            <span className="font-outfit text-xs text-slate-600 dark:text-slate-400">Closed</span>
           </div>
         ) : (
           <motion.button

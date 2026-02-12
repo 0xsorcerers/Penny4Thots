@@ -90,6 +90,13 @@ html {
     --glass-bg: 0 0% 100% / 0.7;
     --glass-border: 0 0% 100% / 0.5;
     --glass-shadow: 222 47% 11% / 0.08;
+
+    /* High contrast status colors for light mode */
+    --status-critical: 0 85% 45%;
+    --status-urgent: 25 90% 42%;
+    --status-warning: 32 95% 40%;
+    --status-normal: 190 70% 35%;
+    --status-inactive: 220 15% 35%;
   }
 
   .dark {

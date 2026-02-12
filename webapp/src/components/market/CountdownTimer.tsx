@@ -115,15 +115,15 @@ export function CountdownTimer({ endTime, closed, compact = false, className = "
 
     switch (urgencyLevel) {
       case "ended":
-        return `${baseStyles} bg-slate-500/10 text-slate-400 dark:bg-slate-500/20 dark:text-slate-400`;
+        return `${baseStyles} bg-slate-500/10 text-slate-600 dark:bg-slate-500/20 dark:text-slate-400`;
       case "critical":
-        return `${baseStyles} bg-red-500/15 text-red-500 dark:bg-red-500/25 dark:text-red-400 animate-pulse`;
+        return `${baseStyles} bg-red-500/15 text-red-600 dark:bg-red-500/25 dark:text-red-400 animate-pulse`;
       case "urgent":
-        return `${baseStyles} bg-orange-500/15 text-orange-500 dark:bg-orange-500/25 dark:text-orange-400`;
+        return `${baseStyles} bg-orange-500/15 text-orange-700 dark:bg-orange-500/25 dark:text-orange-400`;
       case "warning":
-        return `${baseStyles} bg-amber-500/15 text-amber-600 dark:bg-amber-500/25 dark:text-amber-400`;
+        return `${baseStyles} bg-amber-500/15 text-amber-700 dark:bg-amber-500/25 dark:text-amber-400`;
       default:
-        return `${baseStyles} bg-cyan-500/10 text-cyan-600 dark:bg-cyan-500/20 dark:text-cyan-400`;
+        return `${baseStyles} bg-cyan-500/10 text-cyan-700 dark:bg-cyan-500/20 dark:text-cyan-400`;
     }
   };
 
@@ -195,15 +195,15 @@ export function CountdownTimerLarge({ endTime, closed, sharesFinalized, classNam
   const getTextColor = () => {
     switch (urgencyLevel) {
       case "ended":
-        return "text-slate-400";
+        return "text-slate-600 dark:text-slate-400";
       case "critical":
-        return "text-red-500 dark:text-red-400";
+        return "text-red-600 dark:text-red-400";
       case "urgent":
-        return "text-orange-500 dark:text-orange-400";
+        return "text-orange-700 dark:text-orange-400";
       case "warning":
-        return "text-amber-600 dark:text-amber-400";
+        return "text-amber-700 dark:text-amber-400";
       default:
-        return "text-cyan-600 dark:text-cyan-400";
+        return "text-cyan-700 dark:text-cyan-400";
     }
   };
 
@@ -282,8 +282,8 @@ export function CountdownTimerLarge({ endTime, closed, sharesFinalized, classNam
         </div>
       ) : (
         <div className="flex items-center justify-center gap-2">
-          <CheckCircle2 className="h-5 w-5 text-slate-400" />
-          <span className="font-outfit text-lg text-slate-400">{getStatusMessage()}</span>
+          <CheckCircle2 className="h-5 w-5 text-slate-600 dark:text-slate-400" />
+          <span className="font-outfit text-lg text-slate-600 dark:text-slate-400">{getStatusMessage()}</span>
         </div>
       )}
     </motion.div>
