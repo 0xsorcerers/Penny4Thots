@@ -97,6 +97,11 @@ html {
     --status-warning: 32 95% 40%;
     --status-normal: 194 55% 33%;
     --status-inactive: 217 28% 19%;
+
+    /* Vote modal theme - silver & sky blue */
+    --modal-silver: 220 13% 70%;
+    --modal-sky-blue: 210 100% 50%;
+    --modal-bright-blue: 210 100% 47%;
   }
 
   .dark {
