@@ -300,7 +300,7 @@ export function VoteModal({
                       {step === "amount" && "Enter Amount"}
                       {step === "success" && "Vote Submitted!"}
                     </h2>
-                    <p className="mt-1 font-outfit text-sm text-sky-300 line-clamp-1">
+                    <p className="mt-1 font-outfit text-sm text-slate-300 line-clamp-1">
                       {marketTitle}
                     </p>
                   </div>
@@ -318,13 +318,13 @@ export function VoteModal({
                   {isLoadingData ? (
                     <div className="flex flex-col items-center justify-center py-8">
                       <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                      <p className="mt-4 text-sm text-sky-300">
+                      <p className="mt-4 text-sm text-slate-300">
                         Loading market data...
                       </p>
                     </div>
                   ) : step === "select" ? (
                     <div className="space-y-4">
-                      <p className="text-sm text-sky-300 text-center mb-6">
+                      <p className="text-sm text-slate-300 text-center mb-6">
                         Choose your position
                       </p>
 
@@ -356,7 +356,7 @@ export function VoteModal({
                     <div className="space-y-6">
                       {/* Selected Option */}
                       <div className="rounded-xl bg-muted/50 p-4">
-                        <p className="text-sm text-sky-300 mb-2">
+                        <p className="text-sm text-slate-700 dark:text-slate-300 mb-2">
                           Your Vote
                         </p>
                         <p
@@ -387,11 +387,11 @@ export function VoteModal({
                               transformStyle: "preserve-3d" as const,
                             }}
                           >
-                            <p className="font-syne text-sm font-bold text-sky-300">
+                            <p className="font-syne text-sm font-bold text-slate-300">
                               Pay with{" "}
                               <span
                                 style={{
-                                  color: isZeroAddress(paymentToken) ? "hsl(var(--primary))" : "hsl(var(--accent))",
+                                  color: "hsl(210 100% 50%)",
                                 }}
                               >
                                 {tokenSymbol ? tokenSymbol : isZeroAddress(paymentToken) ? blockchain.symbol : "Token"}
@@ -410,12 +410,12 @@ export function VoteModal({
                       <div className="space-y-2">
                         <Label
                           htmlFor="vote-amount"
-                          className="font-outfit text-sky-300"
+                          className="font-outfit text-slate-300"
                         >
                           Spending Amount{" "}
                           <span
                             style={{
-                              color: isZeroAddress(paymentToken) ? "hsl(var(--primary))" : "hsl(var(--accent))",
+                              color: "hsl(210 100% 50%)",
                             }}
                           >
                             ({tokenSymbol ? tokenSymbol : isZeroAddress(paymentToken) ? blockchain.symbol : "Token"})
@@ -434,16 +434,16 @@ export function VoteModal({
                           disabled={isLoading}
                           autoFocus
                         />
-                        <p className="text-xs text-sky-300/80">
+                        <p className="text-xs text-slate-300">
                           Amount to stake with your vote
                         </p>
                         {/* Platform Fee Display */}
                         {platformFeePercentage !== null && (
                           <p className="text-xs mt-2">
-                            <span className="text-sky-300/80">Platform fee: </span>
+                            <span className="text-slate-300">Platform fee: </span>
                             <span
                               style={{
-                                color: isZeroAddress(paymentToken) ? "hsl(var(--primary))" : "hsl(var(--accent))",
+                                color: "hsl(210 100% 50%)",
                               }}
                               className="font-semibold"
                             >
@@ -485,7 +485,7 @@ export function VoteModal({
                               </div>
                             </div>
                           ) : (
-                            <p className="text-center text-xs text-sky-300">
+                            <p className="text-center text-xs text-slate-300">
                               Get Started button will appear shortly…
                             </p>
                           )}
@@ -532,7 +532,7 @@ export function VoteModal({
                       <p className="mt-4 font-semibold text-sky-300 text-lg">
                         Vote Submitted!
                       </p>
-                      <p className="mt-2 text-sm text-sky-300/80">
+                      <p className="mt-2 text-sm text-slate-300">
                         Your vote for{" "}
                         <span
                           className={selectedSignal ? "text-yes" : "text-no"}
