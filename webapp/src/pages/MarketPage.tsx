@@ -1171,7 +1171,7 @@ export default function MarketPage() {
               
               {market.closed ? (
                 sharesFinalized === null ? (
-                  <span className="flex items-center gap-1.5 rounded-full bg-slate-500/10 px-3 py-1 font-mono text-xs font-semibold text-slate-500 dark:bg-slate-500/20 dark:text-slate-400">
+                  <span className="flex items-center gap-1.5 rounded-full bg-slate-500/10 px-3 py-1 font-mono text-xs font-semibold text-slate-600 dark:bg-slate-500/20 dark:text-slate-400">
                     <CircleOff className="h-3.5 w-3.5" />
                     Checking...
                   </span>
@@ -1592,8 +1592,8 @@ export default function MarketPage() {
             ) : !sharesFinalized ? (
               /* Closed Market - Shares not finalized - Show Resolving */
               <div className="w-full rounded-xl py-5 bg-gradient-to-r from-slate-500/10 to-gray-500/10 border border-slate-500/20 flex items-center justify-center gap-2">
-                <Hourglass className="h-5 w-5 text-slate-400 dark:text-slate-500 animate-pulse" />
-                <span className="font-syne text-lg font-semibold text-slate-500 dark:text-slate-400">Resolving Market</span>
+                <Hourglass className="h-5 w-5 text-slate-600 dark:text-slate-400 animate-pulse" />
+                <span className="font-syne text-lg font-semibold text-slate-600 dark:text-slate-400">Resolving Market</span>
               </div>
             ) : isLoadingPositions ? (
               /* Closed Market - Loading positions */
@@ -1604,8 +1604,8 @@ export default function MarketPage() {
             ) : userPositions.length === 0 ? (
               /* Closed Market - No positions to claim - Show Closed */
               <div className="w-full rounded-xl py-5 bg-gradient-to-r from-slate-500/10 to-gray-500/10 border border-slate-500/20 flex items-center justify-center gap-2 opacity-60">
-                <CircleOff className="h-5 w-5 text-slate-400 dark:text-slate-500" />
-                <span className="font-syne text-lg font-semibold text-slate-500 dark:text-slate-400">Closed</span>
+                <CircleOff className="h-5 w-5 text-slate-600 dark:text-slate-500" />
+                <span className="font-syne text-lg font-semibold text-slate-600 dark:text-slate-400">Closed</span>
               </div>
             ) : (
                 <motion.button
