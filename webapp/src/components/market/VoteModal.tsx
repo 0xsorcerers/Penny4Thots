@@ -295,12 +295,12 @@ export function VoteModal({
                 {/* Header */}
                 <div className="flex items-center justify-between border-b border-border/50 p-6">
                   <div>
-                    <h2 className="font-syne text-xl font-bold text-chalk dark:text-foreground">
+                    <h2 className="font-syne text-xl font-bold text-sky-300 dark:text-foreground">
                       {step === "select" && "Cast Your Vote"}
                       {step === "amount" && "Enter Amount"}
                       {step === "success" && "Vote Submitted!"}
                     </h2>
-                    <p className="mt-1 font-outfit text-sm text-muted-foreground line-clamp-1">
+                    <p className="mt-1 font-outfit text-sm text-sky-300 line-clamp-1">
                       {marketTitle}
                     </p>
                   </div>
@@ -318,13 +318,13 @@ export function VoteModal({
                   {isLoadingData ? (
                     <div className="flex flex-col items-center justify-center py-8">
                       <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                      <p className="mt-4 text-sm text-muted-foreground">
+                      <p className="mt-4 text-sm text-sky-300">
                         Loading market data...
                       </p>
                     </div>
                   ) : step === "select" ? (
                     <div className="space-y-4">
-                      <p className="text-sm text-muted-foreground text-center mb-6">
+                      <p className="text-sm text-sky-300 text-center mb-6">
                         Choose your position
                       </p>
 
@@ -356,7 +356,7 @@ export function VoteModal({
                     <div className="space-y-6">
                       {/* Selected Option */}
                       <div className="rounded-xl bg-muted/50 p-4">
-                        <p className="text-sm text-chalk dark:text-muted-foreground mb-2">
+                        <p className="text-sm text-sky-300 mb-2">
                           Your Vote
                         </p>
                         <p
@@ -387,7 +387,7 @@ export function VoteModal({
                               transformStyle: "preserve-3d" as const,
                             }}
                           >
-                            <p className="font-syne text-sm font-bold text-chalk dark:text-foreground">
+                            <p className="font-syne text-sm font-bold text-sky-300">
                               Pay with{" "}
                               <span
                                 style={{
@@ -410,7 +410,7 @@ export function VoteModal({
                       <div className="space-y-2">
                         <Label
                           htmlFor="vote-amount"
-                          className="font-outfit text-chalk dark:text-foreground"
+                          className="font-outfit text-sky-300"
                         >
                           Spending Amount{" "}
                           <span
@@ -434,13 +434,13 @@ export function VoteModal({
                           disabled={isLoading}
                           autoFocus
                         />
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-xs text-sky-300/80">
                           Amount to stake with your vote
                         </p>
                         {/* Platform Fee Display */}
                         {platformFeePercentage !== null && (
                           <p className="text-xs mt-2">
-                            <span className="text-muted-foreground">Platform fee: </span>
+                            <span className="text-sky-300/80">Platform fee: </span>
                             <span
                               style={{
                                 color: isZeroAddress(paymentToken) ? "hsl(var(--primary))" : "hsl(var(--accent))",
@@ -456,7 +456,7 @@ export function VoteModal({
                       {/* Warning */}
                       <div className="flex gap-3 rounded-xl bg-yellow-500/10 border border-yellow-500/20 p-3">
                         <AlertCircle className="h-5 w-5 text-yellow-500 flex-shrink-0 mt-0.5" />
-                        <div className="text-sm text-yellow-600 dark:text-yellow-400">
+                        <div className="text-sm text-yellow-300">
                           <p className="font-semibold">Cannot be zero</p>
                           <p className="mt-1">
                             You must send a non-zero amount to engage your vote
@@ -468,14 +468,14 @@ export function VoteModal({
                       {error && (!isWalletNotConnectedError || (!showConnectCta && !account)) && (
                         <div className="flex gap-3 rounded-xl bg-destructive/10 border border-destructive/20 p-3">
                           <AlertCircle className="h-5 w-5 text-destructive flex-shrink-0 mt-0.5" />
-                          <p className="text-sm text-destructive">{error}</p>
+                          <p className="text-sm text-red-300">{error}</p>
                         </div>
                       )}
 
                       {isWalletNotConnectedError && (
                         <div className="pt-2">
                           {account ? (
-                            <p className="text-center text-xs text-muted-foreground">
+                            <p className="text-center text-xs text-sky-300">
                               {showProceedMessage ? "Connected. You can now vote." : ""}
                             </p>
                           ) : showConnectCta ? (
@@ -485,7 +485,7 @@ export function VoteModal({
                               </div>
                             </div>
                           ) : (
-                            <p className="text-center text-xs text-muted-foreground">
+                            <p className="text-center text-xs text-sky-300">
                               Get Started button will appear shortly…
                             </p>
                           )}
@@ -529,10 +529,10 @@ export function VoteModal({
                       >
                         <CheckCircle className="h-16 w-16 text-yes" />
                       </motion.div>
-                      <p className="mt-4 font-semibold text-foreground text-lg">
+                      <p className="mt-4 font-semibold text-sky-300 text-lg">
                         Vote Submitted!
                       </p>
-                      <p className="mt-2 text-sm text-muted-foreground">
+                      <p className="mt-2 text-sm text-sky-300/80">
                         Your vote for{" "}
                         <span
                           className={selectedSignal ? "text-yes" : "text-no"}
