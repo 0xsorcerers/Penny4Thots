@@ -28,14 +28,14 @@ export function Header({ onConnect, isConnected = false }: HeaderProps) {
           transition={{ type: "spring", stiffness: 400, damping: 17 }}
         >
           <div className="relative">
-            <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-primary/20 to-accent/20 p-1">
+            <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-yellow-600/30 to-cyan-600/30 p-1">
               <img
                 src="/logo-white-no-bkg.webp"
                 alt="Penny4Thots Logo"
                 className="h-full w-full object-contain"
               />
             </div>
-            <div className="absolute -inset-1 -z-10 rounded-xl bg-gradient-to-br from-primary/50 to-accent/50 opacity-50 blur-sm" />
+            <div className="absolute -inset-1 -z-10 rounded-xl bg-gradient-to-br from-yellow-600/60 to-cyan-600/60 opacity-50 blur-sm" />
           </div>
           <span className="font-syne text-xl font-bold tracking-tight text-foreground">
             Penny4Thots
