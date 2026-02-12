@@ -33,8 +33,8 @@ html {
     --popover: 0 0% 100%;
     --popover-foreground: 222 47% 11%;
 
-    /* Deep amber/bronze - warm, premium, high contrast */
-    --primary: 32 95% 44%;
+    /* Deep Navy - Finance-grade trust, maximum contrast on florals */
+    --primary: 217 28% 19%;
     --primary-foreground: 0 0% 100%;
 
     /* Soft warm gray */
@@ -45,11 +45,11 @@ html {
     --muted: 220 14% 90%;
     --muted-foreground: 220 9% 38%;
 
-    /* Deep teal accent - strong contrast */
-    --accent: 172 66% 30%;
+    /* Deep Teal accent - elegant complement to navy */
+    --accent: 194 55% 33%;
     --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 72% 51%;
+    --destructive: 0 84% 50%;
     --destructive-foreground: 0 0% 100%;
 
     /* Success - deeper green */
@@ -59,29 +59,29 @@ html {
     /* Glass borders - slightly darker for definition */
     --border: 220 13% 85%;
     --input: 220 14% 92%;
-    --ring: 32 95% 44%;
+    --ring: 217 28% 19%;
 
     --radius: 1rem;
 
-    /* Prediction market colors - high contrast */
+    /* Prediction market colors - navy yes, crimson no for contrast */
     --yes: 158 64% 32%;
     --yes-foreground: 0 0% 100%;
-    --no: 0 72% 51%;
+    --no: 0 84% 50%;
     --no-foreground: 0 0% 100%;
 
-    /* Gradient for shimmer effect */
-    --shimmer-start: 32 95% 44%;
-    --shimmer-mid: 172 66% 30%;
+    /* Gradient for shimmer effect - navy to teal */
+    --shimmer-start: 217 28% 19%;
+    --shimmer-mid: 194 55% 33%;
     --shimmer-end: 220 60% 50%;
 
     --sidebar-background: 220 14% 94%;
     --sidebar-foreground: 222 47% 11%;
-    --sidebar-primary: 32 95% 44%;
+    --sidebar-primary: 217 28% 19%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 220 14% 90%;
     --sidebar-accent-foreground: 222 47% 11%;
     --sidebar-border: 220 13% 85%;
-    --sidebar-ring: 32 95% 44%;
+    --sidebar-ring: 217 28% 19%;
 
     /* Chalk color for light theme - darker for legibility */
     --chalk: 222 47% 11%;
@@ -91,12 +91,12 @@ html {
     --glass-border: 0 0% 100% / 0.5;
     --glass-shadow: 222 47% 11% / 0.08;
 
-    /* High contrast status colors for light mode */
-    --status-critical: 0 85% 45%;
-    --status-urgent: 25 90% 42%;
+    /* High contrast status colors for light mode - navy-based */
+    --status-critical: 0 84% 50%;
+    --status-urgent: 194 55% 33%;
     --status-warning: 32 95% 40%;
-    --status-normal: 190 70% 35%;
-    --status-inactive: 220 15% 35%;
+    --status-normal: 194 55% 33%;
+    --status-inactive: 217 28% 19%;
   }
 
   .dark {
