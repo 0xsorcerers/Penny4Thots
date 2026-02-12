@@ -3,7 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { AutoConnect, ThirdwebProvider } from "thirdweb/react";
+import { AutoConnect } from "thirdweb/react";
 import { client, wallets } from "@/tools/utils";
 import Welcome from "./pages/Welcome";
 import Index from "./pages/Index";
@@ -16,7 +16,7 @@ import NotFound from "./pages/NotFound";
 const queryClient = new QueryClient();
 
 const App = () => (
-  <ThirdwebProvider>
+  <>
     <AutoConnect
       client={client}
       wallets={wallets}
@@ -45,7 +45,7 @@ const App = () => (
         </BrowserRouter>
       </TooltipProvider>
     </QueryClientProvider>
-  </ThirdwebProvider>
+  </>
 );
 
 export default App;
