@@ -4,6 +4,7 @@ import { publicClient, isZeroAddress, ZERO_ADDRESS, blockchain } from "@/tools/u
 import type { Address } from "viem";
 import erc20 from "@/abi/ERC20.json";
 import { Abi } from "viem";
+import { useTheme } from "@/hooks/use-theme";
 
 interface MarketBalanceProps {
   marketBalance: string;
@@ -13,6 +14,7 @@ interface MarketBalanceProps {
 export function MarketBalance({ marketBalance, paymentToken }: MarketBalanceProps) {
   const [symbol, setSymbol] = useState<string>(blockchain.symbol);
   const [isLoading, setIsLoading] = useState(false);
+  const { isLight } = useTheme();
 
   useEffect(() => {
     if (paymentToken && !isZeroAddress(paymentToken)) {
@@ -42,7 +44,9 @@ export function MarketBalance({ marketBalance, paymentToken }: MarketBalanceProp
   const displayBalance = parseFloat(marketBalance).toFixed(4);
   const symbolColor =
     symbol === blockchain.symbol
-      ? "text-primary" // Primary color for blockchain symbol (gold/emerald)
+      ? isLight 
+        ? "text-amber-600" // Amber color for blockchain symbol in light mode
+        : "text-primary"   // Primary color for blockchain symbol in dark mode (gold/emerald)
       : "text-accent"; // Accent color for tokens (cyan/coral)
 
   return (
