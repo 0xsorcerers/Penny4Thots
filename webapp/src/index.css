@@ -312,7 +312,8 @@ html {
   /* Disable glass effects in dark mode */
   .dark .glass,
   .dark .glass-subtle,
-  .dark .glass-prominent {
+  .dark .glass-prominent,
+  .dark .card-glass {
     background: hsl(var(--card));
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
