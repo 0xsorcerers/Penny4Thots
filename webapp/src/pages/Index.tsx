@@ -182,7 +182,7 @@ export default function Index() {
     }
   };
 
-  const handleCreateMarket = async (data: CreateMarketData & { marketBalance: string; initialVote: "YES" | "NO"; useToken: boolean; tokenAddress: Address; endTime: number }) => {
+  const handleCreateMarket = async (data: CreateMarketData & { marketBalance: string; initialVote: "YES" | "NO" | null; useToken: boolean; tokenAddress: Address; endTime: number }) => {
     if (!account) {
       toast.error("Please connect your wallet first");
       throw new Error("Wallet not connected");

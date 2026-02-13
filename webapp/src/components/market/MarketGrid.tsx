@@ -142,7 +142,7 @@ export function MarketGrid({ markets, onCreateMarket, onVoteClick, onRefreshMark
               placeholder="Search markets..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="h-11 rounded-xl border-white/60 bg-white/60 backdrop-blur-lg pl-10 font-outfit placeholder:text-muted-foreground focus:border-primary/50 focus:ring-primary/20 shadow-[inset_0_1px_2px_hsl(220_30%_15%/0.05)] dark:border-border/50 dark:bg-card dark:backdrop-blur-none dark:shadow-none"
+              className="h-11 rounded-xl border-amber-100/60 bg-amber-50/60 backdrop-blur-lg pl-10 font-outfit placeholder:text-muted-foreground focus:border-primary/50 focus:ring-primary/20 shadow-[inset_0_1px_2px_hsl(220_30%_15%/0.05)] dark:border-border/50 dark:bg-card dark:backdrop-blur-none dark:shadow-none"
             />
             {searchQuery && (
               <button
@@ -243,7 +243,7 @@ export function MarketGrid({ markets, onCreateMarket, onVoteClick, onRefreshMark
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-white/50 bg-white/50 backdrop-blur-lg py-20 dark:border-border/50 dark:bg-card/50 dark:backdrop-blur-none"
+              className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-amber-100/50 bg-amber-50/50 backdrop-blur-lg py-20 dark:border-border/50 dark:bg-card/50 dark:backdrop-blur-none"
             >
               <Loader2 className="h-10 w-10 animate-spin text-primary mb-4" />
               <p className="font-outfit text-muted-foreground">Loading markets from blockchain...</p>
@@ -273,7 +273,7 @@ export function MarketGrid({ markets, onCreateMarket, onVoteClick, onRefreshMark
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-white/50 bg-white/50 backdrop-blur-lg py-20 dark:border-border/50 dark:bg-card/50 dark:backdrop-blur-none"
+              className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-amber-100/50 bg-amber-50/50 backdrop-blur-lg py-20 dark:border-border/50 dark:bg-card/50 dark:backdrop-blur-none"
             >
               <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
                 <Sparkles className="h-8 w-8 text-primary" />

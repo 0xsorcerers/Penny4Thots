@@ -8,8 +8,8 @@ const Card = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElemen
     className={cn(
       "rounded-lg border text-card-foreground shadow-sm",
       // Light mode glassmorphism
-      "bg-white/75 backdrop-blur-[12px] border-white/60",
-      "shadow-[0_4px_24px_-4px_hsl(220_30%_15%/0.08),0_1px_2px_hsl(220_30%_15%/0.04),inset_0_1px_0_hsl(0_0%_100%/0.8)]",
+      "bg-amber-50/75 backdrop-blur-[12px] border-amber-100/60",
+      "shadow-[0_4px_24px_-4px_hsl(220_30%_15%/0.08),0_1px_2px_hsl(220_30%_15%/0.04),inset_0_1px_0_hsl(38_25%_85%/0.8)]",
       // Dark mode - solid background
       "dark:bg-card dark:backdrop-blur-none dark:border-border dark:shadow-sm",
       className

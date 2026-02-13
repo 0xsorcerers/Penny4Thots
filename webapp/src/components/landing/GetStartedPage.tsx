@@ -116,7 +116,7 @@ export function GetStartedPage({ onGetStarted }: GetStartedPageProps) {
       <div className="relative z-10 flex min-h-screen flex-col items-center justify-center px-6">
         {showConnectNotice && (
           <div className="mb-8 w-full max-w-xl">
-            <Alert variant="destructive" className="rounded-xl bg-white/70 backdrop-blur-xl border-destructive/30 dark:bg-destructive/10 dark:backdrop-blur-none">
+            <Alert variant="destructive" className="rounded-xl bg-amber-50/70 backdrop-blur-xl border-destructive/30 dark:bg-destructive/10 dark:backdrop-blur-none">
               <AlertTitle>Wallet not connected</AlertTitle>
               <AlertDescription>
                 Connect your wallet to participate. This message will disappear shortly.
@@ -132,7 +132,7 @@ export function GetStartedPage({ onGetStarted }: GetStartedPageProps) {
           transition={{ duration: 0.6, delay: 0.2 }}
           className="mb-8"
         >
-          <div className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-white/60 backdrop-blur-lg px-4 py-2 shadow-[0_2px_12px_-2px_hsl(220_30%_15%/0.08)] dark:bg-primary/10 dark:backdrop-blur-sm dark:shadow-none">
+          <div className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-amber-50/60 backdrop-blur-lg px-4 py-2 shadow-[0_2px_12px_-2px_hsl(220_30%_15%/0.08)] dark:bg-primary/10 dark:backdrop-blur-sm dark:shadow-none">
             <Sparkles className="h-4 w-4 text-primary" />
             <span className="font-mono text-sm text-primary">Next Gen Prediction Market</span>
           </div>
@@ -204,7 +204,7 @@ export function GetStartedPage({ onGetStarted }: GetStartedPageProps) {
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 1 + i * 0.1, duration: 0.3 }}
-              className="flex items-center gap-2 rounded-lg border border-white/50 bg-white/60 px-4 py-2 backdrop-blur-lg shadow-[0_2px_8px_-2px_hsl(220_30%_15%/0.06)] dark:border-border/50 dark:bg-card/50 dark:backdrop-blur-sm dark:shadow-none"
+              className="flex items-center gap-2 rounded-lg border border-amber-100/50 bg-amber-50/60 px-4 py-2 backdrop-blur-lg shadow-[0_2px_8px_-2px_hsl(220_30%_15%/0.06)] dark:border-border/50 dark:bg-card/50 dark:backdrop-blur-sm dark:shadow-none"
             >
               <item.icon className="h-4 w-4 text-accent" />
               <span className="font-outfit text-sm text-foreground/80">{item.label}</span>

@@ -100,7 +100,7 @@ export function MarketCard({ market, onVoteClick }: MarketCardProps) {
       className={cn(
         "group relative cursor-pointer overflow-hidden rounded-2xl transition-all duration-300",
         // Light mode glassmorphism
-        "border border-white/60 bg-white/70 backdrop-blur-xl shadow-[0_4px_24px_-4px_hsl(220_30%_15%/0.1),inset_0_1px_0_hsl(0_0%_100%/0.8)]",
+        "border border-amber-100/60 bg-amber-50/70 backdrop-blur-xl shadow-[0_4px_24px_-4px_hsl(220_30%_15%/0.1),inset_0_1px_0_hsl(38_25%_85%/0.8)]",
         "hover:border-primary/30 hover:shadow-[0_8px_32px_-8px_hsl(220_30%_15%/0.15),0_0_30px_rgba(var(--primary),0.08)]",
         // Dark mode
         "dark:border-border/50 dark:bg-card/80 dark:backdrop-blur-sm dark:shadow-none",
