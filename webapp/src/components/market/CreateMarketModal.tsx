@@ -16,7 +16,7 @@ import { Abi } from "viem";
 interface CreateMarketModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (data: CreateMarketData & { marketBalance: string; initialVote: "YES" | "NO"; useToken: boolean; tokenAddress: Address; endTime: number }) => Promise<void>;
+  onSubmit: (data: CreateMarketData & { marketBalance: string; initialVote: "YES" | "NO" | null; useToken: boolean; tokenAddress: Address; endTime: number }) => Promise<void>;
   isLoading?: boolean;
 }
 
@@ -229,9 +229,14 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent, voteChoice?: "YES" | "NO") => {
     e.preventDefault();
-    if (!marketBalance || !initialVote) return;
+    const finalVote = voteChoice || initialVote;
+    console.log('Submit called - voteChoice:', voteChoice);
+    console.log('Submit called - initialVote:', initialVote);
+    console.log('Submit called - finalVote:', finalVote);
+    console.log('Submit called - signal will be:', finalVote === "YES");
+    if (!marketBalance || !finalVote) return;
     if (useToken && !tokenAddress) return;
 
     // Calculate endTime at submission time to ensure accuracy
@@ -253,6 +258,8 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
         optionA: formData.optionA,
         optionB: formData.optionB,
         useToken,
+        feetype: useToken, // true for token payment, false for ETH payment
+        signal: finalVote === "YES", // true for Option A, false for Option B
         tokenAddress: (useToken ? tokenAddress : ZERO_ADDRESS) as Address,
         endTime: finalEndTime,
       });
@@ -692,23 +699,36 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
                             <motion.button
                               type="button"
                               onClick={handleTogglePayment}
-                              className="relative inline-flex h-7 w-14 items-center rounded-full bg-muted transition-colors"
-                              style={{
-                                backgroundColor: useToken ? "hsl(var(--accent))" : "hsl(var(--primary))",
-                              }}
-                              whileHover={{ scale: 1.05 }}
-                              whileTap={{ scale: 0.95 }}
+                              className={`relative inline-flex h-8 w-16 items-center rounded-full border transition-colors shadow-sm ${
+                                useToken 
+                                  ? "bg-amber-100 border-amber-300 dark:bg-accent dark:border-0" 
+                                  : "bg-amber-100 border-amber-300 dark:bg-primary dark:border-0"
+                              }`}
+                              whileHover={{ scale: 1.02 }}
+                              whileTap={{ scale: 0.98 }}
                             >
                               <motion.div
-                                className="absolute h-6 w-6 rounded-full bg-foreground"
+                                className="absolute h-6 w-6 rounded-full bg-white border-amber-400 shadow-md dark:bg-foreground dark:border-0"
                                 animate={{
-                                  left: useToken ? "calc(100% - 28px)" : "2px",
+                                  x: useToken ? 32 : 4,
                                 }}
-                                transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                                transition={{ type: "spring", stiffness: 400, damping: 25 }}
                               />
-                              <div className="relative w-full h-full flex items-center justify-between px-2 pointer-events-none">
-                                <span className="text-xs font-semibold text-foreground/60">{blockchain.symbol}</span>
-                                <span className="text-xs font-semibold text-foreground/60">TKN</span>
+                              <div className="absolute inset-0 flex items-center justify-between px-3 pointer-events-none">
+                                <span className={`text-xs font-semibold transition-opacity ${
+                                  useToken 
+                                    ? "opacity-100 text-amber-700 dark:text-foreground/60" 
+                                    : "opacity-0"
+                                }`}>
+                                  {blockchain.symbol}
+                                </span>
+                                <span className={`text-xs font-semibold transition-opacity ${
+                                  useToken 
+                                    ? "opacity-0" 
+                                    : "opacity-100 text-amber-700 dark:text-foreground/60"
+                                }`}>
+                                  TKN
+                                </span>
                               </div>
                             </motion.button>
                           </div>
@@ -837,7 +857,10 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
                           <div className="grid grid-cols-2 gap-3">
                             <motion.button
                               type="button"
-                              onClick={() => setInitialVote("YES")}
+                              onClick={() => {
+                                const choice = "YES";
+                                setInitialVote(choice);
+                              }}
                               whileHover={{ scale: 1.02 }}
                               whileTap={{ scale: 0.98 }}
                               className={`relative rounded-xl border-2 p-4 transition-colors ${
@@ -858,7 +881,10 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
 
                             <motion.button
                               type="button"
-                              onClick={() => setInitialVote("NO")}
+                              onClick={() => {
+                                const choice = "NO";
+                                setInitialVote(choice);
+                              }}
                               whileHover={{ scale: 1.02 }}
                               whileTap={{ scale: 0.98 }}
                               className={`relative rounded-xl border-2 p-4 transition-colors ${
