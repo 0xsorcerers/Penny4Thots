@@ -27,7 +27,7 @@ html {
     --foreground: 222 47% 11%;
 
     /* Glass cards - translucent white */
-    --card: 0 0% 100%;
+    --card: 38 25% 85%; /* Wheat color for light mode */
     --card-foreground: 222 47% 11%;
 
     --popover: 0 0% 100%;

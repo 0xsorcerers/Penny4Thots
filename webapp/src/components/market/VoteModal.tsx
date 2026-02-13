@@ -507,7 +507,7 @@ export function VoteModal({
                           type="button"
                           onClick={handleSubmitVote}
                           disabled={!isValid || isLoading}
-                          className="flex-1 rounded-xl bg-primary font-outfit font-semibold"
+                          className="flex-1 rounded-xl bg-white text-amber-600 font-outfit font-semibold border border-amber-200 shadow-lg hover:bg-amber-50 hover:text-amber-700 dark:bg-primary dark:text-primary-foreground dark:border-0 dark:shadow-none dark:hover:bg-primary/90"
                         >
                           {isLoading ? (
                             <>

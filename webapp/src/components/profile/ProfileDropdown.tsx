@@ -48,7 +48,7 @@ export function ProfileDropdown() {
         <motion.button
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
-          className="group relative flex items-center gap-2 rounded-xl bg-white/70 backdrop-blur-xl border border-white/60 px-4 py-2.5 font-outfit font-medium text-foreground shadow-[0_2px_12px_-2px_hsl(220_30%_15%/0.08)] transition-all hover:border-primary/30 hover:bg-white/80 hover:shadow-[0_4px_20px_-4px_hsl(220_30%_15%/0.12)] dark:bg-card/80 dark:backdrop-blur-sm dark:border-border/50 dark:shadow-none dark:hover:bg-card dark:hover:shadow-[0_0_20px_rgba(var(--primary),0.1)]"
+          className="group relative flex items-center gap-2 rounded-xl bg-amber-50/70 backdrop-blur-xl border border-amber-100/60 px-4 py-2.5 font-outfit font-medium text-foreground shadow-[0_2px_12px_-2px_hsl(220_30%_15%/0.08)] transition-all hover:border-primary/30 hover:bg-amber-50/80 hover:shadow-[0_4px_20px_-4px_hsl(220_30%_15%/0.12)] dark:bg-card/80 dark:backdrop-blur-sm dark:border-border/50 dark:shadow-none dark:hover:bg-card dark:hover:shadow-[0_0_20px_rgba(var(--primary),0.1)]"
         >
           <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-primary/20 to-accent/20 ring-2 ring-primary/30">
             <User className="h-4 w-4 text-primary" />
@@ -68,7 +68,7 @@ export function ProfileDropdown() {
           <DropdownMenuContent
             align="end"
             sideOffset={8}
-            className="w-72 rounded-2xl border-white/60 bg-white/90 backdrop-blur-xl p-2 shadow-[0_8px_40px_-12px_hsl(220_30%_15%/0.2)] dark:border-border/50 dark:bg-card/95 dark:shadow-2xl"
+            className="w-72 rounded-2xl border-amber-100/60 bg-amber-50/90 backdrop-blur-xl p-2 shadow-[0_8px_40px_-12px_hsl(220_30%_15%/0.2)] dark:border-border/50 dark:bg-card/95 dark:shadow-2xl"
             asChild
           >
             <motion.div
