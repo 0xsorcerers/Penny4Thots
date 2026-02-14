@@ -76,8 +76,19 @@ export default function History() {
         return;
       }
 
-      // Fetch claims in one batch using the paginated function
-      const history = await getUserClaims(userAddress, 0, totalClaims);
+      const BATCH_SIZE = 200;
+      const MAX_BATCH_RANGE = 200;
+      const BATCH_DELAY_MS = 3000;
+      const ITEMS_PER_PAGE = 30;
+
+      // Fetch claims in batches using getUserClaims with _finish parameter
+      const history: ClaimWithMarketInfo[] = [];
+      for (let start = 0; start < totalClaims; start += BATCH_SIZE) {
+        const _finish = Math.min(start + BATCH_SIZE, totalClaims);
+        const batch = await getUserClaims(userAddress, start, _finish);
+        history.push(...batch);
+        await new Promise((resolve) => setTimeout(resolve, BATCH_DELAY_MS));
+      }
 
       // Get unique market IDs from claims
       const uniqueMarketIds = [...new Set(history.map(c => c.marketId))];

@@ -143,7 +143,7 @@ export const blockchain = {
   rpc: 'https://0xrpc.io/sep',
   blockExplorer: 'https://sepolia.etherscan.io',
   decimals: 18,
-  contract_address: '0x68D2dCBc3888bE22d862b207A44A341Bcfc38184' as Address,
+  contract_address: '0xeB0Ba1a8Bb440EF925b2f773d9Bb4e3B7fE80Cb1' as Address, //0xe09e09043C2c7d0a947BFCFD1297f1a22769252C 
   symbol: 'sETH',
 };
 
@@ -241,7 +241,7 @@ export const readMarketData = async (ids: number[]): Promise<MarketDataFormatted
   return marketDataArray.map((marketData) => ({
     indexer: 0, // Will be filled from context
     creator: marketData.creator,
-    status: marketData.status,
+    closed: marketData.closed,
     marketBalance: formatEther(marketData.marketBalance),
     activity: formatEther(marketData.activity),
     aVotes: Number(marketData.aVotes),

@@ -26,6 +26,7 @@ import {
 } from "@/tools/utils";
 
 const BATCH_SIZE = 200;
+const MAX_BATCH_RANGE = 200;
 const BATCH_DELAY_MS = 3000;
 const ITEMS_PER_PAGE = 30;
 const STORAGE_KEY = "penny4thots-mythots-cache";
@@ -114,7 +115,7 @@ export default function MyThots() {
 
       for (let batch = 0; batch < numBatches; batch++) {
         const start = batch * BATCH_SIZE;
-        const finish = Math.min(start + BATCH_SIZE, count);
+        const finish = Math.min(start + MAX_BATCH_RANGE, count);
 
         setLoadingProgress(`Loading batch ${batch + 1}/${numBatches}...`);
         console.log(`[MyThots] Fetching batch ${batch + 1}: start=${start}, finish=${finish}`);
@@ -198,12 +199,12 @@ export default function MyThots() {
           description: info.description,
           posterImage: info.image,
           tags: info.tags,
-          tradeOptions: data?.status || false,
+          tradeOptions: data?.closed || false,
           yesVotes: data?.aVotes || 0,
           noVotes: data?.bVotes || 0,
           createdAt: new Date().toISOString(),
           marketBalance: data?.marketBalance || "0",
-          status: data?.status || false,
+          closed: data?.closed || false,
           optionA: info.optionA || "Yes",
           optionB: info.optionB || "No",
           startTime: data?.startTime || 0,
@@ -277,7 +278,7 @@ export default function MyThots() {
 
         if (currentAllowance < voteParams.marketBalance) {
           toast.info("Approval required", {
-            description: "Approving the token spending in your wallet",
+            description: "Approving token spending in your wallet",
           });
 
           await approve(voteParams.paymentToken, voteParams.marketBalance);
