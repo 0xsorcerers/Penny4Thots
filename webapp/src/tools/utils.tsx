@@ -143,8 +143,7 @@ export const blockchain = {
   rpc: 'https://0xrpc.io/sep',
   blockExplorer: 'https://sepolia.etherscan.io',
   decimals: 18,
-  contract_address: '0xdFece4CFBFc01e511dc1015422EC3cdE96A27188' as Address, //0xe09e09043C2c7d0a947BFCFD1297f1a22769252C 
-  symbol: 'sETH',
+  contract_address: '0xdFece4CFBFc01e511dc1015422EC3cdE96A27188' as Address,
 };
 
 export const network = defineChain({ id: blockchain.chainId, rpc: blockchain.rpc });
@@ -815,13 +814,16 @@ export const getClaimablePositions = async (marketId: number, userAddress: Addre
   if (positionIds.length === 0) return [];
 
   try {
+    console.log(`[getClaimablePositions] Market ${marketId}, User ${userAddress}, Checking positions:`, positionIds);
     const result = await publicClient.readContract({
       address: blockchain.contract_address,
       abi: contractABI,
       functionName: 'isClaimable',
-      args: [BigInt(marketId), userAddress, positionIds.map(id => BigInt(id))],
+      args: [userAddress, BigInt(marketId), positionIds.map(id => BigInt(id))],
     });
-    return (result as bigint[]).map(id => Number(id));
+    const claimable = (result as bigint[]).map(id => Number(id));
+    console.log(`[getClaimablePositions] Market ${marketId}, User ${userAddress}, Claimable positions:`, claimable);
+    return claimable;
   } catch (err) {
     console.error('Error checking claimable positions:', err);
     return [];
@@ -872,7 +874,9 @@ export const getUserPositionsInRange = async (
       args: [BigInt(marketId), userAddress, BigInt(start), BigInt(finish)],
     });
 
-    return (result as bigint[]).map((id) => Number(id));
+    const positions = (result as bigint[]).map((id) => Number(id));
+    console.log(`[getUserPositionsInRange] Market ${marketId}, User ${userAddress}, Range ${start}-${finish}:`, positions);
+    return positions;
   } catch (err) {
     console.error('Error fetching user positions:', err);
     return [];
@@ -893,6 +897,7 @@ export const getAllUserPositions = async (
   userAddress: Address
 ): Promise<number[]> => {
   const positionCount = await getUserPositionCount(marketId, userAddress);
+  console.log(`[getAllUserPositions] Market ${marketId}, User ${userAddress}, Total position count:`, positionCount);
 
   if (positionCount === 0) return [];
 
@@ -912,6 +917,7 @@ export const getAllUserPositions = async (
     }
   }
 
+  console.log(`[getAllUserPositions] Market ${marketId}, User ${userAddress}, All collected positions:`, allPositions);
   return allPositions;
 };
 

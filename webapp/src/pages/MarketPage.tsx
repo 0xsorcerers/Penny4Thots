@@ -419,7 +419,6 @@ export default function MarketPage() {
 
 
 
-    console.log("Opening vote modal for market:", market.indexer, "signal:", signal, "posterImage:", market.posterImage);
 
 
 
@@ -431,7 +430,6 @@ export default function MarketPage() {
 
 
 
-    console.log("Vote modal state set, isVoteModalOpen should now be true");
 
 
 
@@ -474,6 +472,7 @@ export default function MarketPage() {
       toast.error("Claim failed", {
         description: err instanceof Error ? err.message : "Please try again",
       });
+      // Don't clear positions on failure so user can retry
     }
   };
 
@@ -747,7 +746,6 @@ export default function MarketPage() {
 
 
 
-    console.log(`${action} action for market:`, market.id);
 
 
 

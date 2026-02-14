@@ -81,9 +81,7 @@ export function VoteModal({
 
   // Log when modal opens
   useEffect(() => {
-    console.log("VoteModal effect - isOpen:", isOpen, "marketImage:", marketImage, "marketId:", marketId);
     if (isOpen) {
-      console.log("VoteModal opened with image:", marketImage);
       setStep("select");
       setSelectedSignal(null);
       setAmount("");
@@ -137,17 +135,14 @@ export function VoteModal({
       ]);
 
       if (marketDataArray.length > 0) {
-        console.log("Fresh market data:", marketDataArray[0]);
         setMarketBalance(marketDataArray[0].marketBalance || "0");
       }
 
       setPaymentToken(tokenAddress);
-      console.log("Payment token for market", marketId, ":", tokenAddress);
 
       // Calculate and set platform fee percentage
       const feePercentage = calculatePlatformFeePercentage(dataConstants.platformFee);
       setPlatformFeePercentage(feePercentage);
-      console.log("Platform fee:", dataConstants.platformFee, "Percentage:", feePercentage);
 
       // If token is not zero address, fetch its symbol
       if (!isZeroAddress(tokenAddress)) {

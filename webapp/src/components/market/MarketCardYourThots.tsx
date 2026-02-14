@@ -300,10 +300,15 @@ export function MarketCardYourThots({ market, onVoteClick }: MarketCardYourThots
             <span className="font-outfit text-xs text-muted-foreground">Loading positions...</span>
           </div>
         ) : userPositions.length === 0 ? (
-          <div className="flex w-full items-center justify-center gap-2 rounded-xl py-2.5 bg-gradient-to-r from-slate-500/10 to-gray-500/10 border border-slate-500/20 opacity-60">
-            <CircleOff className="h-4 w-4 text-slate-600 dark:text-slate-500" />
-            <span className="font-outfit text-xs text-slate-600 dark:text-slate-400">Closed</span>
-          </div>
+          <motion.button
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            onClick={handleCardClick}
+            className="flex w-full items-center justify-center gap-2 rounded-xl py-2.5 font-outfit text-sm font-medium transition-all bg-slate-500/10 text-slate-400 hover:bg-slate-500/20 border border-slate-500/30 hover:border-slate-500/50"
+          >
+            <ExternalLink className="h-4 w-4" />
+            <span className="font-outfit text-xs text-slate-600 dark:text-slate-400">Visit Market</span>
+          </motion.button>
         ) : (
           <motion.button
             initial={{ opacity: 0 }}

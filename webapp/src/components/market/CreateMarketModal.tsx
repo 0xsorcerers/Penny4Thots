@@ -232,10 +232,6 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
   const handleSubmit = async (e: React.FormEvent, voteChoice?: "YES" | "NO") => {
     e.preventDefault();
     const finalVote = voteChoice || initialVote;
-    console.log('Submit called - voteChoice:', voteChoice);
-    console.log('Submit called - initialVote:', initialVote);
-    console.log('Submit called - finalVote:', finalVote);
-    console.log('Submit called - signal will be:', finalVote === "YES");
     if (!marketBalance || !finalVote) return;
     if (useToken && !tokenAddress) return;
 
