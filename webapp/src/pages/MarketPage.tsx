@@ -574,7 +574,7 @@ export default function MarketPage() {
 
 
 
-            description: "Approving the token spending in your wallet",
+            description: "Approving token spending in your wallet",
 
 
 
@@ -635,11 +635,11 @@ export default function MarketPage() {
               return {
                 ...m,
                 creator: freshData.creator,
-                tradeOptions: freshData.status,
+                tradeOptions: freshData.closed,
                 yesVotes: freshData.aVotes,
                 noVotes: freshData.bVotes,
                 marketBalance: freshData.marketBalance,
-                status: freshData.status,
+                closed: freshData.closed,
                 startTime: freshData.startTime,
                 endTime: freshData.endTime,
                 closed: freshData.closed,
