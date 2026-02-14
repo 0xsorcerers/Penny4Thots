@@ -114,7 +114,7 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
   // Validate image URL
   const validateImageUrl = useCallback((url: string) => {
     if (!url.trim()) {
-      setPosterImageError(null);
+      setPosterImageError("Poster image URL is required");
       return;
     }
 
@@ -217,7 +217,7 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
     formData.description.trim() &&
     formData.tags.length > 0 &&
     !posterImageError &&
-    (formData.posterImage === "" || posterImageError === null) &&
+    formData.posterImage.trim() &&
     endDate &&
     endTimeInput &&
     !endTimeError;
@@ -416,7 +416,7 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
                           <Label htmlFor="posterImage" className="font-outfit text-foreground">
                             <span className="flex items-center gap-2">
                               <ImageIcon className="h-4 w-4" />
-                              Poster Image URL
+                              Poster Image URL *
                             </span>
                           </Label>
                           <Input
@@ -430,6 +430,7 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
                             className={`rounded-xl border-border/50 bg-background font-outfit ${
                               posterImageError ? "border-destructive/50" : ""
                             }`}
+                            required
                           />
                           {posterImageError && (
                             <p className="text-xs text-destructive font-semibold">{posterImageError}</p>
@@ -438,7 +439,7 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
                             <p className="text-xs text-success font-semibold">Valid image URL ✓</p>
                           )}
                           <p className="text-xs text-muted-foreground">
-                            Try Pinterest for lots of free images. (HINT: copy image address, not page URL 😉)
+                            Required: Try Pinterest for lots of free images. (HINT: copy image address, not page URL 😉)
                           </p>
                         </div>
 

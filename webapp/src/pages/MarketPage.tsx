@@ -213,7 +213,7 @@ export default function MarketPage() {
           setSharesFinalized(marketLock.sharesFinalized);
 
           if (!marketLock.sharesFinalized) {
-            // Market is still resolving, no need to fetch positions
+            // Market is closed but shares not finalized - Resolving state
             setUserPositions([]);
             setMarketClaimable(false);
             setIsLoadingPositions(false);
@@ -229,7 +229,7 @@ export default function MarketPage() {
             setMarketClaimable(true); // Market is claimable but user has no positions
           } else {
             // Check which positions are actually claimable (winning positions)
-            const claimablePositions = await getClaimablePositions(market.indexer!, allPositions);
+            const claimablePositions = await getClaimablePositions(market.indexer!, account.address as Address, allPositions);
             setUserPositions(claimablePositions);
             setMarketClaimable(true);
           }
@@ -248,23 +248,15 @@ export default function MarketPage() {
       const checkSharesFinalized = async () => {
         if (market?.indexer !== undefined) {
           try {
-            const marketLock = await readMarketLock(market.indexer);
+            const marketLock = await readMarketLock(market.indexer!);
             setSharesFinalized(marketLock.sharesFinalized);
-            setMarketClaimable(marketLock.sharesFinalized);
           } catch (err) {
             console.error("Failed to check shares finalized:", err);
             setSharesFinalized(null);
-            setMarketClaimable(false);
           }
         }
-        setUserPositions([]);
-        setIsLoadingPositions(false);
       };
       checkSharesFinalized();
-    } else {
-      setMarketClaimable(null);
-      setSharesFinalized(null);
-      setUserPositions([]);
     }
   }, [market?.indexer, market?.closed, account?.address]);
 
@@ -1571,59 +1563,67 @@ export default function MarketPage() {
 
             {/* Vote/Claim Action Button */}
             {!market.closed ? (
-              /* Live Market - Show Vote Button */
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => handleVoteClick(true)}
-                className="w-full relative overflow-hidden rounded-xl py-5 font-syne text-xl font-bold transition-all bg-gradient-to-r from-amber-700/20 to-yellow-600/20 text-amber-600 hover:from-amber-700 hover:to-yellow-600 hover:text-white dark:from-amber-700/30 dark:to-yellow-600/30 dark:text-amber-500 dark:hover:from-amber-700 dark:hover:to-yellow-600 dark:hover:text-white border border-amber-700/30"
-              >
-                <span className="relative z-10 flex items-center justify-center gap-2">
-                  <TrendingUp className="h-6 w-6" />
-                  Vote
-                </span>
-              </motion.button>
+              /* Live Market - endTime running, closed=false */
+              (() => {
+                const now = Math.floor(Date.now() / 1000);
+                const timerExpired = market.endTime && market.endTime > 0 && now >= market.endTime;
+                
+                return (
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => handleVoteClick(true)}
+                    className="w-full relative overflow-hidden rounded-xl py-5 font-syne text-xl font-bold transition-all bg-gradient-to-r from-amber-700/20 to-yellow-600/20 text-amber-600 hover:from-amber-700 hover:to-yellow-600 hover:text-white dark:from-amber-700/30 dark:to-yellow-600/30 dark:text-amber-500 dark:hover:from-amber-700 dark:hover:to-yellow-600 dark:hover:text-white border border-amber-700/30"
+                  >
+                    <span className="relative z-10 flex items-center justify-center gap-2">
+                      <TrendingUp className="h-6 w-6" />
+                      {timerExpired ? "Late Vote" : "Vote"}
+                    </span>
+                  </motion.button>
+                );
+              })()
             ) : marketClaimable === null || sharesFinalized === null ? (
-              /* Closed Market - Loading claimable status */
+              /* Closed Market - endTime expired, closed=true, sharesFinalized=false - Penalty Window */
               <div className="w-full rounded-xl py-5 bg-muted/30 flex items-center justify-center gap-2">
                 <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
                 <span className="font-outfit text-muted-foreground">Penalty Window</span>
               </div>
             ) : !sharesFinalized ? (
-              /* Closed Market - Shares not finalized - Show Resolving */
+              /* Closed Market - closed=true, sharesFinalized=false - Resolving */
               <div className="w-full rounded-xl py-5 bg-gradient-to-r from-slate-500/10 to-gray-500/10 border border-slate-500/20 flex items-center justify-center gap-2">
                 <Hourglass className="h-5 w-5 text-slate-600 dark:text-slate-400 animate-pulse" />
                 <span className="font-syne text-lg font-semibold text-slate-600 dark:text-slate-400">Resolving Market</span>
               </div>
             ) : isLoadingPositions ? (
-              /* Closed Market - Loading positions */
+              /* Closed Market - Loading positions to check claimable status */
               <div className="w-full rounded-xl py-5 bg-muted/30 flex items-center justify-center gap-2">
                 <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
                 <span className="font-outfit text-muted-foreground">Loading positions...</span>
               </div>
             ) : userPositions.length === 0 ? (
-              /* Closed Market - No positions to claim - Show Closed */
+              /* Closed & Finalized - User has no winning positions - Show Closed (disabled) */
               <div className="w-full rounded-xl py-5 bg-gradient-to-r from-slate-500/10 to-gray-500/10 border border-slate-500/20 flex items-center justify-center gap-2 opacity-60">
                 <CircleOff className="h-5 w-5 text-slate-600 dark:text-slate-500" />
                 <span className="font-syne text-lg font-semibold text-slate-600 dark:text-slate-400">Closed</span>
               </div>
             ) : (
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={handleClaim}
-                  disabled={isClaiming}
-                  className="w-full relative overflow-hidden rounded-xl py-5 font-syne text-xl font-bold transition-all bg-gradient-to-r from-amber-500/20 to-orange-500/20 text-amber-500 hover:from-amber-500 hover:to-orange-500 hover:text-white dark:from-amber-500/30 dark:to-orange-500/30 dark:text-amber-400 dark:hover:from-amber-500 dark:hover:to-orange-500 dark:hover:text-white border border-amber-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <span className="relative z-10 flex items-center justify-center gap-2">
-                    {isClaiming ? (
-                      <Loader2 className="h-6 w-6 animate-spin" />
-                    ) : (
-                      <Gift className="h-6 w-6" />
-                    )}
-                    {isClaiming ? "Claiming..." : userPositions.length > 1 ? `Claim All (${userPositions.length})` : "Claim"}
-                  </span>
-                </motion.button>
+              /* Closed & Finalized - User has winning positions - Show Claim button */
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={handleClaim}
+                disabled={isClaiming}
+                className="w-full relative overflow-hidden rounded-xl py-5 font-syne text-xl font-bold transition-all bg-gradient-to-r from-amber-500/20 to-orange-500/20 text-amber-500 hover:from-amber-500 hover:to-orange-500 hover:text-white dark:from-amber-500/30 dark:to-orange-500/30 dark:text-amber-400 dark:hover:from-amber-500 dark:hover:to-orange-500 dark:hover:text-white border border-amber-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <span className="relative z-10 flex items-center justify-center gap-2">
+                  {isClaiming ? (
+                    <Loader2 className="h-6 w-6 animate-spin" />
+                  ) : (
+                    <Gift className="h-6 w-6" />
+                  )}
+                  {isClaiming ? "Claiming..." : userPositions.length > 1 ? `Claim All (${userPositions.length})` : "Claim"}
+                </span>
+              </motion.button>
             )}
 
           </motion.div>

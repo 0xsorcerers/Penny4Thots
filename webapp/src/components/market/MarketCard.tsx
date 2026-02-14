@@ -199,18 +199,7 @@ export function MarketCard({ market, onVoteClick }: MarketCardProps) {
 
         {/* Vote/Trade Buttons */}
         <AnimatePresence mode="wait">
-          {market.closed ? (
-            <motion.div
-              key="closed"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="flex w-full items-center justify-center gap-2 rounded-xl py-2.5 font-outfit text-sm font-medium bg-muted/40 text-muted-foreground cursor-not-allowed opacity-60"
-            >
-              <CircleOff className="h-4 w-4" />
-              Closed
-            </motion.div>
-          ) : tradeMode === "idle" ? (
+          {!market.closed ? (
             (() => {
               // Check if timer has expired but market is not closed
               const now = Math.floor(Date.now() / 1000);
@@ -230,44 +219,16 @@ export function MarketCard({ market, onVoteClick }: MarketCardProps) {
                 </motion.button>
               );
             })()
-          ) : tradeMode === "active" ? (
-            <motion.button
-              key="trade"
+          ) : (
+            <motion.div
+              key="closed"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              onClick={handleTradeClick}
-              disabled={!market.tradeOptions}
-              className={cn(
-                "flex w-full items-center justify-center gap-2 rounded-xl py-2.5 font-outfit text-sm font-medium transition-all",
-                market.tradeOptions
-                  ? "bg-primary/10 text-primary hover:bg-primary/20"
-                  : "cursor-not-allowed bg-muted/50 text-muted-foreground opacity-50"
-              )}
+              className="flex w-full items-center justify-center gap-2 rounded-xl py-2.5 font-outfit text-sm font-medium bg-muted/40 text-muted-foreground cursor-not-allowed opacity-60"
             >
-              <BarChart3 className="h-4 w-4" />
-              {market.tradeOptions ? "Trade" : "Trading Disabled"}
-            </motion.button>
-          ) : (
-            <motion.div
-              key="buy-sell"
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="flex gap-2"
-            >
-              <button
-                onClick={(e) => handleBuySell(e, "buy")}
-                className="flex-1 rounded-xl bg-yes py-2.5 font-outfit text-sm font-semibold text-yes-foreground transition-all hover:bg-yes/90 hover:shadow-[0_0_20px_rgba(var(--yes),0.3)]"
-              >
-                BUY
-              </button>
-              <button
-                onClick={(e) => handleBuySell(e, "sell")}
-                className="flex-1 rounded-xl bg-no py-2.5 font-outfit text-sm font-semibold text-no-foreground transition-all hover:bg-no/90 hover:shadow-[0_0_20px_rgba(var(--no),0.3)]"
-              >
-                SELL
-              </button>
+              <CircleOff className="h-4 w-4" />
+              Closed
             </motion.div>
           )}
         </AnimatePresence>
