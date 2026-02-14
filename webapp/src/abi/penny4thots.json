@@ -418,11 +418,6 @@
 				"type": "address"
 			},
 			{
-				"internalType": "bool",
-				"name": "status",
-				"type": "bool"
-			},
-			{
 				"internalType": "uint256",
 				"name": "marketBalance",
 				"type": "uint256"
@@ -476,6 +471,11 @@
 				"internalType": "uint256",
 				"name": "positionCount",
 				"type": "uint256"
+			},
+			{
+				"internalType": "bool",
+				"name": "blacklist",
+				"type": "bool"
 			}
 		],
 		"stateMutability": "view",
@@ -558,25 +558,6 @@
 		"name": "batchKamikaze",
 		"outputs": [],
 		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"name": "blacklisted",
-		"outputs": [
-			{
-				"internalType": "bool",
-				"name": "blacklist",
-				"type": "bool"
-			}
-		],
-		"stateMutability": "view",
 		"type": "function"
 	},
 	{
@@ -1209,11 +1190,6 @@
 						"type": "address"
 					},
 					{
-						"internalType": "bool",
-						"name": "status",
-						"type": "bool"
-					},
-					{
 						"internalType": "uint256",
 						"name": "marketBalance",
 						"type": "uint256"
@@ -1267,6 +1243,11 @@
 						"internalType": "uint256",
 						"name": "positionCount",
 						"type": "uint256"
+					},
+					{
+						"internalType": "bool",
+						"name": "blacklist",
+						"type": "bool"
 					}
 				],
 				"internalType": "struct Penny4Thots.MarketData[]",
