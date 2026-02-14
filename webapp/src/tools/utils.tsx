@@ -143,7 +143,7 @@ export const blockchain = {
   rpc: 'https://0xrpc.io/sep',
   blockExplorer: 'https://sepolia.etherscan.io',
   decimals: 18,
-  contract_address: '0xeB0Ba1a8Bb440EF925b2f773d9Bb4e3B7fE80Cb1' as Address, //0xe09e09043C2c7d0a947BFCFD1297f1a22769252C 
+  contract_address: '0xdFece4CFBFc01e511dc1015422EC3cdE96A27188' as Address, //0xe09e09043C2c7d0a947BFCFD1297f1a22769252C 
   symbol: 'sETH',
 };
 
@@ -404,7 +404,7 @@ export const prepareWriteMarket = (params: WriteMarketParams) => {
   ];
 
   const feetype = params.feetype || false;
-  const signal = params.signal || false; // true for token payment, false for ETH
+  const signal = params.signal || false; // true for Option A (YES), false for Option B (NO)
   const endTime = BigInt(params.endTime || 0); // Unix timestamp, 0 for no timer
 
   // Determine the correct payment token address
@@ -417,8 +417,8 @@ export const prepareWriteMarket = (params: WriteMarketParams) => {
     params: [
       infoArray,
       params.marketBalance,
-      signal, // _signal - true if token payment, false if ETH payment
-      feetype,
+      signal, // _signal - true for Option A (YES), false for Option B (NO)
+      feetype, // _feetype - true for token payment, false for ETH payment
       paymentTokenAddress,
       endTime, // Unix timestamp for market end time
     ],
@@ -435,7 +435,7 @@ export const useWriteMarket = () => {
 
     const transaction = {
       ...prepareWriteMarket(params),
-      value: (params.signal || false) ? gasfee : params.marketBalance,
+      value: (params.feetype || false) ? gasfee : params.marketBalance, // Use feetype for msg.value calculation
     };
     const result = await sendTx(transaction);
 
@@ -811,7 +811,7 @@ export const getUserTotalMarkets = async (userAddress: Address): Promise<number>
  * Returns array of position IDs that have winning positions (can be claimed)
  * If returned array is empty, user has no claimable positions in that market
  */
-export const getClaimablePositions = async (marketId: number, positionIds: number[]): Promise<number[]> => {
+export const getClaimablePositions = async (marketId: number, userAddress: Address, positionIds: number[]): Promise<number[]> => {
   if (positionIds.length === 0) return [];
 
   try {
@@ -819,7 +819,7 @@ export const getClaimablePositions = async (marketId: number, positionIds: numbe
       address: blockchain.contract_address,
       abi: contractABI,
       functionName: 'isClaimable',
-      args: [BigInt(marketId), positionIds.map(id => BigInt(id))],
+      args: [BigInt(marketId), userAddress, positionIds.map(id => BigInt(id))],
     });
     return (result as bigint[]).map(id => Number(id));
   } catch (err) {
