@@ -88,7 +88,6 @@ export default function MyThots() {
 
   const fetchAllMarketIds = useCallback(async () => {
     if (!account?.address) {
-      console.log("[MyThots] No account connected");
       setIsLoading(false);
       return;
     }
@@ -96,15 +95,12 @@ export default function MyThots() {
     try {
       setIsLoading(true);
       const userAddress = account.address as Address;
-      console.log("[MyThots] Fetching for address:", userAddress);
 
       setLoadingProgress("Fetching total count...");
       const count = await getUserTotalThots(userAddress);
-      console.log("[MyThots] Total thots count:", count);
       setTotalCount(count);
 
       if (count === 0) {
-        console.log("[MyThots] User has no thots");
         setAllMarketIds([]);
         setIsLoading(false);
         return;
