@@ -878,6 +878,11 @@
 	{
 		"inputs": [
 			{
+				"internalType": "address",
+				"name": "_user",
+				"type": "address"
+			},
+			{
 				"internalType": "uint256",
 				"name": "_market",
 				"type": "uint256"

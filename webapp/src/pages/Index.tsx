@@ -192,8 +192,8 @@ export default function Index() {
     try {
       const marketBalanceBigInt = toWei(data.marketBalance);
 
-      // _signal is true if paying with token, false if paying with ETH
-      const signal = data.useToken;
+      // _signal is true for Option A (YES), false for Option B (NO)
+      const signal = data.signal;
 
       // Check token allowance if paying with token
       if (data.useToken) {
