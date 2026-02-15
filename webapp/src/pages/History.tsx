@@ -63,35 +63,78 @@ export default function History() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const marketDataMap = useMarketStore((state) => state.marketDataMap);
 
-  const fetchClaimHistory = useCallback(async () => {
+  // Storage keys for caching
+  const getStorageKey = (address: Address) => `claim_history_${address}`;
+  const getCountStorageKey = (address: Address) => `claim_count_${address}`;
+
+  // Load cached data on mount
+  useEffect(() => {
+    if (!account?.address) return;
+
+    const cachedClaims = localStorage.getItem(getStorageKey(account.address as Address));
+    const cachedCount = localStorage.getItem(getCountStorageKey(account.address as Address));
+
+    if (cachedClaims && cachedCount) {
+      try {
+        setClaims(JSON.parse(cachedClaims));
+        setIsLoading(false);
+      } catch (err) {
+        console.error('Failed to parse cached claims:', err);
+        localStorage.removeItem(getStorageKey(account.address as Address));
+        localStorage.removeItem(getCountStorageKey(account.address as Address));
+      }
+    }
+  }, [account?.address]);
+
+  const fetchClaimHistory = useCallback(async (forceRefresh = false) => {
     if (!account?.address) {
       setIsLoading(false);
       return;
     }
 
     try {
-      setIsLoading(true);
       const userAddress = account.address as Address;
+      const storageKey = getStorageKey(userAddress);
+      const countStorageKey = getCountStorageKey(userAddress);
 
-      // First get total count
-      const totalClaims = await getUserTotalClaimHistory(userAddress);
-      if (totalClaims === 0) {
+      // Check cached count first
+      const cachedCount = localStorage.getItem(countStorageKey);
+      const currentTotal = await getUserTotalClaimHistory(userAddress);
+
+      // If we have cached data and no new claims, use cache
+      if (!forceRefresh && cachedCount && parseInt(cachedCount) === currentTotal) {
+        const cachedClaims = localStorage.getItem(storageKey);
+        if (cachedClaims) {
+          setClaims(JSON.parse(cachedClaims));
+          setIsLoading(false);
+          return;
+        }
+      }
+
+      // New claims available or force refresh - fetch only new data
+      setIsLoading(true);
+      
+      if (currentTotal === 0) {
         setClaims([]);
+        localStorage.setItem(storageKey, JSON.stringify([]));
+        localStorage.setItem(countStorageKey, '0');
         return;
       }
 
       const BATCH_SIZE = 200;
-      const MAX_BATCH_RANGE = 200;
       const BATCH_DELAY_MS = 3000;
-      const ITEMS_PER_PAGE = 30;
 
-      // Fetch claims in batches using getUserClaims with _finish parameter
+      // Fetch all claims in batches
       const history: ClaimWithMarketInfo[] = [];
-      for (let start = 0; start < totalClaims; start += BATCH_SIZE) {
-        const _finish = Math.min(start + BATCH_SIZE, totalClaims);
+      for (let start = 0; start < currentTotal; start += BATCH_SIZE) {
+        const _finish = Math.min(start + BATCH_SIZE, currentTotal);
         const batch = await getUserClaims(userAddress, start, _finish);
         history.push(...batch);
-        await new Promise((resolve) => setTimeout(resolve, BATCH_DELAY_MS));
+        
+        // Add delay between batches to avoid rate limiting
+        if (start + BATCH_SIZE < currentTotal) {
+          await new Promise((resolve) => setTimeout(resolve, BATCH_DELAY_MS));
+        }
       }
 
       // Get unique market IDs from claims
@@ -143,7 +186,10 @@ export default function History() {
         }))
         .reverse();
 
+      // Update state and cache
       setClaims(enrichedClaims);
+      localStorage.setItem(storageKey, JSON.stringify(enrichedClaims));
+      localStorage.setItem(countStorageKey, currentTotal.toString());
     } catch (error) {
       console.error("Error fetching claim history:", error);
       setClaims([]);
@@ -220,7 +266,7 @@ export default function History() {
     setIsRefreshing(true);
     try {
       setClaims([]);
-      await fetchClaimHistory();
+      await fetchClaimHistory(true); // Force refresh to bypass cache
     } finally {
       setIsRefreshing(false);
     }
