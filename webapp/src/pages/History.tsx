@@ -24,6 +24,9 @@ import {
   blockchain,
   truncateAddress,
   readMarketInfo,
+  readPaymentToken,
+  readTokenSymbol,
+  isZeroAddress,
   type ClaimRecord,
   type MarketInfoFormatted,
   Side,
@@ -49,6 +52,7 @@ function getMarketColor(marketId: number) {
 
 interface ClaimWithMarketInfo extends ClaimRecord {
   marketInfo?: MarketInfoFormatted;
+  tokenSymbol?: string;
 }
 
 export default function History() {
@@ -93,24 +97,49 @@ export default function History() {
       // Get unique market IDs from claims
       const uniqueMarketIds = [...new Set(history.map(c => c.marketId))];
 
-      // Fetch market info for all unique markets
+      // Fetch market info and token symbols for all unique markets
       const marketInfoMap: Map<number, MarketInfoFormatted> = new Map();
+      const tokenSymbolMap: Map<number, string> = new Map();
+      
       if (uniqueMarketIds.length > 0) {
         try {
+          // Fetch market info
           const marketInfos = await readMarketInfo(uniqueMarketIds);
           marketInfos.forEach(info => {
             marketInfoMap.set(info.indexer, info);
           });
+
+          // Fetch payment tokens and their symbols
+          for (const marketId of uniqueMarketIds) {
+            try {
+              const paymentToken = await readPaymentToken(marketId);
+              let tokenSymbol: string;
+              
+              if (isZeroAddress(paymentToken)) {
+                // Zero address means it's ETH, use blockchain symbol
+                tokenSymbol = blockchain.symbol;
+              } else {
+                // It's a token, fetch its symbol
+                tokenSymbol = await readTokenSymbol(paymentToken);
+              }
+              
+              tokenSymbolMap.set(marketId, tokenSymbol);
+            } catch (err) {
+              console.error(`Failed to fetch token symbol for market ${marketId}:`, err);
+              tokenSymbolMap.set(marketId, 'UNKNOWN');
+            }
+          }
         } catch (err) {
           console.error("Failed to fetch market info for claims:", err);
         }
       }
 
-      // Enrich claims with market info and reverse for newest first
+      // Enrich claims with market info and token symbols, then reverse for newest first
       const enrichedClaims: ClaimWithMarketInfo[] = history
         .map(claim => ({
           ...claim,
           marketInfo: marketInfoMap.get(claim.marketId),
+          tokenSymbol: tokenSymbolMap.get(claim.marketId) || 'UNKNOWN',
         }))
         .reverse();
 
@@ -397,7 +426,7 @@ export default function History() {
                             <div className="flex flex-col items-end">
                               <div className="rounded-xl bg-yes/20 px-4 py-2 backdrop-blur-sm">
                                 <p className="font-mono text-xl font-bold text-yes">
-                                  +{formatAmount(claim.amount)}
+                                  +{formatAmount(claim.amount)} {claim.tokenSymbol}
                                 </p>
                               </div>
                               <span className="font-outfit text-xs text-muted-foreground mt-1">
