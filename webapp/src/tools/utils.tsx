@@ -143,6 +143,7 @@ export const blockchain = {
   rpc: 'https://0xrpc.io/sep',
   blockExplorer: 'https://sepolia.etherscan.io',
   decimals: 18,
+  symbol: 'sETH',
   contract_address: '0xdFece4CFBFc01e511dc1015422EC3cdE96A27188' as Address,
 };
 
@@ -609,8 +610,24 @@ export const readTokenBalance = async (
     functionName: "balanceOf",
     args: [ownerAddress],
   });
-
   return result as bigint;
+};
+
+/**
+ * Read the token symbol
+ */
+export const readTokenSymbol = async (tokenAddress: Address): Promise<string> => {
+  try {
+    const result = await publicClient.readContract({
+      address: tokenAddress,
+      abi: erc20ABI,
+      functionName: "symbol",
+    });
+    return result as string;
+  } catch (err) {
+    console.error('Error reading token symbol:', err);
+    return 'TOKEN';
+  }
 };
 
 /**
