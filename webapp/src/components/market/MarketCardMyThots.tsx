@@ -287,6 +287,7 @@ export function MarketCardMyThots({ market, onVoteClick }: MarketCardMyThotsProp
         ) : marketClaimable === null || sharesFinalized === null ? (
           <div className="flex w-full items-center justify-center gap-2 rounded-xl py-2.5 bg-muted/30">
             <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+            <span className="font-outfit text-xs text-muted-foreground">Visit Market</span>
           </div>
         ) : !sharesFinalized ? (
           <div className="flex w-full items-center justify-center gap-2 rounded-xl py-2.5 bg-gradient-to-r from-orange-500/10 to-yellow-500/10 border border-orange-500/20 opacity-60">
