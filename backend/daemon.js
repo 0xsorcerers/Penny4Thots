@@ -1,5 +1,3 @@
-
-text/x-generic daemon.js ( UTF-8 Unicode text, with CRLF line terminators )
 require('dotenv').config();
 const { ethers } = require('ethers');
 const fs = require('fs');
@@ -227,7 +225,7 @@ const networks = [
   {
     name: 'sepolia',
     rpc: 'https://ethereum-sepolia-rpc.publicnode.com',
-    contract: '0xdFece4CFBFc01e511dc1015422EC3cdE96A27188'
+    contract: '0x929A04E8d5d8aFBCA5C6cE0e9Fe05f506081cc27' // 0xdFece4CFBFc01e511dc1015422EC3cdE96A27188
   }
 ];
 
@@ -479,7 +477,7 @@ async function finalizeMarket(networkName, marketId, readContract, writeContract
 
       // Call finalizeShares
       const preview = await writeContract.finalizeShares.staticCall(marketId);
-      let done = preview[0], remaining = preview[1], nextBatchSize = preview[2];
+      let done = preview[0], remaining = Number(preview[1]), nextBatchSize = Number(preview[2]);
       const tx = await writeContract.finalizeShares(marketId, { gasLimit: 500000 });
       await tx.wait();
 

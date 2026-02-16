@@ -1743,7 +1743,7 @@ export default function MarketPage() {
 
 
 
-                    {market.tradeOptions ? "Trade This Market" : "Trading Disabled"}
+                    {market.tradeOptions ? "Kamikaze This Market" : "Kamikaze Disabled"}
 
 
 
