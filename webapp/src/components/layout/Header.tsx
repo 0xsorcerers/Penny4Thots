@@ -5,17 +5,30 @@ import { useTheme } from "@/hooks/useTheme";
 import { Sun, Moon, ChevronDown, Globe } from "lucide-react";
 import { Connector } from "../../tools/utils";
 import { chains } from "../../tools/networkData";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useNetworkStore } from "@/store/networkStore";
+import { useMarketStore } from "@/store/marketStore";
 
 interface HeaderProps {
   onConnect?: () => void;
   isConnected?: boolean;
+  onNetworkChange?: () => void;
 }
 
-export function Header({ onConnect, isConnected = false }: HeaderProps) {
+export function Header({ onConnect, isConnected = false, onNetworkChange }: HeaderProps) {
   const { theme, toggleTheme } = useTheme();
-  const [selectedChain, setSelectedChain] = useState(chains[0]);
+  const { selectedNetwork, setSelectedNetwork } = useNetworkStore();
+  const { clearAllMarkets } = useMarketStore();
   const [isChainDropdownOpen, setIsChainDropdownOpen] = useState(false);
+
+  const handleNetworkChange = (newNetwork: typeof chains[0]) => {
+    setSelectedNetwork(newNetwork);
+    // Clear markets on network switch so new data is fetched
+    clearAllMarkets();
+    setIsChainDropdownOpen(false);
+    // Notify parent component if needed
+    onNetworkChange?.();
+  };
 
   return (
     <motion.header
@@ -58,12 +71,12 @@ export function Header({ onConnect, isConnected = false }: HeaderProps) {
             >
               <Globe className="h-3.5 w-3.5 text-muted-foreground" />
               <span className="text-muted-foreground group-hover:text-foreground transition-colors">
-                {selectedChain.name}
+                {selectedNetwork.name}
               </span>
-              <ChevronDown 
+              <ChevronDown
                 className={`h-3 w-3.5 text-muted-foreground transition-transform duration-200 ${
                   isChainDropdownOpen ? 'rotate-180' : ''
-                }`} 
+                }`}
               />
             </Button>
 
@@ -80,13 +93,10 @@ export function Header({ onConnect, isConnected = false }: HeaderProps) {
                     {chains.map((chain) => (
                       <motion.button
                         key={chain.chainId}
-                        onClick={() => {
-                          setSelectedChain(chain);
-                          setIsChainDropdownOpen(false);
-                        }}
+                        onClick={() => handleNetworkChange(chain)}
                         whileHover={{ backgroundColor: "hsl(var(--muted) / 0.5)" }}
                         className={`w-full px-3 py-2 text-left text-xs font-light italic transition-colors ${
-                          selectedChain.chainId === chain.chainId
+                          selectedNetwork.chainId === chain.chainId
                             ? "text-foreground bg-muted/30"
                             : "text-muted-foreground hover:text-foreground"
                         }`}
