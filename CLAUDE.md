@@ -4,15 +4,7 @@ This workspace contains a mobile app and backend server.
 
 <projects>
   webapp/    — React app (port 8000, environment variable VITE_BASE_URL)
-  backend/   — Hono API server (port 3000)
-
-  In production, the webapp uses relative URLs (/api/...) so it works on any domain.
-  VITE_BACKEND_URL is only needed in development for cross-origin requests to the backend on a different port.
-
-  Set `baseURL: env.BACKEND_URL` in betterAuth() config (required for crossSubDomainCookies, harmless otherwise —
-  proxy headers override via trustedProxyHeaders: true).
-  The webapp auth client (createAuthClient) should use: baseURL: import.meta.env.VITE_BACKEND_URL || undefined
-  The webapp API helper should use: import.meta.env.VITE_BACKEND_URL || "" (empty string = relative URLs)
+  backend/   — Hono API server (port 3000, environment variable VITE_BACKEND_URL)
 </projects>
 
 <agents>
@@ -54,3 +46,37 @@ This workspace contains a mobile app and backend server.
   Communicate in an easy to understand manner for non-technical users.
   Be concise and don't talk too much.
 </environment>
+
+<git_sync_rules>
+  CRITICAL: This project has TWO git remotes that MUST stay in sync:
+  - origin: Vibecode internal server (git.vibecodeapp.com) - used for app restarts
+  - github: User's GitHub repo (github.com/0xsorcerers/Penny4Thots.git) - backup & version control
+
+  MANDATORY ACTIONS:
+  1. When user says "save progress", "stable build", "commit", "push", or "save our work":
+     - Commit all changes with a descriptive message
+     - Push to BOTH remotes: `git push origin main && git push github main`
+     - Confirm both pushes succeeded
+
+  2. Before ANY major feature work or at conversation start:
+     - Run `git fetch github && git fetch origin` to check sync status
+     - If repos are out of sync, merge and push to both before proceeding
+
+  3. After completing significant features:
+     - Auto-commit with summary of changes
+     - Push to BOTH remotes without being asked
+
+  4. If a push to github fails (auth issues):
+     - Notify the user immediately
+     - Still push to origin so Vibecode restarts don't lose work
+     - Ask user to check GitHub connection in Vibecode settings
+
+  NEVER let the two remotes diverge. Lost work = lost money.
+</git_sync_rules>
+
+<progress_tracking>
+  Maintain a PROGRESS.md file in the root directory:
+  - Update after each significant change or feature completion
+  - Include date, feature name, and brief description
+  - This serves as a human-readable changelog
+</progress_tracking>
