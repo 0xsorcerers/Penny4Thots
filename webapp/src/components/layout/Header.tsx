@@ -1,9 +1,11 @@
 "use client";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "@/hooks/useTheme";
-import { Sun, Moon } from "lucide-react";
+import { Sun, Moon, ChevronDown, Globe } from "lucide-react";
 import { Connector } from "../../tools/utils";
+import { chains } from "../../tools/networkData";
+import { useState } from "react";
 
 interface HeaderProps {
   onConnect?: () => void;
@@ -12,6 +14,8 @@ interface HeaderProps {
 
 export function Header({ onConnect, isConnected = false }: HeaderProps) {
   const { theme, toggleTheme } = useTheme();
+  const [selectedChain, setSelectedChain] = useState(chains[0]);
+  const [isChainDropdownOpen, setIsChainDropdownOpen] = useState(false);
 
   return (
     <motion.header
@@ -44,6 +48,58 @@ export function Header({ onConnect, isConnected = false }: HeaderProps) {
 
         {/* Right side buttons */}
         <div className="flex items-center gap-3">
+          {/* Blockchain Selector */}
+          <div className="relative">
+            <Button
+              onClick={() => setIsChainDropdownOpen(!isChainDropdownOpen)}
+              variant="ghost"
+              size="sm"
+              className="group flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-light italic transition-all duration-200 hover:bg-muted/50"
+            >
+              <Globe className="h-3.5 w-3.5 text-muted-foreground" />
+              <span className="text-muted-foreground group-hover:text-foreground transition-colors">
+                {selectedChain.name}
+              </span>
+              <ChevronDown 
+                className={`h-3 w-3.5 text-muted-foreground transition-transform duration-200 ${
+                  isChainDropdownOpen ? 'rotate-180' : ''
+                }`} 
+              />
+            </Button>
+
+            <AnimatePresence>
+              {isChainDropdownOpen && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                  transition={{ duration: 0.15, ease: "easeOut" }}
+                  className="absolute right-0 top-full mt-2 min-w-[140px] overflow-hidden rounded-lg border bg-background/95 backdrop-blur-xl shadow-lg dark:shadow-xl"
+                >
+                  <div className="py-1">
+                    {chains.map((chain) => (
+                      <motion.button
+                        key={chain.chainId}
+                        onClick={() => {
+                          setSelectedChain(chain);
+                          setIsChainDropdownOpen(false);
+                        }}
+                        whileHover={{ backgroundColor: "hsl(var(--muted) / 0.5)" }}
+                        className={`w-full px-3 py-2 text-left text-xs font-light italic transition-colors ${
+                          selectedChain.chainId === chain.chainId
+                            ? "text-foreground bg-muted/30"
+                            : "text-muted-foreground hover:text-foreground"
+                        }`}
+                      >
+                        {chain.name}
+                      </motion.button>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
           {/* Theme Toggle */}
           <Button
             onClick={toggleTheme}
