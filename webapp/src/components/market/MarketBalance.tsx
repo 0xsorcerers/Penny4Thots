@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Wallet } from "lucide-react";
-import { getPublicClient, isZeroAddress, ZERO_ADDRESS } from "@/tools/utils";
+import { getPublicClient, isZeroAddress, ZERO_ADDRESS, readTokenDecimals, fromTokenSmallestUnit } from "@/tools/utils";
 import { useNetworkStore } from "@/store/networkStore";
 import type { Address } from "viem";
 import erc20 from "@/abi/ERC20.json";
@@ -8,43 +8,71 @@ import { Abi } from "viem";
 import { useTheme } from "@/hooks/use-theme";
 
 interface MarketBalanceProps {
-  marketBalance: string;
+  marketBalance: bigint; // Raw balance in token's smallest unit
   paymentToken?: Address;
 }
 
 export function MarketBalance({ marketBalance, paymentToken }: MarketBalanceProps) {
   const selectedNetwork = useNetworkStore((state) => state.selectedNetwork);
   const [symbol, setSymbol] = useState<string>(selectedNetwork.symbol);
+  const [tokenDecimals, setTokenDecimals] = useState<number>(18); // Default to 18
   const [isLoading, setIsLoading] = useState(false);
   const { isLight } = useTheme();
 
   useEffect(() => {
     if (paymentToken && !isZeroAddress(paymentToken)) {
-      const fetchSymbol = async () => {
+      const fetchTokenInfo = async () => {
         setIsLoading(true);
         try {
           const client = getPublicClient(selectedNetwork);
           const erc20ABI = erc20.abi as Abi;
-          const fetchedSymbol = await client.readContract({
-            address: paymentToken,
-            abi: erc20ABI,
-            functionName: "symbol",
-          });
+          
+          // Fetch both symbol and decimals in parallel
+          const [fetchedSymbol, decimals] = await Promise.all([
+            client.readContract({
+              address: paymentToken,
+              abi: erc20ABI,
+              functionName: "symbol",
+            }),
+            readTokenDecimals(paymentToken)
+          ]);
+          
           setSymbol(fetchedSymbol as string);
+          setTokenDecimals(decimals);
         } catch (err) {
-          console.error("Failed to fetch token symbol:", err);
+          console.error("Failed to fetch token info:", err);
           setSymbol("TOKEN");
+          setTokenDecimals(18); // Reset to default
         } finally {
           setIsLoading(false);
         }
       };
-      fetchSymbol();
+      fetchTokenInfo();
     } else {
       setSymbol(selectedNetwork.symbol);
+      setTokenDecimals(18); // ETH uses 18 decimals
     }
   }, [paymentToken, selectedNetwork]);
 
-  const displayBalance = parseFloat(marketBalance).toFixed(4);
+  // Convert market balance using proper decimal handling
+  const displayBalance = (() => {
+    if (!paymentToken || isZeroAddress(paymentToken)) {
+      // ETH - convert from 18 decimals to readable format
+      const ethBalance = fromTokenSmallestUnit(marketBalance, 18);
+      const ethValue = parseFloat(ethBalance);
+      return ethValue >= 10 ? ethValue.toFixed(1) : ethValue.toFixed(4);
+    } else {
+      // Token - convert from smallest unit using token decimals
+      try {
+        const formattedBalance = fromTokenSmallestUnit(marketBalance, tokenDecimals);
+        const tokenValue = parseFloat(formattedBalance);
+        return tokenValue >= 10 ? tokenValue.toFixed(1) : tokenValue.toFixed(4);
+      } catch {
+        // Fallback if conversion fails
+        return marketBalance.toString();
+      }
+    }
+  })();
   const symbolColor =
     symbol === selectedNetwork.symbol
       ? isLight

@@ -11,7 +11,7 @@ export interface Market {
   yesVotes: number;
   noVotes: number;
   createdAt: string;
-  marketBalance?: string; // ETH balance from blockchain
+  marketBalance?: bigint; // Raw balance from blockchain (bigint in token's smallest unit)
   status?: boolean; // Market status from blockchain
   optionA?: string; // Custom option A label
   optionB?: string; // Custom option B label

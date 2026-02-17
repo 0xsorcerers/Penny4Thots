@@ -74,7 +74,7 @@ export interface MarketDataFormatted {
   indexer: number;
   creator: string;
   status: boolean;
-  marketBalance: string;
+  marketBalance: bigint; // Keep as bigint - let display layer handle formatting
   activity: string;
   aVotes: number;
   bVotes: number;
@@ -275,7 +275,7 @@ export const readMarketData = async (ids: number[]): Promise<MarketDataFormatted
     creator: marketData.creator,
     status: marketData.status,
     closed: marketData.closed,
-    marketBalance: formatEther(marketData.marketBalance),
+    marketBalance: marketData.marketBalance, // Keep as bigint - let display layer handle formatting
     activity: formatEther(marketData.activity),
     aVotes: Number(marketData.aVotes),
     bVotes: Number(marketData.bVotes),
@@ -467,7 +467,7 @@ export const useWriteMarket = () => {
 
     const transaction = {
       ...prepareWriteMarket(params),
-      value: (params.feetype || false) ? gasfee : params.marketBalance, // Use feetype for msg.value calculation
+      value: params.feetype ? gasfee : params.marketBalance, // Use feetype for msg.value calculation
     };
     const result = await sendTx(transaction);
 
@@ -557,6 +557,103 @@ export const toWei = (amount: string | number): bigint => {
   return parseEther(String(amount));
 };
 
+/**
+ * Convert a token amount to its smallest unit (bigint) based on token decimals
+ * @param amount - Token amount as string or number (e.g., "0.01", 1, "1.5")
+ * @param decimals - Number of decimals the token uses (e.g., 6 for USDC, 18 for WETH)
+ * @returns bigint in the token's smallest unit
+ */
+export const toTokenSmallestUnit = (amount: string | number, decimals: number): bigint => {
+  const amountStr = String(amount);
+  
+  // For common decimal values, use optimized approach
+  if (decimals === 18) {
+    return parseEther(amountStr);
+  }
+  
+  // For other decimal values, use viem's formatUnits/parseUnits logic
+  // Convert to string with proper decimal places
+  const parts = amountStr.split('.');
+  const integerPart = parts[0] || '0';
+  let fractionalPart = parts[1] || '';
+  
+  // Pad or truncate fractional part to match decimals
+  if (fractionalPart.length > decimals) {
+    fractionalPart = fractionalPart.slice(0, decimals);
+  } else {
+    fractionalPart = fractionalPart.padEnd(decimals, '0');
+  }
+  
+  // Combine and convert to bigint
+  const combined = integerPart + fractionalPart;
+  return BigInt(combined);
+};
+
+/**
+ * Convert a token amount from its smallest unit to a readable string based on token decimals
+ * @param amount - Amount in the token's smallest unit (bigint)
+ * @param decimals - Number of decimals the token uses (e.g., 6 for USDC, 18 for WETH)
+ * @returns Formatted string with appropriate decimal places
+ */
+export const fromTokenSmallestUnit = (amount: bigint, decimals: number): string => {
+  // For common decimal values, use optimized approach
+  if (decimals === 18) {
+    return formatEther(amount);
+  }
+  
+  // For other decimal values, use manual formatting
+  const amountStr = amount.toString();
+  
+  // Pad with leading zeros to ensure we can place decimal point
+  const padded = amountStr.padStart(decimals + 1, '0');
+  
+  // Split into integer and fractional parts
+  const integerPart = padded.slice(0, -decimals) || '0';
+  const fractionalPart = padded.slice(-decimals);
+  
+  // Remove trailing zeros from fractional part
+  const trimmedFractional = fractionalPart.replace(/0+$/, '');
+  
+  // Combine parts
+  if (trimmedFractional) {
+    return `${integerPart}.${trimmedFractional}`;
+  }
+  return integerPart;
+};
+
+/**
+ * Format a token amount for display with proper decimal handling
+ * @param amount - Amount in the token's smallest unit (bigint)
+ * @param decimals - Number of decimals the token uses
+ * @param maxDisplayDecimals - Maximum decimals to show (optional, defaults to token decimals)
+ * @returns Formatted display string
+ */
+export const formatTokenAmount = (
+  amount: bigint, 
+  decimals: number, 
+  maxDisplayDecimals?: number
+): string => {
+  const fullAmount = fromTokenSmallestUnit(amount, decimals);
+  const maxDecimals = maxDisplayDecimals !== undefined ? maxDisplayDecimals : decimals;
+  
+  if (maxDecimals === 0) {
+    return fullAmount.split('.')[0];
+  }
+  
+  const parts = fullAmount.split('.');
+  if (parts.length === 1) {
+    return parts[0];
+  }
+  
+  const integerPart = parts[0];
+  const fractionalPart = parts[1].slice(0, maxDecimals);
+  
+  if (fractionalPart) {
+    return `${integerPart}.${fractionalPart}`;
+  }
+  return integerPart;
+};
+
 export const randomShuffle = (max: number): number => {
   return Math.floor(Math.random() * max);
 };
@@ -643,6 +740,23 @@ export const readTokenBalance = async (
     args: [ownerAddress],
   });
   return result as bigint;
+};
+
+/**
+ * Read the token decimals
+ */
+export const readTokenDecimals = async (tokenAddress: Address): Promise<number> => {
+  try {
+    const result = await getPublicClient().readContract({
+      address: tokenAddress,
+      abi: erc20ABI,
+      functionName: "decimals",
+    });
+    return Number(result);
+  } catch (err) {
+    console.error('Error reading token decimals:', err);
+    return 18; // Default to 18 decimals if unable to read
+  }
 };
 
 /**
