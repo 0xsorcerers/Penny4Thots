@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Wallet } from "lucide-react";
-import { publicClient, isZeroAddress, ZERO_ADDRESS, blockchain } from "@/tools/utils";
+import { getPublicClient, isZeroAddress, ZERO_ADDRESS } from "@/tools/utils";
+import { useNetworkStore } from "@/store/networkStore";
 import type { Address } from "viem";
 import erc20 from "@/abi/ERC20.json";
 import { Abi } from "viem";
@@ -12,7 +13,8 @@ interface MarketBalanceProps {
 }
 
 export function MarketBalance({ marketBalance, paymentToken }: MarketBalanceProps) {
-  const [symbol, setSymbol] = useState<string>(blockchain.symbol);
+  const selectedNetwork = useNetworkStore((state) => state.selectedNetwork);
+  const [symbol, setSymbol] = useState<string>(selectedNetwork.symbol);
   const [isLoading, setIsLoading] = useState(false);
   const { isLight } = useTheme();
 
@@ -21,8 +23,9 @@ export function MarketBalance({ marketBalance, paymentToken }: MarketBalanceProp
       const fetchSymbol = async () => {
         setIsLoading(true);
         try {
+          const client = getPublicClient(selectedNetwork);
           const erc20ABI = erc20.abi as Abi;
-          const fetchedSymbol = await publicClient.readContract({
+          const fetchedSymbol = await client.readContract({
             address: paymentToken,
             abi: erc20ABI,
             functionName: "symbol",
@@ -37,14 +40,14 @@ export function MarketBalance({ marketBalance, paymentToken }: MarketBalanceProp
       };
       fetchSymbol();
     } else {
-      setSymbol(blockchain.symbol);
+      setSymbol(selectedNetwork.symbol);
     }
-  }, [paymentToken]);
+  }, [paymentToken, selectedNetwork]);
 
   const displayBalance = parseFloat(marketBalance).toFixed(4);
   const symbolColor =
-    symbol === blockchain.symbol
-      ? isLight 
+    symbol === selectedNetwork.symbol
+      ? isLight
         ? "text-amber-600" // Amber color for blockchain symbol in light mode
         : "text-primary"   // Primary color for blockchain symbol in dark mode (gold/emerald)
       : "text-accent"; // Accent color for tokens (cyan/coral)

@@ -5,7 +5,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { formatEther, blockchain } from "@/tools/utils";
+import { formatEther } from "@/tools/utils";
+import { useNetworkStore } from "@/store/networkStore";
 
 interface VoteDialogProps {
   isOpen: boolean;
@@ -28,6 +29,7 @@ export function VoteDialog({
   optionA = "Yes",
   optionB = "No",
 }: VoteDialogProps) {
+  const selectedNetwork = useNetworkStore((state) => state.selectedNetwork);
   const [amount, setAmount] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const selectedOption = signal ? optionA : optionB;
@@ -105,7 +107,7 @@ export function VoteDialog({
                   {/* Amount Input */}
                   <div className="space-y-2">
                     <Label htmlFor="amount" className="font-outfit text-foreground">
-                      Amount to Send ({blockchain.symbol}) *
+                      Amount to Send ({selectedNetwork.symbol}) *
                     </Label>
                     <Input
                       id="amount"

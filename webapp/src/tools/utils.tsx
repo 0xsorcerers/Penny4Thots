@@ -169,8 +169,8 @@ export const getThirdwebNetwork = () => {
  * Create a dynamic viem public client for the selected network
  * Used for read-only contract calls
  */
-export const getPublicClient = () => {
-  const blockchain = getBlockchain();
+export const getPublicClient = (network?: typeof getCurrentNetwork extends () => infer T ? T : never) => {
+  const blockchain = network || getBlockchain();
   return createPublicClient({
     transport: http(blockchain.rpc),
   });
