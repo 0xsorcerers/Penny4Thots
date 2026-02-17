@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { TrendingUp, TrendingDown, Vote, Loader2, Gift, Hourglass, CircleOff } from "lucide-react";
+import { TrendingUp, TrendingDown, Vote, Loader2, Gift, Hourglass, CircleOff, ExternalLink } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import type { Market } from "@/types/market";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -78,7 +78,7 @@ export function MarketCardYourThots({ market, onVoteClick }: MarketCardYourThots
             setMarketClaimable(true);
           } else {
             // Check which positions are actually claimable (winning positions)
-            const claimablePositions = await getClaimablePositions(market.indexer!, allPositions);
+            const claimablePositions = await getClaimablePositions(market.indexer!, account.address as `0x${string}`, allPositions);
             setUserPositions(claimablePositions);
             setMarketClaimable(true);
           }

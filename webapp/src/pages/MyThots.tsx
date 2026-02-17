@@ -200,7 +200,6 @@ export default function MyThots() {
           noVotes: data?.bVotes || 0,
           createdAt: new Date().toISOString(),
           marketBalance: data?.marketBalance || "0",
-          closed: data?.closed || false,
           optionA: info.optionA || "Yes",
           optionB: info.optionB || "No",
           startTime: data?.startTime || 0,

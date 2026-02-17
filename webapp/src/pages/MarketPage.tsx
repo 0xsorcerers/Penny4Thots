@@ -630,7 +630,6 @@ export default function MarketPage() {
                 yesVotes: freshData.aVotes,
                 noVotes: freshData.bVotes,
                 marketBalance: freshData.marketBalance,
-                closed: freshData.closed,
                 startTime: freshData.startTime,
                 endTime: freshData.endTime,
                 closed: freshData.closed,
