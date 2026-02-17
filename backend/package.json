@@ -14,17 +14,22 @@
   "license": "ISC",
   "dependencies": {
     "@anthropic-ai/sdk": "^0.37.0",
+    "@vibecodeapp/backend-sdk": "^1.0.1",
+    "@vibecodeapp/cloud-studio": "^0.2.4",
+    "@vibecodeapp/proxy": "^2.0.3",
+    "axios": "^1.7.9",
     "body-parser": "^1.20.3",
     "cors": "^2.8.5",
-    "axios": "^1.7.9",
     "dotenv": "^16.4.5",
     "ethers": "^6.13.4",
     "express": "^4.21.1",
     "express-fileupload": "^1.4.0",
     "fs-extra": "^11.2.0",
+    "hono": "^4.11.9",
     "jsonstream": "^1.0.3",
     "nodemon": "^3.1.7",
-    "openai": "^4.78.1"
+    "openai": "^4.78.1",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "nodemon": "^3.0.1"
