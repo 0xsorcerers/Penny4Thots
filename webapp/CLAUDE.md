@@ -41,13 +41,6 @@
   For images, use URLs from unsplash.com. You can also tell the user they can use the IMAGES tab to generate and upload images.
 </environment>
 
-<bootstrapping>
-  This is a fresh workspace. src/pages/Index.tsx is a placeholder — it is NOT your app.
-  When the user describes what they want to build, DELETE the entire contents of Index.tsx and build their app from scratch.
-  Do not reuse any code, layout, or styling from the placeholder. It exists only to show something while the workspace is empty.
-  The same applies to index.html — update the title, meta tags, and og tags to match whatever the user is building.
-</bootstrapping>
-
 <routing>
   React Router v6 for routing. Routes are manually registered in `src/App.tsx`.
   <adding_routes>
@@ -179,14 +172,13 @@
 
 <backend>
   This app has a backend server at ../backend/.
-  API requests use relative URLs by default (/api/...) so the app works on any domain in production.
-  VITE_BACKEND_URL is only needed in development for cross-origin requests to the backend on a different port.
-  DO NOT hardcode localhost URLs.
+  API base URL is available via process.env.VITE_BACKEND_URL.
+  DO NOT use localhost.
 
-  To call backend APIs, use the api helper from src/lib/api.ts:
+  To call backend APIs:
   ```typescript
-  import { api } from "@/lib/api";
-  const data = await api.get<MyType>("/api/your-endpoint"); // Always use /api/ prefix
+  const baseUrl = process.env.VITE_BACKEND_URL!;
+  const response = await fetch(`${baseUrl}/api/your-endpoint`); // Make sure it is the format of /api/your-endpoint, the /api/ is required
   ```
 
   For setting up authentication and database, use the database-auth skill.

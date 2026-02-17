@@ -1,24 +1,32 @@
 {
   "name": "backend",
-  "module": "src/index.ts",
-  "type": "module",
-  "private": true,
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
   "scripts": {
-    "dev": "bun run --hot src/index.ts",
-    "start": "bun run src/index.ts",
-    "studio": "cloud-studio --port 3001 --hostname 0.0.0.0",
-    "typecheck": "tsc --noEmit"
+    "start-frontend": "react-scripts start",
+    "start-backend": "nodemon index.js",
+    "dev": "concurrently \"npm run start-backend\" \"npm run start-frontend\""
+  },
+  "proxy": "http://localhost:3000",
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.37.0",
+    "body-parser": "^1.20.3",
+    "cors": "^2.8.5",
+    "axios": "^1.7.9",
+    "dotenv": "^16.4.5",
+    "ethers": "^6.13.4",
+    "express": "^4.21.1",
+    "express-fileupload": "^1.4.0",
+    "fs-extra": "^11.2.0",
+    "jsonstream": "^1.0.3",
+    "nodemon": "^3.1.7",
+    "openai": "^4.78.1"
   },
   "devDependencies": {
-    "@types/bun": "latest",
-    "typescript": "5.8.3"
-  },
-  "dependencies": {
-    "@hono/node-server": "1.12.0",
-    "@vibecodeapp/backend-sdk": "^1.0.1",
-    "@vibecodeapp/cloud-studio": "^0.2.4",
-    "@vibecodeapp/proxy": "^2.0.3",
-    "hono": "4.6.0",
-    "zod": "4.1.11"
+    "nodemon": "^3.0.1"
   }
 }

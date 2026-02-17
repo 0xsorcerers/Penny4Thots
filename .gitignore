@@ -1,0 +1,45 @@
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+# Build
+dist/
+build/
+.next/
+out/
+.vite/
+coverage/
+.DS_Store
+.env
+.env.local
+.env.*.local
+
+# Logs
+logs
+*.log
+
+# OS files
+Thumbs.db
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+
+# Editor
+*.swp
+*.swo
+
+# pnpm
+.pnp.cjs
+
+# Python
+__pycache__/
+*.py[cod]
+
+# Misc
+*.tar.gz
+commit_summary.md
+package-lock.json
+
