@@ -7,6 +7,34 @@ Structure:
 - `webapp/` — React frontend (Thirdweb wallet integration, Tailwind)
 - `backend/` — API and server code (if present)
 
+### Network Switching & Multi-Chain Support
+
+The app now supports multiple blockchain networks with per-network data persistence:
+
+**Network Store (`webapp/src/store/networkStore.ts`)**:
+- Manages selected network state using Zustand
+- Persists user's last selected network in localStorage
+- Provides `getCurrentNetwork()` helper for accessing network config outside React components
+- Each network has: chainId, rpc, blockExplorer, decimals, symbol, and contract_address
+
+**Dynamic Blockchain Configuration (`webapp/src/tools/utils.tsx`)**:
+- `getBlockchain()` - Returns current network's blockchain config
+- `getThirdwebNetwork()` - Creates dynamic Thirdweb network definition
+- `getPublicClient()` - Creates Viem client for current network
+- `getPenny4ThotsContract()` - Gets contract for current network
+- All read/write operations automatically use the selected network's RPC and contract address
+
+**Per-Network Data Persistence (`webapp/src/store/marketStore.ts`)**:
+- Market data is stored with network-specific keys (e.g., `prediction-market-storage-chain-11155111`)
+- When users switch networks, they see only markets from that network
+- Switching back to a previous network retrieves that network's cached data
+- Data is completely isolated per network—voting on one network doesn't affect another
+
+**Header Network Dropdown**:
+- Network selector in the header shows all available chains
+- Clicking a network clears current markets and loads data for the new network
+- Selected network is saved to localStorage for persistence across sessions
+
 ### Market Card Features
 - **Delete Button**: Small delete (X) button in the top-right corner of each market card. Removes the market from your local cache without affecting the blockchain. The market can be fetched fresh on the next refresh.
 - **Vote Button Flow**:

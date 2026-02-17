@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { Market, CreateMarketData } from "@/types/market";
 import type { MarketInfoFormatted, MarketDataFormatted } from "@/tools/utils";
+import { getCurrentNetwork } from "./networkStore";
 
 interface MarketStore {
   markets: Market[];
@@ -21,6 +22,14 @@ interface MarketStore {
   deleteMarket: (indexer: number) => void;
   clearAllMarkets: () => void;
 }
+
+/**
+ * Get network-specific storage key for market data
+ */
+const getNetworkStorageKey = (defaultKey: string): string => {
+  const network = getCurrentNetwork();
+  return `${defaultKey}-chain-${network.chainId}`;
+};
 
 export const useMarketStore = create<MarketStore>()(
   persist(
@@ -161,7 +170,7 @@ export const useMarketStore = create<MarketStore>()(
       },
     }),
     {
-      name: "prediction-market-storage",
+      name: getNetworkStorageKey("prediction-market-storage"),
     }
   )
 );

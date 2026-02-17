@@ -8,6 +8,7 @@ import { ReactElement } from "react";
 import penny4thots from "../abi/penny4thots.json";
 import erc20 from "../abi/ERC20.json";
 import { chains } from "./networkData";
+import { getCurrentNetwork } from "../store/networkStore";
 
 const contractABI = penny4thots.abi as Abi;
 const erc20ABI = erc20.abi as Abi;
@@ -136,32 +137,62 @@ export const wallets = [
 ];
 
 // ============================================================================
-// Blockchain Configuration
+// Blockchain Configuration (Dynamic per selected network)
 // ============================================================================
 
-export const blockchain = ({
-  chainId: 11155111,
-  rpc: 'https://0xrpc.io/sep',
-  blockExplorer: 'https://sepolia.etherscan.io',
-  decimals: 18,
-  symbol: 'sETH',
-  contract_address: '0x929A04E8d5d8aFBCA5C6cE0e9Fe05f506081cc27' as Address,
-})
+/**
+ * Get the current blockchain config based on selected network
+ * This is dynamic and updates when user switches networks
+ */
+export const getBlockchain = () => {
+  const network = getCurrentNetwork();
+  return {
+    chainId: network.chainId,
+    rpc: network.rpc,
+    blockExplorer: network.blockExplorer,
+    decimals: network.decimals,
+    symbol: network.symbol,
+    contract_address: network.contract_address,
+  };
+};
 
-export const network = defineChain({ id: blockchain.chainId, rpc: blockchain.rpc });
+/**
+ * Create a dynamic network definition for Thirdweb
+ * Used in ConnectButton and contract interactions
+ */
+export const getThirdwebNetwork = () => {
+  const blockchain = getBlockchain();
+  return defineChain({ id: blockchain.chainId, rpc: blockchain.rpc });
+};
 
-// Viem public client for read operations
-export const publicClient = createPublicClient({
-  chain: viemSepolia,
-  transport: http(blockchain.rpc),
-});
+/**
+ * Create a dynamic viem public client for the selected network
+ * Used for read-only contract calls
+ */
+export const getPublicClient = () => {
+  const blockchain = getBlockchain();
+  return createPublicClient({
+    transport: http(blockchain.rpc),
+  });
+};
 
-// Thirdweb contract for write operations (no ABI needed when using method signature strings)
-export const penny4thotsContract = getContract({
-  client,
-  chain: sepolia,
-  address: blockchain.contract_address,
-});
+/**
+ * Get the Penny4Thots contract for the selected network
+ */
+export const getPenny4ThotsContract = () => {
+  const blockchain = getBlockchain();
+  return getContract({
+    client,
+    chain: getThirdwebNetwork(),
+    address: blockchain.contract_address,
+  });
+};
+
+// Legacy constants for backward compatibility - but they now use getters
+export const blockchain = getBlockchain();
+export const network = getThirdwebNetwork();
+export const publicClient = getPublicClient();
+export const penny4thotsContract = getPenny4ThotsContract();
 
 // ============================================================================
 // Connector Component
@@ -171,7 +202,7 @@ export function Connector(): ReactElement {
   return (
     <ConnectButton
       client={client}
-      chain={network}
+      chain={getThirdwebNetwork()}
       wallets={wallets}
       theme={darkTheme({
         colors: {
@@ -207,8 +238,8 @@ export function Connector(): ReactElement {
 // ============================================================================
 
 export const readMarketInfo = async (ids: number[]): Promise<MarketInfoFormatted[]> => {
-  const result = await publicClient.readContract({
-    address: blockchain.contract_address,
+  const result = await getPublicClient().readContract({
+    address: getBlockchain().contract_address,
     abi: contractABI,
     functionName: 'readMarket',
     args: [ids],
@@ -230,8 +261,8 @@ export const readMarketInfo = async (ids: number[]): Promise<MarketInfoFormatted
 };
 
 export const readMarketData = async (ids: number[]): Promise<MarketDataFormatted[]> => {
-  const result = await publicClient.readContract({
-    address: blockchain.contract_address,
+  const result = await getPublicClient().readContract({
+    address: getBlockchain().contract_address,
     abi: contractABI,
     functionName: 'readMarketData',
     args: [ids],
@@ -259,8 +290,8 @@ export const readMarketData = async (ids: number[]): Promise<MarketDataFormatted
 };
 
 export const readMarketCount = async (): Promise<number> => {
-  const result = await publicClient.readContract({
-    address: blockchain.contract_address,
+  const result = await getPublicClient().readContract({
+    address: getBlockchain().contract_address,
     abi: contractABI,
     functionName: 'marketCount',
   }) as number;
@@ -270,8 +301,8 @@ export const readMarketCount = async (): Promise<number> => {
 
 
 export const readPaymentToken = async (marketId: number): Promise<Address> => {
-  const result = await publicClient.readContract({
-    address: blockchain.contract_address,
+  const result = await getPublicClient().readContract({
+    address: getBlockchain().contract_address,
     abi: contractABI,
     functionName: 'paymentTokens',
     args: [marketId],
@@ -299,8 +330,8 @@ export interface DataConstants {
 }
 
 export const fetchDataConstants = async (): Promise<DataConstants> => {
-  const result = await publicClient.readContract({
-    address: blockchain.contract_address,
+  const result = await getPublicClient().readContract({
+    address: getBlockchain().contract_address,
     abi: contractABI,
     functionName: 'fetchDataConstants',
   }) as [bigint[], boolean[]];
@@ -413,7 +444,7 @@ export const prepareWriteMarket = (params: WriteMarketParams) => {
   const paymentTokenAddress: Address = params.paymentToken || ("0x0000000000000000000000000000000000000000" as Address);
 
   return prepareContractCall({
-    contract: penny4thotsContract,
+    contract: getPenny4ThotsContract(),
     method: "function writeMarket(string[] calldata _info, uint256 _marketBalance, bool _signal, bool _feetype, address _paymentToken, uint256 _endTime) external payable",
     params: [
       infoArray,
@@ -444,7 +475,7 @@ export const useWriteMarket = () => {
     // This ensures the new market is written to the blockchain before we fetch updated data
     await waitForReceipt({
       client,
-      chain: sepolia,
+      chain: getThirdwebNetwork(),
       transactionHash: result.transactionHash,
     });
 
@@ -464,7 +495,7 @@ export interface VoteParams {
 
 export const prepareVote = (params: VoteParams) => {
   return prepareContractCall({
-    contract: penny4thotsContract,
+    contract: getPenny4ThotsContract(),
     method: "function vote(bool _signal, uint256 _market, uint256 _marketBalance) external payable",
     params: [params.signal, BigInt(params.marketId), params.marketBalance],
   });
@@ -485,7 +516,7 @@ export const useVote = () => {
 
     await waitForReceipt({
       client,
-      chain: sepolia,
+      chain: getThirdwebNetwork(),
       transactionHash: result.transactionHash,
     });
 
@@ -588,7 +619,7 @@ export const readTokenAllowance = async (
   ownerAddress: Address,
   spenderAddress: Address
 ): Promise<bigint> => {
-  const result = await publicClient.readContract({
+  const result = await getPublicClient().readContract({
     address: tokenAddress,
     abi: erc20ABI,
     functionName: "allowance",
@@ -605,7 +636,7 @@ export const readTokenBalance = async (
   tokenAddress: Address,
   ownerAddress: Address
 ): Promise<bigint> => {
-  const result = await publicClient.readContract({
+  const result = await getPublicClient().readContract({
     address: tokenAddress,
     abi: erc20ABI,
     functionName: "balanceOf",
@@ -619,7 +650,7 @@ export const readTokenBalance = async (
  */
 export const readTokenSymbol = async (tokenAddress: Address): Promise<string> => {
   try {
-    const result = await publicClient.readContract({
+    const result = await getPublicClient().readContract({
       address: tokenAddress,
       abi: erc20ABI,
       functionName: "symbol",
@@ -637,14 +668,14 @@ export const readTokenSymbol = async (tokenAddress: Address): Promise<string> =>
 export const prepareTokenApprove = (tokenAddress: Address, amount: bigint) => {
   const tokenContract = getContract({
     client,
-    chain: sepolia,
+    chain: getThirdwebNetwork(),
     address: tokenAddress,
   });
 
   return prepareContractCall({
     contract: tokenContract,
     method: "function approve(address spender, uint256 amount) external returns (bool)",
-    params: [blockchain.contract_address, amount],
+    params: [getBlockchain().contract_address, amount],
   });
 };
 
@@ -660,7 +691,7 @@ export const useTokenApprove = () => {
 
     await waitForReceipt({
       client,
-      chain: sepolia,
+      chain: getThirdwebNetwork(),
       transactionHash: result.transactionHash,
     });
 
@@ -679,8 +710,8 @@ export const useTokenApprove = () => {
  * Returns array of market IDs
  */
 export const getUserThots = async (userAddress: Address, start: number, finish: number): Promise<number[]> => {
-  const result = await publicClient.readContract({
-    address: blockchain.contract_address,
+  const result = await getPublicClient().readContract({
+    address: getBlockchain().contract_address,
     abi: contractABI,
     functionName: 'getUserThots',
     args: [userAddress, BigInt(start), BigInt(finish)],
@@ -694,8 +725,8 @@ export const getUserThots = async (userAddress: Address, start: number, finish: 
  * Returns array of market IDs
  */
 export const getUserMarkets = async (userAddress: Address, start: number, finish: number): Promise<number[]> => {
-  const result = await publicClient.readContract({
-    address: blockchain.contract_address,
+  const result = await getPublicClient().readContract({
+    address: getBlockchain().contract_address,
     abi: contractABI,
     functionName: 'getUserMarkets',
     args: [userAddress, BigInt(start), BigInt(finish)],
@@ -720,8 +751,8 @@ export interface ClaimRecord {
  */
 export const getUserTotalClaimHistory = async (userAddress: Address): Promise<number> => {
   try {
-    const result = await publicClient.readContract({
-      address: blockchain.contract_address,
+    const result = await getPublicClient().readContract({
+      address: getBlockchain().contract_address,
       abi: contractABI,
       functionName: 'userTotalClaimHistory',
       args: [userAddress],
@@ -744,8 +775,8 @@ export const getUserClaims = async (
   if (start >= finish) return [];
 
   try {
-    const result = await publicClient.readContract({
-      address: blockchain.contract_address,
+    const result = await getPublicClient().readContract({
+      address: getBlockchain().contract_address,
       abi: contractABI,
       functionName: 'getUserClaims',
       args: [userAddress, BigInt(start), BigInt(finish)],
@@ -794,8 +825,8 @@ export const getUserClaimHistory = async (userAddress: Address): Promise<ClaimRe
  */
 export const getUserTotalThots = async (userAddress: Address): Promise<number> => {
   try {
-    const result = await publicClient.readContract({
-      address: blockchain.contract_address,
+    const result = await getPublicClient().readContract({
+      address: getBlockchain().contract_address,
       abi: contractABI,
       functionName: 'userTotalThots',
       args: [userAddress],
@@ -811,8 +842,8 @@ export const getUserTotalThots = async (userAddress: Address): Promise<number> =
  */
 export const getUserTotalMarkets = async (userAddress: Address): Promise<number> => {
   try {
-    const result = await publicClient.readContract({
-      address: blockchain.contract_address,
+    const result = await getPublicClient().readContract({
+      address: getBlockchain().contract_address,
       abi: contractABI,
       functionName: 'userTotalMarkets',
       args: [userAddress],
@@ -833,8 +864,8 @@ export const getClaimablePositions = async (marketId: number, userAddress: Addre
 
   try {
     console.log(`[getClaimablePositions] Market ${marketId}, User ${userAddress}, Checking positions:`, positionIds);
-    const result = await publicClient.readContract({
-      address: blockchain.contract_address,
+    const result = await getPublicClient().readContract({
+      address: getBlockchain().contract_address,
       abi: contractABI,
       functionName: 'isClaimable',
       args: [userAddress, BigInt(marketId), positionIds.map(id => BigInt(id))],
@@ -859,8 +890,8 @@ const POSITION_FETCH_LIMIT = 200;
  */
 export const getUserPositionCount = async (marketId: number, userAddress: Address): Promise<number> => {
   try {
-    const result = await publicClient.readContract({
-      address: blockchain.contract_address,
+    const result = await getPublicClient().readContract({
+      address: getBlockchain().contract_address,
       abi: contractABI,
       functionName: 'userPositionCount',
       args: [BigInt(marketId), userAddress],
@@ -885,8 +916,8 @@ export const getUserPositionsInRange = async (
   if (start >= finish) return [];
 
   try {
-    const result = await publicClient.readContract({
-      address: blockchain.contract_address,
+    const result = await getPublicClient().readContract({
+      address: getBlockchain().contract_address,
       abi: contractABI,
       functionName: 'getUserPositions',
       args: [BigInt(marketId), userAddress, BigInt(start), BigInt(finish)],
@@ -950,7 +981,7 @@ export interface BatchClaimParams {
 
 export const prepareBatchClaim = (params: BatchClaimParams) => {
   return prepareContractCall({
-    contract: penny4thotsContract,
+    contract: getPenny4ThotsContract(),
     method: "function batchClaim(uint256 _market, uint256[] calldata _posIds) external",
     params: [BigInt(params.marketId), params.positionIds.map(id => BigInt(id))],
   });
@@ -965,7 +996,7 @@ export const useBatchClaim = () => {
 
     await waitForReceipt({
       client,
-      chain: sepolia,
+      chain: getThirdwebNetwork(),
       transactionHash: result.transactionHash,
     });
 
@@ -989,8 +1020,8 @@ export interface MarketLock {
  * Returns the finalization status including whether shares are finalized
  */
 export const readMarketLock = async (marketId: number): Promise<MarketLock> => {
-  const result = await publicClient.readContract({
-    address: blockchain.contract_address,
+  const result = await getPublicClient().readContract({
+    address: getBlockchain().contract_address,
     abi: contractABI,
     functionName: 'allMarketLocks',
     args: [BigInt(marketId)],

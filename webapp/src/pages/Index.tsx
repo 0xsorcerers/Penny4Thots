@@ -5,14 +5,16 @@ import { MarketGrid } from "@/components/market/MarketGrid";
 import { CreateMarketModal } from "@/components/market/CreateMarketModal";
 import { VoteModal } from "@/components/market/VoteModal";
 import { useMarketStore } from "@/store/marketStore";
+import { useNetworkStore } from "@/store/networkStore";
 import { useActiveAccount } from "thirdweb/react";
-import { useWriteMarket, useVote, useTokenApprove, fetchMarketsFromBlockchain, fetchMarketDataFromBlockchain, readMarketCount, readPaymentToken, readTokenAllowance, readTokenBalance, toWei, isZeroAddress, blockchain, formatEther, type VoteParams } from "@/tools/utils";
+import { useWriteMarket, useVote, useTokenApprove, fetchMarketsFromBlockchain, fetchMarketDataFromBlockchain, readMarketCount, readPaymentToken, readTokenAllowance, readTokenBalance, toWei, isZeroAddress, getBlockchain, formatEther, type VoteParams } from "@/tools/utils";
 import type { CreateMarketData } from "@/types/market";
 import type { Address } from "viem";
 import { toast } from "sonner";
 
 export default function Index() {
   const { markets, setMarketsFromBlockchain, updateMarketData, marketInfos, isLoadingFromBlockchain, setIsLoadingFromBlockchain } = useMarketStore();
+  const { selectedNetwork } = useNetworkStore();
   const [isConnected, setIsConnected] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isVoteModalOpen, setIsVoteModalOpen] = useState(false);
@@ -20,6 +22,7 @@ export default function Index() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [lastFetchedCount, setLastFetchedCount] = useState(0);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [currentNetworkChainId, setCurrentNetworkChainId] = useState(selectedNetwork.chainId);
   const account = useActiveAccount();
   const { writeMarket, isPending, error } = useWriteMarket();
   const { vote, isPending: isVoting } = useVote();
@@ -87,14 +90,26 @@ export default function Index() {
   }, [loadMarketsFromBlockchain]);
 
   useEffect(() => {
+    // If network has changed, reset the fetch tracking to reload data
+    if (currentNetworkChainId !== selectedNetwork.chainId) {
+      setCurrentNetworkChainId(selectedNetwork.chainId);
+      setLastFetchedCount(0);
+      // Data will be reloaded in the next effect
+    }
+  }, [selectedNetwork.chainId, currentNetworkChainId]);
+
+  useEffect(() => {
     if (account && isInitialLoad) {
       setIsInitialLoad(false);
       loadMarketsFromBlockchain();
     } else if (account && !isInitialLoad && marketInfos.length === 0) {
       // If we've navigated back and lost data, reload
       loadMarketsFromBlockchain();
+    } else if (account && !isInitialLoad && currentNetworkChainId !== selectedNetwork.chainId) {
+      // Network has changed, reload markets for new network
+      loadMarketsFromBlockchain();
     }
-  }, [account, isInitialLoad, marketInfos.length, loadMarketsFromBlockchain]);
+  }, [account, isInitialLoad, marketInfos.length, loadMarketsFromBlockchain, currentNetworkChainId, selectedNetwork.chainId]);
 
   const handleConnect = () => {
     setIsConnected(!isConnected);
@@ -144,7 +159,7 @@ export default function Index() {
         const currentAllowance = await readTokenAllowance(
           voteParams.paymentToken,
           account.address as Address,
-          blockchain.contract_address
+          getBlockchain().contract_address
         );
 
         // Only approve if allowance is insufficient
@@ -217,7 +232,7 @@ export default function Index() {
         const currentAllowance = await readTokenAllowance(
           data.tokenAddress,
           account.address as Address,
-          blockchain.contract_address
+          getBlockchain().contract_address
         );
 
         // Only approve if allowance is insufficient
@@ -280,7 +295,14 @@ export default function Index() {
 
   return (
     <div className="min-h-screen textured-bg">
-      <Header onConnect={handleConnect} isConnected={isConnected} />
+      <Header
+        onConnect={handleConnect}
+        isConnected={isConnected}
+        onNetworkChange={() => {
+          // Trigger reload when network changes
+          setLastFetchedCount(0);
+        }}
+      />
       <div className="relative z-10">
         <MarketGrid
           markets={markets}
