@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { MarketBalance } from "./MarketBalance";
 import { Connector } from "@/tools/utils";
+import { useNetworkStore } from "@/store/networkStore";
 import { useActiveAccount } from "thirdweb/react";
 import {
   readPaymentToken,
@@ -14,8 +15,7 @@ import {
   calculatePlatformFeePercentage,
   isZeroAddress,
   ZERO_ADDRESS,
-  publicClient,
-  blockchain,
+  getPublicClient,
   type VoteParams,
 } from "@/tools/utils";
 import type { Address } from "viem";
@@ -49,6 +49,7 @@ export function VoteModal({
   optionA = "Yes",
   optionB = "No",
 }: VoteModalProps) {
+  const selectedNetwork = useNetworkStore((state) => state.selectedNetwork);
   const account = useActiveAccount();
   const [step, setStep] = useState<VoteStep>("select");
   const [selectedSignal, setSelectedSignal] = useState<boolean | null>(null);
@@ -66,8 +67,9 @@ export function VoteModal({
   // Fetch token symbol from blockchain
   const fetchTokenSymbol = useCallback(async (address: Address) => {
     try {
+      const client = getPublicClient(selectedNetwork);
       const erc20ABI = erc20.abi as Abi;
-      const symbol = await publicClient.readContract({
+      const symbol = await client.readContract({
         address: address,
         abi: erc20ABI,
         functionName: "symbol",
@@ -77,7 +79,7 @@ export function VoteModal({
       console.error("Failed to fetch token symbol:", err);
       setTokenSymbol(null);
     }
-  }, []);
+  }, [selectedNetwork]);
 
   // Log when modal opens
   useEffect(() => {
@@ -389,7 +391,7 @@ export function VoteModal({
                                   color: "hsl(210 100% 50%)",
                                 }}
                               >
-                                {tokenSymbol ? tokenSymbol : isZeroAddress(paymentToken) ? blockchain.symbol : "Token"}
+                                {tokenSymbol ? tokenSymbol : isZeroAddress(paymentToken) ? selectedNetwork.symbol : "Token"}
                               </span>
                             </p>
                           </motion.div>
@@ -413,7 +415,7 @@ export function VoteModal({
                               color: "hsl(210 100% 50%)",
                             }}
                           >
-                            ({tokenSymbol ? tokenSymbol : isZeroAddress(paymentToken) ? blockchain.symbol : "Token"})
+                            ({tokenSymbol ? tokenSymbol : isZeroAddress(paymentToken) ? selectedNetwork.symbol : "Token"})
                           </span>{" "}
                           *
                         </Label>

@@ -21,7 +21,6 @@ import type { Address } from "viem";
 import {
   getUserTotalClaimHistory,
   getUserClaims,
-  blockchain,
   truncateAddress,
   readMarketInfo,
   readPaymentToken,
@@ -31,6 +30,7 @@ import {
   type MarketInfoFormatted,
   Side,
 } from "@/tools/utils";
+import { useNetworkStore } from "@/store/networkStore";
 import { useMarketStore } from "@/store/marketStore";
 
 // Color palette for distinguishing markets
@@ -58,6 +58,7 @@ interface ClaimWithMarketInfo extends ClaimRecord {
 export default function History() {
   const navigate = useNavigate();
   const account = useActiveAccount();
+  const selectedNetwork = useNetworkStore((state) => state.selectedNetwork);
   const [claims, setClaims] = useState<ClaimWithMarketInfo[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -160,7 +161,7 @@ export default function History() {
               
               if (isZeroAddress(paymentToken)) {
                 // Zero address means it's ETH, use blockchain symbol
-                tokenSymbol = blockchain.symbol;
+                tokenSymbol = selectedNetwork.symbol;
               } else {
                 // It's a token, fetch its symbol
                 tokenSymbol = await readTokenSymbol(paymentToken);
@@ -526,7 +527,7 @@ export default function History() {
 
                           {/* Token link */}
                           <a
-                            href={`${blockchain.blockExplorer}/address/${claim.token}`}
+                            href={`${selectedNetwork.blockExplorer}/address/${claim.token}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             onClick={(e) => e.stopPropagation()}
