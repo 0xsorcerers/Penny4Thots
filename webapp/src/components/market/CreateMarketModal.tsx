@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { publicClient, isZeroAddress, ZERO_ADDRESS, blockchain, fetchDataConstants, calculatePlatformFeePercentage } from "@/tools/utils";
+import { getPublicClient, isZeroAddress, ZERO_ADDRESS, fetchDataConstants, calculatePlatformFeePercentage } from "@/tools/utils";
+import { useNetworkStore } from "@/store/networkStore";
 import { useTheme } from "@/hooks/useTheme";
 import blackLogo from "@/assets/images/black-no-bkg.webp";
 import type { CreateMarketData } from "@/types/market";
@@ -30,6 +31,7 @@ const PLACEHOLDER_IMAGES = [
 
 export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false }: CreateMarketModalProps) {
   const { theme } = useTheme();
+  const selectedNetwork = useNetworkStore((state) => state.selectedNetwork);
   const [step, setStep] = useState<"details" | "confirm">("details");
   const [formData, setFormData] = useState({
     title: "",
@@ -96,8 +98,9 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
   // Fetch token symbol from blockchain
   const fetchTokenSymbol = useCallback(async (address: string) => {
     try {
+      const client = getPublicClient(selectedNetwork);
       const erc20ABI = erc20.abi as Abi;
-      const symbol = await publicClient.readContract({
+      const symbol = await client.readContract({
         address: address as Address,
         abi: erc20ABI,
         functionName: "symbol",
@@ -109,7 +112,7 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
       setTokenSymbol(null);
       setTokenInputError(true);
     }
-  }, []);
+  }, [selectedNetwork]);
 
   // Validate image URL
   const validateImageUrl = useCallback((url: string) => {
@@ -713,11 +716,11 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
                               />
                               <div className="absolute inset-0 flex items-center justify-between px-3 pointer-events-none">
                                 <span className={`text-xs font-semibold transition-opacity ${
-                                  useToken 
-                                    ? "opacity-100 text-amber-700 dark:text-foreground/60" 
+                                  useToken
+                                    ? "opacity-100 text-amber-700 dark:text-foreground/60"
                                     : "opacity-0"
                                 }`}>
-                                  {blockchain.symbol}
+                                  {selectedNetwork.symbol}
                                 </span>
                                 <span className={`text-xs font-semibold transition-opacity ${
                                   useToken 
@@ -758,7 +761,7 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
                                       color: useToken ? "hsl(var(--accent))" : "hsl(var(--primary))",
                                     }}
                                   >
-                                    {useToken && tokenSymbol ? tokenSymbol : useToken ? "Token" : blockchain.symbol}
+                                    {useToken && tokenSymbol ? tokenSymbol : useToken ? "Token" : selectedNetwork.symbol}
                                   </span>
                                 </p>
                               </motion.div>
@@ -811,7 +814,7 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
                                   color: useToken ? "hsl(var(--accent))" : "hsl(var(--primary))",
                                 }}
                               >
-                                ({useToken && tokenSymbol ? tokenSymbol : useToken ? "Token" : blockchain.symbol})
+                                ({useToken && tokenSymbol ? tokenSymbol : useToken ? "Token" : selectedNetwork.symbol})
                               </span>{" "}
                               *
                             </Label>
