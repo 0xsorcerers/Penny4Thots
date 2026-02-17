@@ -7,6 +7,7 @@ import { sepolia as viemSepolia } from "viem/chains";
 import { ReactElement } from "react";
 import penny4thots from "../abi/penny4thots.json";
 import erc20 from "../abi/ERC20.json";
+import { chains } from "./networkData";
 
 const contractABI = penny4thots.abi as Abi;
 const erc20ABI = erc20.abi as Abi;
@@ -138,14 +139,14 @@ export const wallets = [
 // Blockchain Configuration
 // ============================================================================
 
-export const blockchain = {
+export const blockchain = ({
   chainId: 11155111,
   rpc: 'https://0xrpc.io/sep',
   blockExplorer: 'https://sepolia.etherscan.io',
   decimals: 18,
   symbol: 'sETH',
   contract_address: '0x929A04E8d5d8aFBCA5C6cE0e9Fe05f506081cc27' as Address,
-};
+})
 
 export const network = defineChain({ id: blockchain.chainId, rpc: blockchain.rpc });
 
