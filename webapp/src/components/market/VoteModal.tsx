@@ -16,6 +16,8 @@ import {
   isZeroAddress,
   ZERO_ADDRESS,
   getPublicClient,
+  readTokenDecimals,
+  toTokenSmallestUnit,
   type VoteParams,
 } from "@/tools/utils";
 import type { Address } from "viem";
@@ -56,6 +58,7 @@ export function VoteModal({
   const [amount, setAmount] = useState("");
   const [paymentToken, setPaymentToken] = useState<Address>(ZERO_ADDRESS);
   const [tokenSymbol, setTokenSymbol] = useState<string | null>(null);
+  const [tokenDecimals, setTokenDecimals] = useState<number>(18); // Default to 18
   const [marketBalance, setMarketBalance] = useState<string>("0");
   const [isLoadingData, setIsLoadingData] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -64,20 +67,28 @@ export function VoteModal({
   const [showProceedMessage, setShowProceedMessage] = useState(false);
   const [platformFeePercentage, setPlatformFeePercentage] = useState<number | null>(null);
 
-  // Fetch token symbol from blockchain
-  const fetchTokenSymbol = useCallback(async (address: Address) => {
+  // Fetch token symbol and decimals from blockchain
+  const fetchTokenInfo = useCallback(async (address: Address) => {
     try {
       const client = getPublicClient(selectedNetwork);
       const erc20ABI = erc20.abi as Abi;
-      const symbol = await client.readContract({
-        address: address,
-        abi: erc20ABI,
-        functionName: "symbol",
-      });
+      
+      // Fetch both symbol and decimals in parallel
+      const [symbol, decimals] = await Promise.all([
+        client.readContract({
+          address: address,
+          abi: erc20ABI,
+          functionName: "symbol",
+        }),
+        readTokenDecimals(address)
+      ]);
+      
       setTokenSymbol(symbol as string);
+      setTokenDecimals(decimals);
     } catch (err) {
-      console.error("Failed to fetch token symbol:", err);
+      console.error("Failed to fetch token info:", err);
       setTokenSymbol(null);
+      setTokenDecimals(18); // Reset to default
     }
   }, [selectedNetwork]);
 
@@ -91,6 +102,7 @@ export function VoteModal({
       setShowConnectCta(false);
       setShowProceedMessage(false);
       setTokenSymbol(null);
+      setTokenDecimals(18); // Reset to default
       fetchMarketPaymentData();
     }
   }, [isOpen, marketId, marketImage]);
@@ -146,9 +158,9 @@ export function VoteModal({
       const feePercentage = calculatePlatformFeePercentage(dataConstants.platformFee);
       setPlatformFeePercentage(feePercentage);
 
-      // If token is not zero address, fetch its symbol
+      // If token is not zero address, fetch its symbol and decimals
       if (!isZeroAddress(tokenAddress)) {
-        await fetchTokenSymbol(tokenAddress);
+        await fetchTokenInfo(tokenAddress);
       }
     } catch (err) {
       console.error("Failed to fetch market data:", err);
@@ -177,7 +189,16 @@ export function VoteModal({
     setError(null);
     setShowConnectCta(false);
     setShowProceedMessage(false);
-    const amountWei = BigInt(Math.floor(parseFloat(amount) * 1e18));
+    
+    // Convert amount using proper decimal handling
+    let amountWei: bigint;
+    if (!isZeroAddress(paymentToken)) {
+      // Token payment - use token decimals
+      amountWei = toTokenSmallestUnit(amount, tokenDecimals);
+    } else {
+      // ETH payment - use 18 decimals
+      amountWei = BigInt(Math.floor(parseFloat(amount) * 1e18));
+    }
 
     try {
       const voteParams: VoteParams = {

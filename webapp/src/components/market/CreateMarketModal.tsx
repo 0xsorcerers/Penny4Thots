@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { getPublicClient, isZeroAddress, ZERO_ADDRESS, fetchDataConstants, calculatePlatformFeePercentage } from "@/tools/utils";
+import { getPublicClient, isZeroAddress, ZERO_ADDRESS, fetchDataConstants, calculatePlatformFeePercentage, readTokenDecimals, toTokenSmallestUnit, formatTokenAmount } from "@/tools/utils";
 import { useNetworkStore } from "@/store/networkStore";
 import { useTheme } from "@/hooks/useTheme";
 import blackLogo from "@/assets/images/black-no-bkg.webp";
@@ -48,6 +48,7 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
   const [useToken, setUseToken] = useState(false);
   const [tokenAddress, setTokenAddress] = useState("");
   const [tokenSymbol, setTokenSymbol] = useState<string | null>(null);
+  const [tokenDecimals, setTokenDecimals] = useState<number>(18); // Default to 18
   const [tokenInputError, setTokenInputError] = useState(false);
   const [platformFeePercentage, setPlatformFeePercentage] = useState<number | null>(null);
   const [posterImageError, setPosterImageError] = useState<string | null>(null);
@@ -95,21 +96,29 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
   // Get current end time as unix timestamp
   const endTimeTimestamp = useMemo(() => validateEndTime(), [validateEndTime]);
 
-  // Fetch token symbol from blockchain
-  const fetchTokenSymbol = useCallback(async (address: string) => {
+  // Fetch token symbol and decimals from blockchain
+  const fetchTokenInfo = useCallback(async (address: string) => {
     try {
       const client = getPublicClient(selectedNetwork);
       const erc20ABI = erc20.abi as Abi;
-      const symbol = await client.readContract({
-        address: address as Address,
-        abi: erc20ABI,
-        functionName: "symbol",
-      });
+      
+      // Fetch both symbol and decimals in parallel
+      const [symbol, decimals] = await Promise.all([
+        client.readContract({
+          address: address as Address,
+          abi: erc20ABI,
+          functionName: "symbol",
+        }),
+        readTokenDecimals(address as Address)
+      ]);
+      
       setTokenSymbol(symbol as string);
+      setTokenDecimals(decimals);
       setTokenInputError(false);
     } catch (err) {
-      console.error("Failed to fetch token symbol:", err);
+      console.error("Failed to fetch token info:", err);
       setTokenSymbol(null);
+      setTokenDecimals(18); // Reset to default
       setTokenInputError(true);
     }
   }, [selectedNetwork]);
@@ -156,11 +165,12 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
   const handleTokenAddressChange = (value: string) => {
     setTokenAddress(value);
     setTokenSymbol(null);
+    setTokenDecimals(18); // Reset to default
     setTokenInputError(false);
 
     // Validate address format (42 characters including 0x)
     if (value.length === 42 && value.startsWith("0x")) {
-      fetchTokenSymbol(value);
+      fetchTokenInfo(value);
     } else if (value.length > 0) {
       setTokenInputError(true);
     }
@@ -186,6 +196,7 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
     setUseToken(!useToken);
     setTokenAddress("");
     setTokenSymbol(null);
+    setTokenDecimals(18); // Reset to default
     setTokenInputError(false);
   };
 
@@ -280,6 +291,7 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
       setUseToken(false);
       setTokenAddress("");
       setTokenSymbol(null);
+      setTokenDecimals(18); // Reset to default
       setEndDate("");
       setEndTimeInput("");
       setEndTimeError(null);
@@ -298,6 +310,7 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
     setUseToken(false);
     setTokenAddress("");
     setTokenSymbol(null);
+    setTokenDecimals(18); // Reset to default
     setTokenInputError(false);
     setEndDate("");
     setEndTimeInput("");

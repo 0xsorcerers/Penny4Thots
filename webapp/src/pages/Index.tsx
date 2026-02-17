@@ -7,7 +7,7 @@ import { VoteModal } from "@/components/market/VoteModal";
 import { useMarketStore } from "@/store/marketStore";
 import { useNetworkStore } from "@/store/networkStore";
 import { useActiveAccount } from "thirdweb/react";
-import { useWriteMarket, useVote, useTokenApprove, fetchMarketsFromBlockchain, fetchMarketDataFromBlockchain, readMarketCount, readPaymentToken, readTokenAllowance, readTokenBalance, toWei, isZeroAddress, getBlockchain, formatEther, type VoteParams } from "@/tools/utils";
+import { useWriteMarket, useVote, useTokenApprove, fetchMarketsFromBlockchain, fetchMarketDataFromBlockchain, readMarketCount, readPaymentToken, readTokenAllowance, readTokenBalance, readTokenDecimals, toWei, toTokenSmallestUnit, fromTokenSmallestUnit, isZeroAddress, getBlockchain, formatEther, type VoteParams } from "@/tools/utils";
 import type { CreateMarketData } from "@/types/market";
 import type { Address } from "viem";
 import { toast } from "sonner";
@@ -147,12 +147,13 @@ export default function Index() {
 
         // Check if user has sufficient balance
         if (userBalance < voteParams.marketBalance) {
-          const balanceInEth = formatEther(userBalance);
-          const requiredInEth = formatEther(voteParams.marketBalance);
+          const tokenDecimals = await readTokenDecimals(voteParams.paymentToken);
+          const balanceFormatted = fromTokenSmallestUnit(userBalance, tokenDecimals);
+          const requiredFormatted = fromTokenSmallestUnit(voteParams.marketBalance, tokenDecimals);
           toast.error("Insufficient token balance", {
-            description: `You have ${balanceInEth} but need ${requiredInEth}`,
+            description: `You have ${balanceFormatted} but need ${requiredFormatted}`,
           });
-          throw new Error(`Insufficient balance: have ${balanceInEth}, need ${requiredInEth}`);
+          throw new Error(`Insufficient balance: have ${balanceFormatted}, need ${requiredFormatted}`);
         }
 
         // Balance is sufficient - now check allowance
@@ -205,7 +206,16 @@ export default function Index() {
 
     setIsSubmitting(true);
     try {
-      const marketBalanceBigInt = toWei(data.marketBalance);
+      // Convert market balance using appropriate decimal handling
+      let marketBalanceBigInt: bigint;
+      if (data.useToken) {
+        // Get token decimals for proper conversion
+        const tokenDecimals = await readTokenDecimals(data.tokenAddress);
+        marketBalanceBigInt = toTokenSmallestUnit(data.marketBalance, tokenDecimals);
+      } else {
+        // Use ETH conversion (18 decimals)
+        marketBalanceBigInt = toWei(data.marketBalance);
+      }
 
       // _signal is true for Option A (YES), false for Option B (NO)
       const signal = data.signal;
@@ -220,12 +230,13 @@ export default function Index() {
 
         // Check if user has sufficient balance
         if (userBalance < marketBalanceBigInt) {
-          const balanceInEth = formatEther(userBalance);
-          const requiredInEth = formatEther(marketBalanceBigInt);
+          const tokenDecimals = await readTokenDecimals(data.tokenAddress);
+          const balanceFormatted = fromTokenSmallestUnit(userBalance, tokenDecimals);
+          const requiredFormatted = fromTokenSmallestUnit(marketBalanceBigInt, tokenDecimals);
           toast.error("Insufficient token balance", {
-            description: `You have ${balanceInEth} but need ${requiredInEth}`,
+            description: `You have ${balanceFormatted} but need ${requiredFormatted}`,
           });
-          throw new Error(`Insufficient balance: have ${balanceInEth}, need ${requiredInEth}`);
+          throw new Error(`Insufficient balance: have ${balanceFormatted}, need ${requiredFormatted}`);
         }
 
         // Balance is sufficient - now check allowance
