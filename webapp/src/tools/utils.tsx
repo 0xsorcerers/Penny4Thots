@@ -242,6 +242,7 @@ export const readMarketData = async (ids: number[]): Promise<MarketDataFormatted
   return marketDataArray.map((marketData) => ({
     indexer: 0, // Will be filled from context
     creator: marketData.creator,
+    status: marketData.status,
     closed: marketData.closed,
     marketBalance: formatEther(marketData.marketBalance),
     activity: formatEther(marketData.activity),
@@ -250,7 +251,6 @@ export const readMarketData = async (ids: number[]): Promise<MarketDataFormatted
     // === Shares system ===
     startTime: Number(marketData.startTime),
     endTime: Number(marketData.endTime),
-    closed: marketData.closed,
     winningSide: marketData.winningSide as Side,
     totalSharesA: formatEther(marketData.totalSharesA),
     totalSharesB: formatEther(marketData.totalSharesB),

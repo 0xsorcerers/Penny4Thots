@@ -16,7 +16,7 @@ import { Abi } from "viem";
 interface CreateMarketModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (data: CreateMarketData & { marketBalance: string; initialVote: "YES" | "NO" | null; useToken: boolean; tokenAddress: Address; endTime: number }) => Promise<void>;
+  onSubmit: (data: CreateMarketData & { marketBalance: string; initialVote: "YES" | "NO" | null; useToken: boolean; tokenAddress: Address; endTime: number; signal: boolean; feetype: boolean }) => Promise<void>;
   isLoading?: boolean;
 }
 
