@@ -89,13 +89,14 @@ function safeParseArray(raw) {
     return null;
   }
 }
+
 // ================= CONSENSUS ENGINE =================
 async function batchDetermineWinners(expiredMarkets) {
-
-  if (!expiredMarkets.length) return [];
+  if (!expiredMarkets.length) {
+    return { resolved: [], voteMap: {} };
+  }
 
   log(`Sending ${expiredMarkets.length} expired markets to AI consensus.`);
-
   const payload = JSON.stringify(expiredMarkets);
 
   async function queryOpenAI() {
@@ -108,7 +109,6 @@ async function batchDetermineWinners(expiredMarkets) {
           { role: "user", content: payload }
         ]
       });
-
       log(`OpenAI responded (${expiredMarkets.length} markets).`);
       return safeParseArray(res.choices[0].message.content.trim());
     } catch (err) {
@@ -127,7 +127,6 @@ async function batchDetermineWinners(expiredMarkets) {
           { role: "user", content: payload }
         ]
       });
-
       log(`DeepSeek responded (${expiredMarkets.length} markets).`);
       return safeParseArray(res.choices[0].message.content.trim());
     } catch (err) {
@@ -144,7 +143,6 @@ async function batchDetermineWinners(expiredMarkets) {
         system: resolutionInstruction,
         messages: [{ role: "user", content: payload }]
       });
-
       log(`Anthropic responded (${expiredMarkets.length} markets).`);
       return safeParseArray(res.content[0].text.trim());
     } catch (err) {
@@ -153,51 +151,105 @@ async function batchDetermineWinners(expiredMarkets) {
     }
   }
 
-  const [openaiRes, deepseekRes, anthropicRes] =
-    await Promise.all([
-      queryOpenAI(),
-      queryDeepSeek(),
-      queryAnthropic()
-    ]);
+  const [openaiRes, deepseekRes, anthropicRes] = await Promise.all([
+    queryOpenAI(),
+    queryDeepSeek(),
+    queryAnthropic()
+  ]);
 
-  const modelOutputs = [openaiRes, deepseekRes, anthropicRes]
-    .filter(r => Array.isArray(r));
-
+  const modelOutputs = [openaiRes, deepseekRes, anthropicRes].filter(r => Array.isArray(r));
   if (modelOutputs.length < 2) {
     log(`Not enough AI responses for consensus.`);
-    return [];
+    return { resolved: [], voteMap: {} };
   }
 
   const voteMap = {};
+  const modelNames = ["openai", "deepseek", "anthropic"];
+  const modelOutputsRaw = [openaiRes, deepseekRes, anthropicRes];
 
-  for (const output of modelOutputs) {
+  for (let m = 0; m < modelOutputsRaw.length; m++) {
+    const output = modelOutputsRaw[m];
+    const modelName = modelNames[m];
+    if (!Array.isArray(output)) continue;
+
     for (const item of output) {
+      if (!item?.indexer || !["A", "B"].includes(item.decision)) continue;
 
-      if (!item?.indexer || !["A", "B"].includes(item.decision))
-        continue;
+      if (!voteMap[item.indexer]) {
+        voteMap[item.indexer] = { votes: { A: 0, B: 0 }, models: {} };
+      }
 
-      if (!voteMap[item.indexer])
-        voteMap[item.indexer] = { A: 0, B: 0 };
-
-      voteMap[item.indexer][item.decision]++;
+      voteMap[item.indexer].votes[item.decision]++;
+      voteMap[item.indexer].models[modelName] = item.decision;
     }
   }
 
   const finalResults = [];
-
-  for (const [indexer, votes] of Object.entries(voteMap)) {
-
+  for (const [indexer, data] of Object.entries(voteMap)) {
+    const { votes, models } = data;
     log(`Market ${indexer} votes → A:${votes.A} B:${votes.B}`);
 
-    if (votes.A >= 2)
-      finalResults.push({ indexer: Number(indexer), decision: "A" });
-    else if (votes.B >= 2)
-      finalResults.push({ indexer: Number(indexer), decision: "B" });
-    else
+    if (votes.A >= 2 || votes.B >= 2) {
+      const winner = votes.A >= 2 ? "A" : "B";
+      finalResults.push({ indexer: Number(indexer), decision: winner, models, deadlockBrokenBy: null });
+    } else {
       log(`No consensus for market ${indexer}. Skipping.`);
+    }
   }
 
-  return finalResults;
+  return { resolved: finalResults, voteMap };
+}
+
+async function finalArbiterResolve(market, luckyJudge) {
+  log(`Deadlock detected for market ${market.indexer}. Random arbiter selected: ${luckyJudge}`);
+  const payload = JSON.stringify([market]);
+
+  try {
+    if (luckyJudge === "openai") {
+      const res = await openai.chat.completions.create({
+        model: "gpt-4o",
+        temperature: 0,
+        messages: [
+          { role: "system", content: resolutionInstruction },
+          { role: "user", content: payload }
+        ]
+      });
+      const parsed = safeParseArray(res.choices[0].message.content.trim());
+      if (parsed?.[0]) return { ...parsed[0], deadlockBrokenBy: luckyJudge };
+      return null;
+    }
+
+    if (luckyJudge === "deepseek") {
+      const res = await deepseekai.chat.completions.create({
+        model: "deepseek-chat",
+        temperature: 0,
+        messages: [
+          { role: "system", content: resolutionInstruction },
+          { role: "user", content: payload }
+        ]
+      });
+      const parsed = safeParseArray(res.choices[0].message.content.trim());
+      if (parsed?.[0]) return { ...parsed[0], deadlockBrokenBy: luckyJudge };
+      return null;
+    }
+
+    if (luckyJudge === "anthropic") {
+      const res = await anthropic.messages.create({
+        model: "claude-3-7-sonnet-20250219",
+        max_tokens: 2000,
+        system: resolutionInstruction,
+        messages: [{ role: "user", content: payload }]
+      });
+      const parsed = safeParseArray(res.content[0].text.trim());
+      if (parsed?.[0]) return { ...parsed[0], deadlockBrokenBy: luckyJudge };
+      return null;
+    }
+  } catch (err) {
+    log(`Final arbiter error: ${err.message}`);
+    return null;
+  }
+
+  return null;
 }
 
 
@@ -225,7 +277,17 @@ const networks = [
   {
     name: 'sepolia',
     rpc: 'https://ethereum-sepolia-rpc.publicnode.com',
-    contract: '0x929A04E8d5d8aFBCA5C6cE0e9Fe05f506081cc27' // 0xdFece4CFBFc01e511dc1015422EC3cdE96A27188
+    contract: '0x929A04E8d5d8aFBCA5C6cE0e9Fe05f506081cc27'
+  },
+  {
+    name: 'bnb',
+    rpc: 'https://bsc-dataseed.binance.org',
+    contract: '0x683a3d9b7723f29eaf2e5511F94F02Dab5f1a633'
+  },
+  {
+    name: 'opbnb',
+    rpc: 'https://opbnb-mainnet-rpc.bnbchain.org',
+    contract: '0x9dc5736Db801272B2357962448B189f5A77a5e36'
   }
 ];
 
@@ -289,7 +351,7 @@ async function monitorNetwork(networkConfig) {
       log(`[${name}] Reading batch ${i} → ${i + batch.length - 1}`);
 
       const marketDataArray = await readContract.readMarketData(batch);
-      log(`All new markets Data read.`);
+      log(`All new markets data read.`);
       const marketInfoArray = await readContract.readMarket(batch);
       log(`All new markets read.`);
       await AntiAbuseBlacklister(marketInfoArray, writeContract);
@@ -303,7 +365,8 @@ async function monitorNetwork(networkConfig) {
           closed: data.closed,
           finalized: false,
           finalizedUpTo: 0,
-          finalizeRetries: 0
+          finalizeRetries: 0,
+          consensusAttempts: 0
         };
 
         log(`[${name}] Market ${id} tracked | EndTime: ${data.endTime}`);
@@ -318,14 +381,12 @@ async function monitorNetwork(networkConfig) {
   } else {
     log(`[${name}] No new markets.`);
   }
-  
 
   // ================= MARKET CLOSURE =================
 
   const now = Math.floor(Date.now() / 1000);
   const expiredIds = [];
 
-  // Step 1: Collect expired market IDs
   for (const [marketId, market] of Object.entries(state.markets)) {
     if (!market.closed && market.endTime <= now) {
       expiredIds.push(Number(marketId));
@@ -334,84 +395,114 @@ async function monitorNetwork(networkConfig) {
 
   if (expiredIds.length === 0) {
     log(`[${name}] No expired markets to resolve.`);
-  } else {
+    return;
+  }
 
-    log(`[${name}] Found ${expiredIds.length} expired markets.`);
+  log(`[${name}] Found ${expiredIds.length} expired markets.`);
 
-    const chunkSize = 200; // contract-safe batch limit
-    const expiredMarkets = [];
+  const chunkSize = 200;
+  const expiredMarkets = [];
 
-    // Step 2: Chunked batch reading
-    for (let i = 0; i < expiredIds.length; i += chunkSize) {
+  for (let i = 0; i < expiredIds.length; i += chunkSize) {
+    const chunkIds = expiredIds.slice(i, i + chunkSize);
+    log(`[${name}] Reading chunk ${i / chunkSize + 1} (${chunkIds.length} markets)`);
+    const marketInfos = await readContract.readMarket(chunkIds);
 
-      const chunkIds = expiredIds.slice(i, i + chunkSize);
+    for (let j = 0; j < chunkIds.length; j++) {
+      const id = chunkIds[j];
+      const info = marketInfos[j];
+      expiredMarkets.push({
+        indexer: id,
+        title: info.title,
+        subtitle: info.subtitle,
+        description: info.description,
+        optionA: info.optionA,
+        optionB: info.optionB,
+        endTime: state.markets[id].endTime
+      });
+    }
 
-      log(`[${name}] Reading chunk ${i / chunkSize + 1} (${chunkIds.length} markets)`);
-
-      const marketInfos = await readContract.readMarket(chunkIds);
-
-      // Step 3: Map returned data deterministically
-      for (let j = 0; j < chunkIds.length; j++) {
-
-        const id = chunkIds[j];
-        const info = marketInfos[j];
-
-        expiredMarkets.push({
-          indexer: id,
-          title: info.title,
-          subtitle: info.subtitle,
-          description: info.description,
-          optionA: info.optionA,
-          optionB: info.optionB,
-          endTime: state.markets[id].endTime
-        });
-      }
-
-    // Optional minor delay to reduce RPC pressure
     await sleep(300);
   }
 
   log(`[${name}] Sending ${expiredMarkets.length} markets to AI consensus`);
 
-  const aiChunkSize = 50; // Defensive AI batch limit
+  const aiChunkSize = 50;
   const decisions = [];
 
   for (let i = 0; i < expiredMarkets.length; i += aiChunkSize) {
-
     const aiChunk = expiredMarkets.slice(i, i + aiChunkSize);
-
     log(`[${name}] AI consensus batch ${Math.floor(i / aiChunkSize) + 1} (${aiChunk.length} markets)`);
+    const consensusResult = await batchDetermineWinners(aiChunk);
 
-    const chunkResults = await batchDetermineWinners(aiChunk);
-
-    if (Array.isArray(chunkResults) && chunkResults.length > 0) {
-      decisions.push(...chunkResults);
+    if (consensusResult?.resolved?.length > 0) {
+      decisions.push(...consensusResult.resolved);
     }
 
-  const hash = crypto
-    .createHash('sha256')
-    .update(JSON.stringify(aiChunk))
-    .digest('hex');
+    if (consensusResult?.voteMap) {
+      for (const [id, data] of Object.entries(consensusResult.voteMap)) {
+        if (!state.markets[id]) continue;
+        state.markets[id].lastVoteModels = data.models;
+      }
+    }
 
-  log(`AI batch hash: ${hash}`);
-
-    // Slight delay to avoid rate-limit bursts
+    const hash = crypto.createHash('sha256').update(JSON.stringify(aiChunk)).digest('hex');
+    log(`AI batch hash: ${hash}`);
     await sleep(500);
   }
 
   log(`[${name}] AI consensus complete. ${decisions.length} markets resolved.`);
 
+  // ================= DEADLOCK HANDLING =================
 
-  // Step 5: Sequential closure (safe nonce handling)
+  const latestBlock = await provider.getBlock("latest");
+
+  for (const market of expiredMarkets) {
+    const seed = crypto
+      .createHash("sha256")
+      .update(`${latestBlock.hash}-${market.indexer}`)
+      .digest("hex");
+    const judges = ["openai", "deepseek", "anthropic"];
+    const index = parseInt(seed.slice(0, 8), 16) % judges.length;
+    const luckyJudge = judges[index];
+
+    const id = market.indexer;
+    const resolvedIds = new Set(decisions.map(d => d.indexer));
+
+    if (resolvedIds.has(id)) {
+      state.markets[id].consensusAttempts = 0;
+      continue;
+    }
+
+    state.markets[id].consensusAttempts = (state.markets[id].consensusAttempts || 0) + 1;
+    log(`[${name}] Market ${id} deadlock attempt ${state.markets[id].consensusAttempts}`);
+
+    if (state.markets[id].consensusAttempts >= 3) {
+      const arbiterDecision = await finalArbiterResolve(market, luckyJudge);
+
+      if (arbiterDecision && ["A", "B"].includes(arbiterDecision.decision)) {
+        log(`[${name}] Final arbiter resolved market ${id} → ${arbiterDecision.decision}`);
+        decisions.push({
+          indexer: id,
+          decision: arbiterDecision.decision,
+          models: state.markets[id].lastVoteModels || {},
+          deadlockBrokenBy: arbiterDecision.deadlockBrokenBy
+        });
+        state.markets[id].consensusAttempts = 0;
+      } else {
+        log(`[${name}] Final arbiter failed for market ${id}. Will retry next run.`);
+      }
+    }
+  }
+
+  saveState(name, state);
+
+  // ================= SEQUENTIAL CLOSURE =================
   for (const result of decisions) {
-
     const resolvedToOptionA = result.decision === "A";
 
     try {
-
-      // 🔎 --- ON-CHAIN STATE RESYNC ---
       const data = await readContract.readMarketData([result.indexer]);
-
       if (data[0].closed) {
         state.markets[result.indexer].closed = true;
         log(`[${name}] Market ${result.indexer} already closed on-chain. Syncing state.`);
@@ -419,38 +510,66 @@ async function monitorNetwork(networkConfig) {
         continue;
       }
 
-      // 🔐 Safety static call
-      await writeContract.closeMarket.staticCall(
-        result.indexer,
-        resolvedToOptionA
+      // ================= BUILD ADJUDICATOR STRING =================
+      const minedBlock = await provider.getBlock("latest"); // fallback for timestamp
+      const dateObj = new Date(minedBlock.timestamp * 1000);
+      const formattedDate = `${String(dateObj.getMonth() + 1).padStart(2,'0')}/` +
+                            `${String(dateObj.getDate()).padStart(2,'0')}/` +
+                            `${dateObj.getFullYear()}`;
+
+      const decisionHash = crypto.createHash('sha256')
+        .update(`${result.indexer}-${result.decision}-${JSON.stringify(result.models || {})}`)
+        .digest('hex');
+
+      const modelLabelMap = {
+        openai: "OpenAI(gpt-4o)",
+        deepseek: "DeepSeek(deepseek-chat)",
+        anthropic: "Anthropic(claude-3-7-sonnet)"
+      };
+
+      const judgeEntries = Object.entries(result.models || {}).map(
+        ([model, vote]) => `${modelLabelMap[model]} voted ${vote}`
       );
 
+      let adjudicatorString =
+        `At ${formattedDate}, decision ${decisionHash} to close market ${result.indexer} ` +
+        `was reached by ${judgeEntries.length} judges: ${judgeEntries.join(", ")}.`;
+
+      if (result.deadlockBrokenBy) {
+        adjudicatorString += ` The deadlock was broken by ${modelLabelMap[result.deadlockBrokenBy]}.`;
+      }
+
+      // 🔐 Static call
+      await writeContract.closeMarket.staticCall(
+        result.indexer,
+        resolvedToOptionA,
+        adjudicatorString
+      );
+
+      // ✅ Send TX
       const tx = await writeContract.closeMarket(
         result.indexer,
         resolvedToOptionA,
+        adjudicatorString,
         { gasLimit: 500000 }
       );
 
-      log(`[${name}] Closing TX sent: ${tx.hash}`);
-      await tx.wait();
+      const receipt = await tx.wait();
+      const minedBlockFinal = await provider.getBlock(receipt.blockNumber);
 
       state.markets[result.indexer].closed = true;
       saveState(name, state);
 
       log(`[${name}] Market ${result.indexer} closed → ${result.decision}`);
-
     } catch (err) {
       log(`[${name}] Close failed for ${result.indexer}: ${err.message}`);
     }
 
     await sleep(1000);
   }
-}
 
   // ================= FINALIZATION =================
-
   for (const [marketId, market] of Object.entries(state.markets)) {
-
     if (market.closed && !market.finalized && market.finalizeRetries < maxRetryAttempts) {
       log(`[${name}] Market ${marketId} closed. Starting finalization...`);
       await finalizeMarket(name, Number(marketId), readContract, writeContract, state);
@@ -465,7 +584,7 @@ async function finalizeMarket(networkName, marketId, readContract, writeContract
 
   while (state.markets[marketId].finalizeRetries < maxRetryAttempts) {
     try {
-      // Read the market lock to check progress
+      // Check on-chain lock status
       const lock = await readContract.allMarketLocks(marketId);
 
       if (lock.sharesFinalized) {
@@ -475,12 +594,12 @@ async function finalizeMarket(networkName, marketId, readContract, writeContract
         break;
       }
 
-      // Call finalizeShares
+      // Preview finalizeShares call
       const preview = await writeContract.finalizeShares.staticCall(marketId);
       let done = preview[0], remaining = Number(preview[1]), nextBatchSize = Number(preview[2]);
+
       const tx = await writeContract.finalizeShares(marketId, { gasLimit: 500000 });
       await tx.wait();
-
 
       log(`[${networkName}] Market ${marketId} finalizeShares called | done: ${done}, remaining: ${remaining}, nextBatch: ${nextBatchSize}`);
 
@@ -493,9 +612,8 @@ async function finalizeMarket(networkName, marketId, readContract, writeContract
 
       log(`[${networkName}] Market ${marketId} not fully finalized. Retrying in ${batchDelay / 1000}s...`);
       await sleep(batchDelay);
-
     } catch (err) {
-      state.markets[marketId].finalizeRetries += 1;
+      state.markets[marketId].finalizeRetries++;
       log(`[${networkName}] Finalization attempt ${state.markets[marketId].finalizeRetries} failed for market ${marketId}: ${err.message}`);
       await sleep(batchDelay);
 
@@ -514,12 +632,11 @@ async function finalizeMarket(networkName, marketId, readContract, writeContract
 
 // ================= AI BLACKLISTER =================
 async function AntiAbuseBlacklister(marketInfoArray, writeContract) {
-      log(`Running anti-abuse for new markets.`);
+  log(`Running anti-abuse for new markets.`);
 
   if (!marketInfoArray || marketInfoArray.length === 0) return;
 
   const payload = prepareMarketPayload(marketInfoArray);
-
   const instruction = blacklistInstructionManual;
 
   try {
@@ -529,65 +646,52 @@ async function AntiAbuseBlacklister(marketInfoArray, writeContract) {
       messages: [
         { role: "system", content: instruction },
         { role: "user", content: JSON.stringify(payload) }
-      ],
+      ]
     });
 
     const raw = completion.choices[0].message.content.trim();
-
     let parsed;
 
     try {
       parsed = JSON.parse(raw);
     } catch {
-      console.error("AI returned invalid JSON:", raw);
-      log(`AI returned invalid JSON.`);
+      log(`AI returned invalid JSON: ${raw}`);
       return;
     }
 
     if (!Array.isArray(parsed)) {
-      console.error("AI output was not array:", parsed);
-      log(`AI output was not array.`);
+      log(`AI output was not an array: ${parsed}`);
       return;
     }
 
     if (parsed.length === 0) {
-      console.log("Batch clean. No abusive markets detected.");
       log(`Batch clean. No abusive markets detected.`);
       return;
     }
 
-    // Sanitize IDs
+    // Filter valid IDs only
     const validIds = parsed.filter(id =>
       Number.isInteger(id) &&
       payload.some(m => m.indexer === id)
     );
 
     if (validIds.length === 0) {
-      console.log("AI returned invalid marketIds.");
       log(`AI returned invalid marketIds.`);
       return;
     }
 
-    console.log("Blacklisting markets:", validIds);
-      log(`Blacklisting markets: ${validIds}`);
+    log(`Blacklisting markets: ${validIds}`);
 
-    const tx = await writeContract.AddToBlacklist(validIds, {
-      gasLimit: 500000
-    });
-
+    const tx = await writeContract.AddToBlacklist(validIds, { gasLimit: 500000 });
     await tx.wait();
 
-    console.log("Blacklist confirmed.");
-      log(`Blacklist confirmed.`);
-
+    log(`Blacklist confirmed.`);
   } catch (error) {
-    console.error("OpenAI API Error:", error);
-      log(`OpenAI API Error.`);
+    log(`OpenAI API Error: ${error.message}`);
   }
 }
 
 // ================= MAIN =================
-
 async function run() {
   log("Cron monitor execution started.");
 

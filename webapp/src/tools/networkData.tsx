@@ -17,7 +17,7 @@ const sepolia: NetworkConfig = {
   blockExplorer: 'https://sepolia.etherscan.io',
   decimals: 18,
   symbol: 'sETH',
-  contract_address: '0x929A04E8d5d8aFBCA5C6cE0e9Fe05f506081cc27' as Address,
+  contract_address: '0x7DeA875A4D644aB78e0914FFF8b760bE5e8F54cb' as Address,
 };
 
 const bnb: NetworkConfig = {
@@ -27,7 +27,7 @@ const bnb: NetworkConfig = {
   blockExplorer: 'https://bscscan.com',
   decimals: 18,
   symbol: 'BNB',
-  contract_address: '0x683a3d9b7723f29eaf2e5511F94F02Dab5f1a633' as Address,
+  contract_address: '0x13B9CD2340E8224D4c1CC86d3481c217d9078AAe' as Address,
 };
 
 const opbnb: NetworkConfig = {
@@ -37,7 +37,7 @@ const opbnb: NetworkConfig = {
   blockExplorer: 'https://opbnb.bscscan.com',
   decimals: 18,
   symbol: 'BNB',
-  contract_address: '0x9dc5736Db801272B2357962448B189f5A77a5e36' as Address,
+  contract_address: '0x8d4a1A116Fd092D21b47Aa29a1882995af234353' as Address,
 };
 
 const chains: NetworkConfig[] = [sepolia, bnb, opbnb];
