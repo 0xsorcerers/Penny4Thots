@@ -741,7 +741,7 @@ export default function MarketPage() {
 
 
 
-  const handleBuySell = (action: "buy" | "sell") => {
+  const handleKamikaze = (action: "kamikaze" | "fullKamikaze") => {
 
 
 
@@ -1782,7 +1782,7 @@ export default function MarketPage() {
 
 
 
-                  key="buy-sell-buttons"
+                  key="kamikaze-buttons"
 
 
 
@@ -1810,11 +1810,11 @@ export default function MarketPage() {
 
 
 
-                    onClick={() => handleBuySell("buy")}
+                    onClick={() => handleKamikaze("kamikaze")}
 
 
 
-                    className="rounded-xl bg-yes py-6 font-outfit text-lg font-bold text-yes-foreground transition-all hover:bg-yes/90 hover:shadow-[0_0_30px_rgba(var(--yes),0.3)]"
+                    className="rounded-xl bg-red-600 py-6 font-outfit text-lg font-bold text-white transition-all hover:bg-red-700 hover:shadow-[0_0_30px_rgba(239,68,68,0.3)]"
 
 
 
@@ -1834,11 +1834,11 @@ export default function MarketPage() {
 
 
 
-                    onClick={() => handleBuySell("sell")}
+                    onClick={() => handleKamikaze("fullKamikaze")}
 
 
 
-                    className="rounded-xl bg-no py-6 font-outfit text-lg font-bold text-no-foreground transition-all hover:bg-no/90 hover:shadow-[0_0_30px_rgba(var(--no),0.3)]"
+                    className="rounded-xl bg-red-800 py-6 font-outfit text-lg font-bold text-white transition-all hover:bg-red-900 hover:shadow-[0_0_30px_rgba(127,29,29,0.3)]"
 
 
 

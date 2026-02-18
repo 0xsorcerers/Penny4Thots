@@ -63,6 +63,31 @@
 		"inputs": [
 			{
 				"indexed": true,
+				"internalType": "uint256",
+				"name": "marketId",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"internalType": "address",
+				"name": "token",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "amount",
+				"type": "uint256"
+			}
+		],
+		"name": "CapitalRescued",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": true,
 				"internalType": "address",
 				"name": "user",
 				"type": "address"
@@ -409,6 +434,25 @@
 				"type": "uint256"
 			}
 		],
+		"name": "adjudicators",
+		"outputs": [
+			{
+				"internalType": "string",
+				"name": "",
+				"type": "string"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
 		"name": "allMarketData",
 		"outputs": [
 			{
@@ -464,6 +508,11 @@
 			{
 				"internalType": "uint256",
 				"name": "totalSharesB",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "totalWinningPrincipal",
 				"type": "uint256"
 			},
 			{
@@ -614,6 +663,11 @@
 				"internalType": "bool",
 				"name": "_signalWinner",
 				"type": "bool"
+			},
+			{
+				"internalType": "string",
+				"name": "_presidingJudges",
+				"type": "string"
 			}
 		],
 		"name": "closeMarket",
@@ -1245,6 +1299,11 @@
 					},
 					{
 						"internalType": "uint256",
+						"name": "totalWinningPrincipal",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
 						"name": "positionCount",
 						"type": "uint256"
 					},
@@ -1271,6 +1330,19 @@
 			}
 		],
 		"name": "removeFromBlacklist",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "_market",
+				"type": "uint256"
+			}
+		],
+		"name": "rescueLostCapital",
 		"outputs": [],
 		"stateMutability": "nonpayable",
 		"type": "function"
@@ -1757,4 +1829,4 @@
 		"stateMutability": "payable",
 		"type": "function"
 	}
- ]
+]
