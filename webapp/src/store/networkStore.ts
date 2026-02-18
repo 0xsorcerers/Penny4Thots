@@ -1,17 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { chains } from "@/tools/networkData";
+import { chains, type NetworkConfig } from "@/tools/networkData";
 import type { Address } from "viem";
-
-export interface NetworkConfig {
-  name: string;
-  chainId: number;
-  rpc: string;
-  blockExplorer: string;
-  decimals: number;
-  symbol: string;
-  contract_address: Address;
-}
 
 interface NetworkStore {
   selectedNetwork: NetworkConfig;
