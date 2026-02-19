@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Timer, Clock, Flame, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { readAdjudicators, renderParsedAdjudicators } from "../../tools/utils";
 
 interface CountdownTimerProps {
   endTime: number; // Unix timestamp in seconds
@@ -8,6 +9,7 @@ interface CountdownTimerProps {
   sharesFinalized?: boolean | null; // For market page - null = loading, false = resolving, true = finalized
   compact?: boolean; // For market cards
   className?: string;
+  marketId?: number; // Market ID for fetching adjudicators
 }
 
 interface TimeRemaining {
@@ -149,8 +151,10 @@ export function CountdownTimer({ endTime, closed, compact = false, className = "
 }
 
 // Larger version for MarketPage
-export function CountdownTimerLarge({ endTime, closed, sharesFinalized, className = "" }: CountdownTimerProps) {
+export function CountdownTimerLarge({ endTime, closed, sharesFinalized, className = "", marketId }: CountdownTimerProps) {
   const [timeRemaining, setTimeRemaining] = useState<TimeRemaining>(() => calculateTimeRemaining(endTime));
+  const [adjudicators, setAdjudicators] = useState<string>("");
+  const [isLoadingAdjudicators, setIsLoadingAdjudicators] = useState(false);
 
   useEffect(() => {
     if (endTime === 0 || closed) return;
@@ -161,6 +165,29 @@ export function CountdownTimerLarge({ endTime, closed, sharesFinalized, classNam
 
     return () => clearInterval(interval);
   }, [endTime, closed]);
+
+  // Fetch adjudicators data when marketId is available
+  useEffect(() => {
+    console.log('Adjudicators useEffect triggered, marketId:', marketId);
+    if (!marketId && marketId !== 0) return;
+
+    const fetchAdjudicators = async () => {
+      console.log('Starting to fetch adjudicators for marketId:', marketId);
+      setIsLoadingAdjudicators(true);
+      try {
+        const adjudicatorsData = await readAdjudicators(marketId);
+        console.log('Adjudicators data received:', adjudicatorsData);
+        setAdjudicators(adjudicatorsData);
+      } catch (error) {
+        console.error('Error fetching adjudicators:', error);
+        setAdjudicators("");
+      } finally {
+        setIsLoadingAdjudicators(false);
+      }
+    };
+
+    fetchAdjudicators();
+  }, [marketId]);
 
   const urgencyLevel = useMemo(() => {
     if (closed || timeRemaining.total === 0) return "ended";
@@ -228,17 +255,18 @@ export function CountdownTimerLarge({ endTime, closed, sharesFinalized, classNam
     // Market timer has ended, check closed and sharesFinalized status
     if (!closed) {
       // Timer ended but market not yet closed
-      return "Penalty Window";
+      return "Penalty Window.";
     } else if (!sharesFinalized) {
       // Market is closed but shares not finalized (resolving)
-      return "Market Resolving";
+      return "Market Resolving.";
     } else {
       // Market is closed and shares are finalized
-      return "Market Resolved";
+      return "Market Closed.";
     }
   };
 
-  const getStatusMessage = () => {
+  const getStatusMessage = (adjudicatorsMessage: string) => {
+    console.log('getStatusMessage called with:', { adjudicatorsMessage, isEnded, closed, sharesFinalized });
     if (!isEnded) return null;
 
     // Market timer has ended, check closed and sharesFinalized status
@@ -250,9 +278,13 @@ export function CountdownTimerLarge({ endTime, closed, sharesFinalized, classNam
       return "Voting is now closed.";
     } else {
       // Market is closed and shares are finalized
-      return "This market is closed.";
+      console.log('Returning adjudicators message:', adjudicatorsMessage);
+      return adjudicatorsMessage;
     }
   };
+
+  // Debug: Log current state during render
+  console.log('CountdownTimerLarge render state:', { adjudicators, isLoadingAdjudicators, marketId });
 
   return (
     <motion.div
@@ -283,7 +315,13 @@ export function CountdownTimerLarge({ endTime, closed, sharesFinalized, classNam
       ) : (
         <div className="flex items-center justify-center gap-2">
           <CheckCircle2 className="h-5 w-5 text-slate-600 dark:text-slate-400" />
-          <span className="font-outfit text-lg text-slate-600 dark:text-slate-400">{getStatusMessage()}</span>
+          {adjudicators ? (
+            <span className="font-outfit text-lg text-slate-600 dark:text-slate-400">
+              {renderParsedAdjudicators(getStatusMessage(adjudicators))}
+            </span>
+          ) : (
+            <span className="font-outfit text-lg text-slate-600 dark:text-slate-400">{getStatusMessage("Loading adjudicators...")}</span>
+          )}
         </div>
       )}
     </motion.div>
