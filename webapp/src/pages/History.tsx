@@ -32,6 +32,7 @@ import {
 } from "@/tools/utils";
 import { useNetworkStore } from "@/store/networkStore";
 import { useMarketStore } from "@/store/marketStore";
+import { buildMarketRoute } from "@/lib/marketRoutes";
 
 // Color palette for distinguishing markets
 const MARKET_COLORS = [
@@ -444,7 +445,7 @@ export default function History() {
 
                       <div
                         className={`group relative overflow-hidden rounded-2xl border ${colorScheme.border} bg-gradient-to-br ${colorScheme.bg} backdrop-blur-sm p-6 transition-all hover:shadow-xl ${colorScheme.glow} cursor-pointer`}
-                        onClick={() => navigate(`/market/penny4thot-${claim.marketId}`)}
+                        onClick={() => navigate(buildMarketRoute(`penny4thot-${claim.marketId}`, selectedNetwork.chainId))}
                       >
                         {/* Shimmer effect on hover */}
                         <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity -translate-x-full group-hover:translate-x-full duration-1000" />
