@@ -1,6 +1,6 @@
 # Penny4Thots
 
-Monorepo containing the frontend webapp and backend services for Penny4Thots.
+Monorepo containing the frontend webapp and backend services for Penny4Thots on BNB Chain, opBNB, Sepolia and coming host of networks.
 
 Structure:
 
