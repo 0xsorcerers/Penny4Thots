@@ -80,6 +80,49 @@ export function MarketGrid({ markets, marketCount, currentPage, pageSize, onPage
   const visibleStart = marketCount === 0 ? 0 : Math.max(0, marketCount - ((currentPage - 1) * pageSize) - 1);
   const visibleEnd = marketCount === 0 ? 0 : Math.max(0, visibleStart - pageSize + 1);
 
+  const getPagePickerItems = () => {
+    if (totalPages <= 7) {
+      return Array.from({ length: totalPages }, (_, i) => i + 1);
+    }
+
+    if (currentPage <= 4) {
+      return [1, 2, 3, 4, 5, "ellipsis", totalPages] as const;
+    }
+
+    if (currentPage >= totalPages - 3) {
+      return [1, "ellipsis", totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages] as const;
+    }
+
+    return [1, "ellipsis", currentPage - 1, currentPage, currentPage + 1, "ellipsis", totalPages] as const;
+  };
+
+  const renderPagePicker = (className = "") => (
+    <div className={`flex flex-wrap items-center justify-center gap-2 ${className}`}>
+      <Button variant="outline" size="icon" onClick={() => onPageChange(Math.max(1, currentPage - 1))} disabled={currentPage === 1 || isLoading}>
+        <ChevronLeft className="h-4 w-4" />
+      </Button>
+      {getPagePickerItems().map((item, idx) => {
+        if (item === "ellipsis") {
+          return <span key={`ellipsis-${idx}`} className="px-2 text-sm text-muted-foreground">…</span>;
+        }
+        return (
+          <Button
+            key={item}
+            variant={currentPage === item ? "default" : "outline"}
+            size="sm"
+            onClick={() => onPageChange(item)}
+            disabled={isLoading}
+          >
+            {item}
+          </Button>
+        );
+      })}
+      <Button variant="outline" size="icon" onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))} disabled={currentPage === totalPages || isLoading}>
+        <ChevronRight className="h-4 w-4" />
+      </Button>
+    </div>
+  );
+
   const handleRefreshMarkets = async () => {
     if (isRefreshing || !onRefreshMarkets) return;
     setIsRefreshing(true);
@@ -243,6 +286,8 @@ export function MarketGrid({ markets, marketCount, currentPage, pageSize, onPage
           </Dialog>
         </motion.div>
 
+        {marketCount > 0 && renderPagePicker("mb-6") }
+
         <AnimatePresence mode="wait">
           {isLoading ? (
             <motion.div
@@ -306,17 +351,7 @@ export function MarketGrid({ markets, marketCount, currentPage, pageSize, onPage
           )}
         </AnimatePresence>
 
-        {marketCount > 0 && (
-          <div className="mt-8 flex items-center justify-center gap-2">
-            <Button variant="outline" size="icon" onClick={() => onPageChange(Math.max(1, currentPage - 1))} disabled={currentPage === 1 || isLoading}>
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <span className="px-3 py-2 text-sm text-muted-foreground">{currentPage} / {totalPages}</span>
-            <Button variant="outline" size="icon" onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))} disabled={currentPage === totalPages || isLoading}>
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
-        )}
+        {marketCount > 0 && renderPagePicker("mt-6")}
       </div>
     </div>
   );

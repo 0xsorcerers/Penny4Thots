@@ -224,6 +224,69 @@ export default function YourThots() {
 
   const totalPages = Math.ceil(allMarketIds.length / ITEMS_PER_PAGE);
 
+  const getPagePickerItems = () => {
+    if (totalPages <= 7) {
+      return Array.from({ length: totalPages }, (_, i) => i + 1);
+    }
+
+    if (currentPage <= 4) {
+      return [1, 2, 3, 4, 5, "ellipsis", totalPages] as const;
+    }
+
+    if (currentPage >= totalPages - 3) {
+      return [1, "ellipsis", totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages] as const;
+    }
+
+    return [1, "ellipsis", currentPage - 1, currentPage, currentPage + 1, "ellipsis", totalPages] as const;
+  };
+
+  const renderPagination = (className = "") => (
+    <div className={`flex flex-wrap items-center justify-center gap-2 ${className}`}>
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+        disabled={currentPage === 1}
+        className="border-violet-500/30 hover:bg-violet-500/10"
+      >
+        <ChevronLeft className="h-4 w-4 mr-1" />
+        Previous
+      </Button>
+
+      {getPagePickerItems().map((item, idx) => {
+        if (item === "ellipsis") {
+          return <span key={`ellipsis-${idx}`} className="px-2 text-sm text-muted-foreground">…</span>;
+        }
+
+        return (
+          <Button
+            key={item}
+            variant={currentPage === item ? "default" : "outline"}
+            size="sm"
+            onClick={() => setCurrentPage(item)}
+            className={currentPage === item
+              ? "bg-violet-500 hover:bg-violet-600"
+              : "border-violet-500/30 hover:bg-violet-500/10"
+            }
+          >
+            {item}
+          </Button>
+        );
+      })}
+
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+        disabled={currentPage === totalPages}
+        className="border-violet-500/30 hover:bg-violet-500/10"
+      >
+        Next
+        <ChevronRight className="h-4 w-4 ml-1" />
+      </Button>
+    </div>
+  );
+
   const handleVoteClick = (marketId: number) => {
     const market = markets.find((m) => m.indexer === marketId);
     if (market) {
@@ -422,6 +485,8 @@ export default function YourThots() {
             </motion.div>
           ) : markets.length > 0 ? (
             <>
+              {totalPages > 1 && renderPagination("mb-6")}
+
               <motion.div
                 key="grid"
                 initial={{ opacity: 0 }}
@@ -440,60 +505,7 @@ export default function YourThots() {
                   </motion.div>
                 ))}
               </motion.div>
-
-              {/* Pagination */}
-              {totalPages > 1 && (
-                <div className="mt-8 flex items-center justify-center gap-4">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                    disabled={currentPage === 1}
-                    className="border-violet-500/30 hover:bg-violet-500/10"
-                  >
-                    <ChevronLeft className="h-4 w-4 mr-1" />
-                    Previous
-                  </Button>
-                  <div className="flex items-center gap-2">
-                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                      let pageNum: number;
-                      if (totalPages <= 5) {
-                        pageNum = i + 1;
-                      } else if (currentPage <= 3) {
-                        pageNum = i + 1;
-                      } else if (currentPage >= totalPages - 2) {
-                        pageNum = totalPages - 4 + i;
-                      } else {
-                        pageNum = currentPage - 2 + i;
-                      }
-                      return (
-                        <Button
-                          key={pageNum}
-                          variant={currentPage === pageNum ? "default" : "outline"}
-                          size="sm"
-                          onClick={() => setCurrentPage(pageNum)}
-                          className={currentPage === pageNum
-                            ? "bg-violet-500 hover:bg-violet-600"
-                            : "border-violet-500/30 hover:bg-violet-500/10"
-                          }
-                        >
-                          {pageNum}
-                        </Button>
-                      );
-                    })}
-                  </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                    disabled={currentPage === totalPages}
-                    className="border-violet-500/30 hover:bg-violet-500/10"
-                  >
-                    Next
-                    <ChevronRight className="h-4 w-4 ml-1" />
-                  </Button>
-                </div>
-              )}
+              {totalPages > 1 && renderPagination("mt-8")}
             </>
           ) : (
             <motion.div
