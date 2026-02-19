@@ -277,17 +277,17 @@ const networks = [
   {
     name: 'sepolia',
     rpc: 'https://ethereum-sepolia-rpc.publicnode.com',
-    contract: '0x929A04E8d5d8aFBCA5C6cE0e9Fe05f506081cc27'
+    contract: '0x7DeA875A4D644aB78e0914FFF8b760bE5e8F54cb'
   },
   {
     name: 'bnb',
     rpc: 'https://bsc-dataseed.binance.org',
-    contract: '0x683a3d9b7723f29eaf2e5511F94F02Dab5f1a633'
+    contract: '0x13B9CD2340E8224D4c1CC86d3481c217d9078AAe'
   },
   {
     name: 'opbnb',
     rpc: 'https://opbnb-mainnet-rpc.bnbchain.org',
-    contract: '0x9dc5736Db801272B2357962448B189f5A77a5e36'
+    contract: '0x8d4a1A116Fd092D21b47Aa29a1882995af234353'
   }
 ];
 
@@ -357,20 +357,27 @@ async function monitorNetwork(networkConfig) {
       await AntiAbuseBlacklister(marketInfoArray, writeContract);
 
       for (let j = 0; j < batch.length; j++) {
-        const id = batch[j];
-        const data = marketDataArray[j];
-
-        state.markets[id] = {
-          endTime: Number(data.endTime),
-          closed: data.closed,
-          finalized: false,
-          finalizedUpTo: 0,
-          finalizeRetries: 0,
-          consensusAttempts: 0
-        };
-
-        log(`[${name}] Market ${id} tracked | EndTime: ${data.endTime}`);
+          const id = batch[j];
+          const data = marketDataArray[j];
+          const info = marketInfoArray[j];
+        
+          state.markets[id] = {
+            endTime: Number(data.endTime),
+            closed: data.closed,
+            finalized: false,
+            finalizedUpTo: 0,
+            finalizeRetries: 0,
+            consensusAttempts: 0,
+            lastVoteModels: {},
+        
+            // ✅ NEW — FULL CACHE (critical for efficiency)
+            optionA: info.optionA,
+            optionB: info.optionB
+          };
+        
+          log(`[${name}] Market ${id} tracked | EndTime: ${data.endTime}`);
       }
+
 
       saveState(name, state);
       if (i + readLimit < newIds.length) await sleep(batchDelayMs);
@@ -411,16 +418,24 @@ async function monitorNetwork(networkConfig) {
     for (let j = 0; j < chunkIds.length; j++) {
       const id = chunkIds[j];
       const info = marketInfos[j];
+    
+      // 🔒 refresh cache safely if missing
+      if (!state.markets[id].optionA) {
+        state.markets[id].optionA = info.optionA;
+        state.markets[id].optionB = info.optionB;
+      }
+    
       expiredMarkets.push({
         indexer: id,
         title: info.title,
         subtitle: info.subtitle,
         description: info.description,
-        optionA: info.optionA,
-        optionB: info.optionB,
+        optionA: state.markets[id].optionA,
+        optionB: state.markets[id].optionB,
         endTime: state.markets[id].endTime
       });
     }
+
 
     await sleep(300);
   }
@@ -500,15 +515,14 @@ async function monitorNetwork(networkConfig) {
   // ================= SEQUENTIAL CLOSURE =================
   for (const result of decisions) {
     const resolvedToOptionA = result.decision === "A";
+    
+    const marketState = state.markets[result.indexer];
+    if (marketState.closed) {
+       log(`[${name}] Market ${result.indexer} already closed (cached). Syncing state.`);
+       continue;
+    }
 
     try {
-      const data = await readContract.readMarketData([result.indexer]);
-      if (data[0].closed) {
-        state.markets[result.indexer].closed = true;
-        log(`[${name}] Market ${result.indexer} already closed on-chain. Syncing state.`);
-        saveState(name, state);
-        continue;
-      }
 
       // ================= BUILD ADJUDICATOR STRING =================
       const minedBlock = await provider.getBlock("latest"); // fallback for timestamp
@@ -528,7 +542,14 @@ async function monitorNetwork(networkConfig) {
       };
 
       const judgeEntries = Object.entries(result.models || {}).map(
-        ([model, vote]) => `${modelLabelMap[model]} voted ${vote}`
+          ([model, vote]) => {
+            const optionText =
+              vote === "A"
+                ? marketState.optionA
+                : marketState.optionB;
+        
+            return `${modelLabelMap[model]} voted "${optionText}"`;
+          }
       );
 
       let adjudicatorString =

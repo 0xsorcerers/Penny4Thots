@@ -129,6 +129,7 @@ contract Penny4Thots is ReentrancyGuard {
     mapping (uint256 => MarketLock) public allMarketLocks;
 
     mapping (uint256 => address) public paymentTokens;
+    mapping (uint256 => string) public adjudicators;
     mapping (address => uint256) public allMarketVolume;
     mapping (address => uint256) public farmTokensDistributed;
     mapping (address => uint256) public TotalClaimsDistributed;
@@ -351,12 +352,13 @@ contract Penny4Thots is ReentrancyGuard {
         }
     }
 
-    function closeMarket(uint256 _market, bool _signalWinner) external onlydAI {
+    function closeMarket(uint256 _market, bool _signalWinner, string memory _presidingJudges) external onlydAI {
         MarketData storage m = allMarketData[_market];
         require(!m.closed, "Already closed");
         m.closed = true;
         m.endTime = block.timestamp;
         m.winningSide = _signalWinner ? Side.A : Side.B;
+        adjudicators[_market] = _presidingJudges;
     }
 
     function finalizeShares(uint256 _market) external onlydAI returns (bool done, uint256 remaining, uint256 nextBatchSize) {

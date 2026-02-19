@@ -311,6 +311,158 @@ export const readPaymentToken = async (marketId: number): Promise<Address> => {
   return result;
 };
 
+export const readAdjudicators = async (marketId: number): Promise<string> => {
+  const result = await getPublicClient().readContract({
+    address: getBlockchain().contract_address,
+    abi: contractABI,
+    functionName: 'adjudicators',
+    args: [marketId],
+  }) as string;
+
+  return result;
+};
+
+// ============================================================================
+// Adjudicators Parser (Collision-Safe Version)
+// ============================================================================
+
+export interface ParsedSegment {
+  text: string;
+  type: 'normal' | 'number' | 'hash' | 'quoted' | 'parenthesis' | 'voted';
+  className: string;
+}
+
+/**
+ * Precedence Order (Top → Bottom):
+ * 1. Quoted text
+ * 2. Parenthesis
+ * 3. Hash (64 hex)
+ * 4. Word after "voted"
+ * 5. Numbers
+ */
+export const parseAdjudicators = (input: string): ParsedSegment[] => {
+  if (!input) return [];
+
+  const segments: ParsedSegment[] = [];
+
+  const combinedRegex =
+  /"([^"]*)"|\(([^)]*)\)|\b([a-fA-F0-9]{64})\b|(?<=\bvoted\s)(\w+)|(?<=\)\s)([A-Z])\b|\b(\d{4}-\d{2}-\d{2}|\d+\/\d+\/\d+|\d+)\b/g;
+
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+
+  while ((match = combinedRegex.exec(input)) !== null) {
+    const start = match.index;
+    const end = combinedRegex.lastIndex;
+
+    // Add normal text before match
+    if (start > lastIndex) {
+      segments.push(createSegment(
+        input.slice(lastIndex, start),
+        'normal'
+      ));
+    }
+
+    let segment: ParsedSegment;
+
+    if (match[1] !== undefined) {
+      segment = createSegment(`"${match[1]}"`, 'quoted');
+    }
+    else if (match[2] !== undefined) {
+      segment = createSegment(`(${match[2]})`, 'parenthesis');
+    }
+    else if (match[3] !== undefined) {
+      segment = createSegment(`#${match[3]}`, 'hash');
+    }
+    else if (match[4] !== undefined) {
+      // Word after "voted "
+      segment = createSegment(match[4], 'voted');
+    }
+    else if (match[5] !== undefined) {
+      // Single letter after ") "
+      segment = createSegment(match[5], 'voted');
+    }
+    else if (match[6] !== undefined) {
+      segment = createSegment(match[6], 'number');
+    }
+    else {
+      segment = createSegment(match[0], 'normal');
+    }
+
+    segments.push(segment);
+    lastIndex = end;
+  }
+
+  // Remaining trailing text
+  if (lastIndex < input.length) {
+    segments.push(createSegment(
+      input.slice(lastIndex),
+      'normal'
+    ));
+  }
+
+  return segments;
+};
+
+const createSegment = (
+  text: string,
+  type: ParsedSegment['type']
+): ParsedSegment => {
+  const base = "font-outfit text-sm";
+
+  const styles: Record<ParsedSegment['type'], string> = {
+    normal: `${base} text-slate-600 dark:text-slate-400`,
+    number: `${base} text-cyan-600 dark:text-cyan-400 font-mono font-semibold`,
+    hash: `${base} text-purple-600 dark:text-purple-400 font-mono`,
+    quoted: `${base} text-emerald-600 dark:text-emerald-400 italic`,
+    parenthesis: `${base} text-amber-600 dark:text-amber-400`,
+    voted: `${base} text-rose-600 dark:text-rose-400 font-bold uppercase`
+  };
+
+  return {
+    text,
+    type,
+    className: styles[type]
+  };
+};
+
+
+/**
+ * Get appropriate CSS class name for each segment type
+ */
+const getSegmentClassName = (type: ParsedAdjudicatorSegment['type']): string => {
+  const baseClasses = "font-outfit text-sm";
+  
+  switch (type) {
+    case 'number':
+      return `${baseClasses} text-cyan-600 dark:text-cyan-400 font-mono font-semibold`;
+    case 'hash':
+      return `${baseClasses} text-purple-600 dark:text-purple-400 font-mono`;
+    case 'quoted':
+      return `${baseClasses} text-emerald-600 dark:text-emerald-400 font-medium italic`;
+    case 'parenthesis':
+      return `${baseClasses} text-amber-600 dark:text-amber-400 font-medium`;
+    case 'voted-word':
+      return `${baseClasses} text-rose-600 dark:text-rose-400 font-bold uppercase tracking-wide`;
+    case 'normal':
+    default:
+      return `${baseClasses} text-slate-700 dark:text-slate-300`;
+  }
+};
+
+/**
+ * Render parsed adjudicators segments as JSX elements
+ */
+export const renderParsedAdjudicators = (input: string): JSX.Element[] => {
+  const segments = parseAdjudicators(input);
+
+  return segments.map((seg, i) => (
+    <span key={i} className={seg.className}>
+      {seg.text}
+    </span>
+  ));
+};
+
 export interface DataConstants {
   marketCount: number;
   payId: number;
