@@ -97,8 +97,8 @@ export function MarketGrid({ markets, marketCount, currentPage, pageSize, onPage
   };
 
   const renderPagePicker = (className = "") => (
-    <div className={`flex flex-wrap items-center justify-center gap-2 ${className}`}>
-      <Button variant="outline" size="icon" onClick={() => onPageChange(Math.max(1, currentPage - 1))} disabled={currentPage === 1 || isLoading}>
+    <div className={`flex flex-wrap items-center justify-center gap-2 rounded-xl border border-border/40 bg-card/35 px-3 py-2 backdrop-blur-sm ${className}`}>
+      <Button variant="outline" className="bg-background/35 border-border/45" size="icon" onClick={() => onPageChange(Math.max(1, currentPage - 1))} disabled={currentPage === 1 || isLoading}>
         <ChevronLeft className="h-4 w-4" />
       </Button>
       {getPagePickerItems().map((item, idx) => {
@@ -112,12 +112,13 @@ export function MarketGrid({ markets, marketCount, currentPage, pageSize, onPage
             size="sm"
             onClick={() => onPageChange(item)}
             disabled={isLoading}
+            className={currentPage === item ? "bg-primary/85" : "bg-background/35 border-border/45"}
           >
             {item}
           </Button>
         );
       })}
-      <Button variant="outline" size="icon" onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))} disabled={currentPage === totalPages || isLoading}>
+      <Button variant="outline" className="bg-background/35 border-border/45" size="icon" onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))} disabled={currentPage === totalPages || isLoading}>
         <ChevronRight className="h-4 w-4" />
       </Button>
     </div>

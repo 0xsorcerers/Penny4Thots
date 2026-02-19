@@ -245,13 +245,13 @@ export default function MyThots() {
   };
 
   const renderPagination = (className = "") => (
-    <div className={`flex flex-wrap items-center justify-center gap-2 ${className}`}>
+    <div className={`flex flex-wrap items-center justify-center gap-2 rounded-xl border border-emerald-500/20 bg-emerald-500/5 px-3 py-2 backdrop-blur-sm ${className}`}>
       <Button
         variant="outline"
         size="sm"
         onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
         disabled={currentPage === 1}
-        className="border-emerald-500/30 hover:bg-emerald-500/10"
+        className="border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20"
       >
         <ChevronLeft className="h-4 w-4 mr-1" />
         Previous
@@ -269,8 +269,8 @@ export default function MyThots() {
             size="sm"
             onClick={() => setCurrentPage(item)}
             className={currentPage === item
-              ? "bg-emerald-500 hover:bg-emerald-600"
-              : "border-emerald-500/30 hover:bg-emerald-500/10"
+              ? "bg-emerald-500/85 hover:bg-emerald-600/90"
+              : "border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20"
             }
           >
             {item}
@@ -283,7 +283,7 @@ export default function MyThots() {
         size="sm"
         onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
         disabled={currentPage === totalPages}
-        className="border-emerald-500/30 hover:bg-emerald-500/10"
+        className="border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20"
       >
         Next
         <ChevronRight className="h-4 w-4 ml-1" />
