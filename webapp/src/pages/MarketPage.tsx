@@ -1,9 +1,11 @@
 import { useState, useEffect, useMemo } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, TrendingUp, TrendingDown, BarChart3, Users, Clock, Share2, Loader2, CircleDot, CircleOff, Hourglass, Gift } from "lucide-react";
-import { useActiveAccount, useIsAutoConnecting } from "thirdweb/react";
+import { useActiveAccount, useActiveWallet, useActiveWalletChain, useDisconnect, useIsAutoConnecting, useSwitchActiveWalletChain } from "thirdweb/react";
+import { defineChain } from "thirdweb/chains";
 import { useMarketStore } from "@/store/marketStore";
+import { useNetworkStore } from "@/store/networkStore";
 import { useMarketDataHydration } from "@/hooks/useMarketDataHydration";
 import { useVote, useTokenApprove, readPaymentToken, readTokenAllowance, isZeroAddress, fetchDataConstants, calculatePlatformFeePercentage, fetchMarketDataFromBlockchain, getClaimablePositions, getAllUserPositions, useBatchClaim, readMarketLock, type VoteParams } from "@/tools/utils";
 import { VoteModal } from "@/components/market/VoteModal";
@@ -12,11 +14,32 @@ import { MarketBalance } from "@/components/market/MarketBalance";
 import { CountdownTimerLarge } from "@/components/market/CountdownTimer";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { CHAIN_ID_QUERY_PARAM } from "@/lib/marketRoutes";
 import type { Address } from "viem";
 import { toast } from "sonner";
 export default function MarketPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const { selectedNetwork, setSelectedNetwork, getNetworkByChainId } = useNetworkStore();
+  const account = useActiveAccount();
+  const activeWallet = useActiveWallet();
+  const activeWalletChain = useActiveWalletChain();
+  const switchChain = useSwitchActiveWalletChain();
+  const { disconnect } = useDisconnect();
+  const [isEnsuringNetwork, setIsEnsuringNetwork] = useState(true);
+
+  const targetChainId = useMemo(() => {
+    const raw = searchParams.get(CHAIN_ID_QUERY_PARAM);
+    if (!raw) return undefined;
+    const parsed = Number(raw);
+    return Number.isInteger(parsed) && parsed > 0 ? parsed : undefined;
+  }, [searchParams]);
+
+  const targetNetwork = useMemo(() => {
+    if (!targetChainId) return undefined;
+    return getNetworkByChainId(targetChainId);
+  }, [getNetworkByChainId, targetChainId]);
   // Extract the numeric market indexer from the URL id (format: "penny4thot-{indexer}")
   const targetMarketIndexer = useMemo(() => {
     if (!id) return undefined;
@@ -27,9 +50,9 @@ export default function MarketPage() {
   // This replicates the same data loading that Index.tsx does, ensuring consistency
   const { isLoading: isHydrating, isHydrated } = useMarketDataHydration({
     targetMarketId: targetMarketIndexer,
+    enabled: !isEnsuringNetwork,
   });
   const market = useMarketStore((state) => state.getMarket(id || ""));
-  const account = useActiveAccount();
   const isAutoConnecting = useIsAutoConnecting();
   const { vote, isPending: isVoting } = useVote();
   const { approve, isPending: isApproving } = useTokenApprove();
@@ -44,6 +67,62 @@ export default function MarketPage() {
   const [sharesFinalized, setSharesFinalized] = useState<boolean | null>(null);
   const [userPositions, setUserPositions] = useState<number[]>([]);
   const [isLoadingPositions, setIsLoadingPositions] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const syncNetwork = async () => {
+      if (!targetChainId) {
+        if (!cancelled) setIsEnsuringNetwork(false);
+        return;
+      }
+
+      if (!targetNetwork) {
+        toast.error("Invalid market network in URL", {
+          description: `Unsupported chainId=${targetChainId}.`,
+        });
+        if (!cancelled) setIsEnsuringNetwork(false);
+        return;
+      }
+
+      if (selectedNetwork.chainId !== targetNetwork.chainId) {
+        setSelectedNetwork(targetNetwork);
+      }
+
+      if (account?.address && activeWalletChain?.id !== targetNetwork.chainId) {
+        try {
+          await switchChain(defineChain({ id: targetNetwork.chainId, rpc: targetNetwork.rpc }));
+        } catch (error) {
+          console.error("Failed to switch network for deep-linked market:", error);
+          if (activeWallet) {
+            await disconnect(activeWallet);
+          }
+          toast.error("Wallet network mismatch", {
+            description: "Please reconnect and approve the requested network.",
+          });
+        }
+      }
+
+      if (!cancelled) setIsEnsuringNetwork(false);
+    };
+
+    setIsEnsuringNetwork(true);
+    syncNetwork();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    account?.address,
+    activeWallet,
+    activeWalletChain?.id,
+    disconnect,
+    selectedNetwork.chainId,
+    setSelectedNetwork,
+    switchChain,
+    targetChainId,
+    targetNetwork,
+  ]);
   // Scroll to top when market page loads
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -126,7 +205,7 @@ export default function MarketPage() {
     console.log("MarketPage render - isVoteModalOpen:", isVoteModalOpen, "market.indexer:", market?.indexer, "market.posterImage:", market?.posterImage);
   }, [isVoteModalOpen, market?.indexer, market?.posterImage]);
   // Show loading state while hydrating data (deep-link scenario)
-  if (isHydrating || !isHydrated) {
+  if (isEnsuringNetwork || isHydrating || !isHydrated) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <div className="text-center">

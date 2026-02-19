@@ -4,8 +4,10 @@ import { TrendingUp, TrendingDown, BarChart3, X, CircleOff } from "lucide-react"
 import { useNavigate } from "react-router-dom";
 import type { Market } from "@/types/market";
 import { cn } from "@/lib/utils";
+import { buildMarketRoute } from "@/lib/marketRoutes";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useMarketStore } from "@/store/marketStore";
+import { useNetworkStore } from "@/store/networkStore";
 import { VoteStats } from "./VoteStats";
 import { CountdownTimer } from "./CountdownTimer";
 import { MarketBalance } from "./MarketBalance";
@@ -25,6 +27,7 @@ const truncateOption = (option: string, maxLength: number = 9): string => {
 export function MarketCard({ market, onVoteClick }: MarketCardProps) {
   const navigate = useNavigate();
   const { deleteMarket } = useMarketStore();
+  const selectedChainId = useNetworkStore((state) => state.selectedNetwork.chainId);
   const [isHovered, setIsHovered] = useState(false);
   const [tradeMode, setTradeMode] = useState<"idle" | "active">("idle");
   const [showAllTags, setShowAllTags] = useState(false);
@@ -49,7 +52,7 @@ export function MarketCard({ market, onVoteClick }: MarketCardProps) {
   }, [market.indexer, market.marketBalance]);
 
   const handleCardClick = () => {
-    navigate(`/market/${market.id}`);
+    navigate(buildMarketRoute(market.id, selectedChainId));
   };
 
   const handleTradeClick = (e: React.MouseEvent) => {

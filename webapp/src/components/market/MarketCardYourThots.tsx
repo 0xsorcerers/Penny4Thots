@@ -11,6 +11,8 @@ import { readPaymentToken, getClaimablePositions, getAllUserPositions, useBatchC
 import type { Address } from "viem";
 import { useActiveAccount } from "thirdweb/react";
 import { toast } from "sonner";
+import { useNetworkStore } from "@/store/networkStore";
+import { buildMarketRoute } from "@/lib/marketRoutes";
 
 interface MarketCardYourThotsProps {
   market: Market;
@@ -23,6 +25,7 @@ const truncateOption = (option: string, maxLength: number = 9): string => {
 
 export function MarketCardYourThots({ market, onVoteClick }: MarketCardYourThotsProps) {
   const navigate = useNavigate();
+  const selectedChainId = useNetworkStore((state) => state.selectedNetwork.chainId);
   const account = useActiveAccount();
   const [isHovered, setIsHovered] = useState(false);
   const [showAllTags, setShowAllTags] = useState(false);
@@ -118,7 +121,7 @@ export function MarketCardYourThots({ market, onVoteClick }: MarketCardYourThots
   }, [market?.indexer, market?.closed, account?.address]);
 
   const handleCardClick = () => {
-    navigate(`/market/${market.id}`);
+    navigate(buildMarketRoute(market.id, selectedChainId));
   };
 
   const handleShowMoreTags = (e: React.MouseEvent) => {

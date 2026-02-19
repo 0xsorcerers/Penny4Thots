@@ -9,6 +9,8 @@ import {
 interface UseMarketDataHydrationOptions {
   /** Market ID to ensure is included in the fetch (for deep-link scenarios) */
   targetMarketId?: number;
+  /** Whether hydration should run */
+  enabled?: boolean;
 }
 
 interface UseMarketDataHydrationResult {
@@ -39,7 +41,7 @@ interface UseMarketDataHydrationResult {
 export function useMarketDataHydration(
   options: UseMarketDataHydrationOptions = {}
 ): UseMarketDataHydrationResult {
-  const { targetMarketId } = options;
+  const { targetMarketId, enabled = true } = options;
 
   const [isLoading, setIsLoading] = useState(false);
   const [isHydrated, setIsHydrated] = useState(false);
@@ -125,8 +127,9 @@ export function useMarketDataHydration(
 
   // Run hydration on mount
   useEffect(() => {
+    if (!enabled) return;
     loadMarketsFromBlockchain();
-  }, [loadMarketsFromBlockchain]);
+  }, [enabled, loadMarketsFromBlockchain]);
 
   return {
     isLoading,
