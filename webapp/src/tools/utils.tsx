@@ -238,34 +238,54 @@ export function Connector(): ReactElement {
 // ============================================================================
 
 export const readMarketInfo = async (ids: number[]): Promise<MarketInfoFormatted[]> => {
-  const result = await getPublicClient().readContract({
-    address: getBlockchain().contract_address,
-    abi: contractABI,
-    functionName: 'readMarket',
-    args: [ids],
-  });
+  if (ids.length === 0) return [];
 
-  const marketInfoArray = result as MarketInfo[];
+  const chunks: number[][] = [];
+  for (let i = 0; i < ids.length; i += IMMUTABLE_MARKET_FETCH_LIMIT) {
+    chunks.push(ids.slice(i, i + IMMUTABLE_MARKET_FETCH_LIMIT));
+  }
 
-  return marketInfoArray.map((marketInfo) => ({
-    indexer: Number(marketInfo.indexer),
-    title: marketInfo.title,
-    subtitle: marketInfo.subtitle,
-    description: marketInfo.description,
-    image: marketInfo.image,
-    tags: parseTags(marketInfo.tags),
-    optionA: marketInfo.optionA,
-    optionB: marketInfo.optionB,
-    feetype: marketInfo.feetype,
-  }));
+  const allMarketInfos: MarketInfoFormatted[] = [];
+
+  for (let i = 0; i < chunks.length; i++) {
+    const result = await getPublicClient().readContract({
+      address: getBlockchain().contract_address,
+      abi: contractABI,
+      functionName: 'readMarket',
+      args: [chunks[i]],
+    });
+
+    const marketInfoArray = result as MarketInfo[];
+
+    allMarketInfos.push(...marketInfoArray.map((marketInfo) => ({
+      indexer: Number(marketInfo.indexer),
+      title: marketInfo.title,
+      subtitle: marketInfo.subtitle,
+      description: marketInfo.description,
+      image: marketInfo.image,
+      tags: parseTags(marketInfo.tags),
+      optionA: marketInfo.optionA,
+      optionB: marketInfo.optionB,
+      feetype: marketInfo.feetype,
+    })));
+
+    if (i < chunks.length - 1) {
+      await delay(BATCH_GESTATION_MS);
+    }
+  }
+
+  return allMarketInfos;
 };
 
 export const readMarketData = async (ids: number[]): Promise<MarketDataFormatted[]> => {
+  if (ids.length === 0) return [];
+
+  const limitedIds = ids.slice(0, MUTABLE_MARKET_FETCH_LIMIT);
   const result = await getPublicClient().readContract({
     address: getBlockchain().contract_address,
     abi: contractABI,
     functionName: 'readMarketData',
-    args: [ids],
+    args: [limitedIds],
   });
 
   const marketDataArray = result as MarketData[];
@@ -518,12 +538,31 @@ export const calculatePlatformFeePercentage = (platformFee: number): number => {
   return 1 / platformFee;
 };
 
-// Range limit for fetching markets from blockchain
-const MARKET_FETCH_LIMIT = 50;
+// Market pagination/fetch constraints
+export const MARKETS_PER_PAGE = 15;
+const IMMUTABLE_MARKET_FETCH_LIMIT = 200;
+const MUTABLE_MARKET_FETCH_LIMIT = 50;
+const BATCH_GESTATION_MS = 3000;
+
+export const getMarketIdsForPage = (
+  marketCount: number,
+  page: number,
+  pageSize: number = MARKETS_PER_PAGE
+): number[] => {
+  if (marketCount <= 0 || page < 1) return [];
+
+  const start = marketCount - ((page - 1) * pageSize) - 1;
+  if (start < 0) return [];
+
+  const end = Math.max(0, start - pageSize + 1);
+  const ids: number[] = [];
+  for (let i = start; i >= end; i--) ids.push(i);
+  return ids;
+};
 
 /**
- * Fetch markets from blockchain with a limit of 50 most recent markets
- * Markets are fetched in descending order (newest first)
+ * Fetch all immutable market info in descending order (newest first)
+ * in conservative background-sized chunks.
  * Only fetches MarketInfo (immutable data)
  *
  * @param additionalMarketIds - Optional array of market IDs to include even if outside the 50 most recent
@@ -536,14 +575,8 @@ export const fetchMarketsFromBlockchain = async (additionalMarketIds?: number[])
     return [];
   }
 
-  // Highest valid ID
-  const startIndex = marketCount - 1;
-
-  // Lower bound, respecting limit
-  const endIndex = Math.max(0, startIndex - MARKET_FETCH_LIMIT + 1);
-
   const marketIds: number[] = [];
-  for (let i = startIndex; i >= endIndex; i--) {
+  for (let i = marketCount - 1; i >= 0; i--) {
     marketIds.push(i);
   }
 

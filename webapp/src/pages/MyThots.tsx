@@ -28,7 +28,7 @@ import {
 const BATCH_SIZE = 200;
 const MAX_BATCH_RANGE = 200;
 const BATCH_DELAY_MS = 3000;
-const ITEMS_PER_PAGE = 30;
+const ITEMS_PER_PAGE = 15;
 const STORAGE_KEY = "penny4thots-mythots-cache";
 
 interface CachedMarketInfo {
