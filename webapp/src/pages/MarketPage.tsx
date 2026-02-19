@@ -1,9 +1,11 @@
 import { useState, useEffect, useMemo } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, TrendingUp, TrendingDown, BarChart3, Users, Clock, Share2, Loader2, CircleDot, CircleOff, Hourglass, Gift } from "lucide-react";
-import { useActiveAccount, useIsAutoConnecting } from "thirdweb/react";
+import { ArrowLeft, TrendingUp, TrendingDown, BarChart3, Users, Clock, Share2, Loader2, CircleDot, CircleOff, Hourglass, Gift, Copy, Send, MessageCircle } from "lucide-react";
+import { useActiveAccount, useActiveWallet, useActiveWalletChain, useDisconnect, useIsAutoConnecting, useSwitchActiveWalletChain } from "thirdweb/react";
+import { defineChain } from "thirdweb/chains";
 import { useMarketStore } from "@/store/marketStore";
+import { useNetworkStore } from "@/store/networkStore";
 import { useMarketDataHydration } from "@/hooks/useMarketDataHydration";
 import { useVote, useTokenApprove, readPaymentToken, readTokenAllowance, isZeroAddress, fetchDataConstants, calculatePlatformFeePercentage, fetchMarketDataFromBlockchain, getClaimablePositions, getAllUserPositions, useBatchClaim, readMarketLock, type VoteParams } from "@/tools/utils";
 import { VoteModal } from "@/components/market/VoteModal";
@@ -12,11 +14,32 @@ import { MarketBalance } from "@/components/market/MarketBalance";
 import { CountdownTimerLarge } from "@/components/market/CountdownTimer";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { CHAIN_ID_QUERY_PARAM } from "@/lib/marketRoutes";
 import type { Address } from "viem";
 import { toast } from "sonner";
 export default function MarketPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const { selectedNetwork, setSelectedNetwork, getNetworkByChainId } = useNetworkStore();
+  const account = useActiveAccount();
+  const activeWallet = useActiveWallet();
+  const activeWalletChain = useActiveWalletChain();
+  const switchChain = useSwitchActiveWalletChain();
+  const { disconnect } = useDisconnect();
+  const [isEnsuringNetwork, setIsEnsuringNetwork] = useState(true);
+
+  const targetChainId = useMemo(() => {
+    const raw = searchParams.get(CHAIN_ID_QUERY_PARAM);
+    if (!raw) return undefined;
+    const parsed = Number(raw);
+    return Number.isInteger(parsed) && parsed > 0 ? parsed : undefined;
+  }, [searchParams]);
+
+  const targetNetwork = useMemo(() => {
+    if (!targetChainId) return undefined;
+    return getNetworkByChainId(targetChainId);
+  }, [getNetworkByChainId, targetChainId]);
   // Extract the numeric market indexer from the URL id (format: "penny4thot-{indexer}")
   const targetMarketIndexer = useMemo(() => {
     if (!id) return undefined;
@@ -27,9 +50,9 @@ export default function MarketPage() {
   // This replicates the same data loading that Index.tsx does, ensuring consistency
   const { isLoading: isHydrating, isHydrated } = useMarketDataHydration({
     targetMarketId: targetMarketIndexer,
+    enabled: !isEnsuringNetwork,
   });
   const market = useMarketStore((state) => state.getMarket(id || ""));
-  const account = useActiveAccount();
   const isAutoConnecting = useIsAutoConnecting();
   const { vote, isPending: isVoting } = useVote();
   const { approve, isPending: isApproving } = useTokenApprove();
@@ -38,12 +61,129 @@ export default function MarketPage() {
   const [selectedVoteSignal, setSelectedVoteSignal] = useState<boolean | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [tradeMode, setTradeMode] = useState<"idle" | "active">("idle");
+  const [isShareMenuOpen, setIsShareMenuOpen] = useState(false);
   const [paymentToken, setPaymentToken] = useState<Address | null>(null);
   const [platformFeePercentage, setPlatformFeePercentage] = useState<number | null>(null);
   const [marketClaimable, setMarketClaimable] = useState<boolean | null>(null);
   const [sharesFinalized, setSharesFinalized] = useState<boolean | null>(null);
   const [userPositions, setUserPositions] = useState<number[]>([]);
   const [isLoadingPositions, setIsLoadingPositions] = useState(false);
+
+  const shareUrl = useMemo(() => {
+    const url = new URL(window.location.href);
+    url.searchParams.set(CHAIN_ID_QUERY_PARAM, String(selectedNetwork.chainId));
+    return url.toString();
+  }, [selectedNetwork.chainId]);
+
+  const shareMessage = useMemo(() => {
+    const title = market?.title || "Penny4Thots Market";
+    const optionA = market?.optionA || "Yes";
+    const optionB = market?.optionB || "No";
+    return `${title} — ${optionA} vs ${optionB} on ${selectedNetwork.name}`;
+  }, [market?.optionA, market?.optionB, market?.title, selectedNetwork.name]);
+
+  const handleCopyShareLink = async () => {
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      toast.success("Share link copied", {
+        description: "Market link includes the intended network.",
+      });
+      setIsShareMenuOpen(false);
+    } catch (error) {
+      console.error("Failed to copy share link:", error);
+      toast.error("Could not copy link", {
+        description: "Please copy the URL manually.",
+      });
+    }
+  };
+
+  const handleNativeShare = async () => {
+    if (!navigator.share) {
+      await handleCopyShareLink();
+      return;
+    }
+
+    try {
+      await navigator.share({
+        title: market?.title || "Penny4Thots Market",
+        text: shareMessage,
+        url: shareUrl,
+      });
+      setIsShareMenuOpen(false);
+    } catch (error) {
+      if (error instanceof Error && error.name === "AbortError") return;
+      console.error("Native share failed:", error);
+      toast.error("Share failed", {
+        description: "Try copying the link instead.",
+      });
+    }
+  };
+
+  const openShareIntent = (baseUrl: string, paramName: string = "url") => {
+    const shareIntent = new URL(baseUrl);
+    shareIntent.searchParams.set(paramName, shareUrl);
+    if (baseUrl.includes("x.com/intent/post")) {
+      shareIntent.searchParams.set("text", shareMessage);
+    }
+    window.open(shareIntent.toString(), "_blank", "noopener,noreferrer");
+    setIsShareMenuOpen(false);
+  };
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const syncNetwork = async () => {
+      if (!targetChainId) {
+        if (!cancelled) setIsEnsuringNetwork(false);
+        return;
+      }
+
+      if (!targetNetwork) {
+        toast.error("Invalid market network in URL", {
+          description: `Unsupported chainId=${targetChainId}.`,
+        });
+        if (!cancelled) setIsEnsuringNetwork(false);
+        return;
+      }
+
+      if (selectedNetwork.chainId !== targetNetwork.chainId) {
+        setSelectedNetwork(targetNetwork);
+      }
+
+      if (account?.address && activeWalletChain?.id !== targetNetwork.chainId) {
+        try {
+          await switchChain(defineChain({ id: targetNetwork.chainId, rpc: targetNetwork.rpc }));
+        } catch (error) {
+          console.error("Failed to switch network for deep-linked market:", error);
+          if (activeWallet) {
+            await disconnect(activeWallet);
+          }
+          toast.error("Wallet network mismatch", {
+            description: "Please reconnect and approve the requested network.",
+          });
+        }
+      }
+
+      if (!cancelled) setIsEnsuringNetwork(false);
+    };
+
+    setIsEnsuringNetwork(true);
+    syncNetwork();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    account?.address,
+    activeWallet,
+    activeWalletChain?.id,
+    disconnect,
+    selectedNetwork.chainId,
+    setSelectedNetwork,
+    switchChain,
+    targetChainId,
+    targetNetwork,
+  ]);
   // Scroll to top when market page loads
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -126,7 +266,7 @@ export default function MarketPage() {
     console.log("MarketPage render - isVoteModalOpen:", isVoteModalOpen, "market.indexer:", market?.indexer, "market.posterImage:", market?.posterImage);
   }, [isVoteModalOpen, market?.indexer, market?.posterImage]);
   // Show loading state while hydrating data (deep-link scenario)
-  if (isHydrating || !isHydrated) {
+  if (isEnsuringNetwork || isHydrating || !isHydrated) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <div className="text-center">
@@ -329,15 +469,65 @@ export default function MarketPage() {
           animate={{ opacity: 1, x: 0 }}
           className="fixed right-4 top-4 z-20 sm:right-6 sm:top-6"
         >
-          <Button
-            variant="ghost"
-            className="rounded-xl border border-white/50 bg-white/70 backdrop-blur-xl hover:bg-white/80 shadow-[0_2px_12px_-2px_hsl(220_30%_15%/0.08)] dark:border-border/50 dark:bg-card/80 dark:backdrop-blur-sm dark:hover:bg-card dark:shadow-none"
-            onClick={() => {
-              navigator.clipboard.writeText(window.location.href);
-            }}
-          >
-            <Share2 className="h-4 w-4" />
-          </Button>
+          <div className="relative">
+            <Button
+              variant="ghost"
+              className="rounded-xl border border-white/50 bg-white/70 backdrop-blur-xl hover:bg-white/80 shadow-[0_2px_12px_-2px_hsl(220_30%_15%/0.08)] dark:border-border/50 dark:bg-card/80 dark:backdrop-blur-sm dark:hover:bg-card dark:shadow-none"
+              onClick={() => setIsShareMenuOpen((prev) => !prev)}
+            >
+              <Share2 className="h-4 w-4" />
+            </Button>
+
+            <AnimatePresence>
+              {isShareMenuOpen && (
+                <motion.div
+                  initial={{ opacity: 0, y: -8, scale: 0.96 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -8, scale: 0.96 }}
+                  transition={{ duration: 0.12, ease: "easeOut" }}
+                  className="absolute right-0 mt-2 w-56 rounded-xl border border-white/40 bg-white/85 p-2 shadow-lg backdrop-blur-xl dark:border-border/50 dark:bg-card/95"
+                >
+                  <p className="px-2 pb-2 pt-1 font-outfit text-xs text-muted-foreground">
+                    Share this market on {selectedNetwork.name}
+                  </p>
+                  <div className="space-y-1">
+                    <Button
+                      variant="ghost"
+                      className="w-full justify-start rounded-lg"
+                      onClick={handleCopyShareLink}
+                    >
+                      <Copy className="mr-2 h-4 w-4" />
+                      Copy link
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      className="w-full justify-start rounded-lg"
+                      onClick={() => openShareIntent("https://x.com/intent/post")}
+                    >
+                      <Send className="mr-2 h-4 w-4" />
+                      Share on X
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      className="w-full justify-start rounded-lg"
+                      onClick={() => openShareIntent("https://t.me/share/url")}
+                    >
+                      <MessageCircle className="mr-2 h-4 w-4" />
+                      Share on Telegram
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      className="w-full justify-start rounded-lg"
+                      onClick={handleNativeShare}
+                    >
+                      <Share2 className="mr-2 h-4 w-4" />
+                      Share via device
+                    </Button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
         </motion.div>
         {/* Main Content */}
         <div className="mx-auto max-w-3xl px-4 pt-20 pb-12 sm:px-6">
