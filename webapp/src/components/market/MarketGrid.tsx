@@ -1,6 +1,6 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Search, X, Sparkles, Loader2, RotateCcw } from "lucide-react";
+import { Plus, Search, X, Sparkles, Loader2, RotateCcw, ChevronLeft, ChevronRight } from "lucide-react";
 import type { Market } from "@/types/market";
 import { MarketCard } from "./MarketCard";
 import { Button } from "@/components/ui/button";
@@ -20,17 +20,29 @@ const shuffleArray = <T,>(array: T[]): T[] => {
 
 interface MarketGridProps {
   markets: Market[];
+  marketCount: number;
+  currentPage: number;
+  pageSize: number;
+  onPageChange: (page: number) => void;
   onCreateMarket: () => void;
   onVoteClick?: (marketId: number, signal: boolean) => void;
   onRefreshMarkets?: () => void;
   isLoading?: boolean;
 }
 
-export function MarketGrid({ markets, onCreateMarket, onVoteClick, onRefreshMarkets, isLoading = false }: MarketGridProps) {
+export function MarketGrid({ markets, marketCount, currentPage, pageSize, onPageChange, onCreateMarket, onVoteClick, onRefreshMarkets, isLoading = false }: MarketGridProps) {
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [showAllTags, setShowAllTags] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const totalPages = Math.max(1, Math.ceil(marketCount / pageSize));
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      onPageChange(totalPages);
+    }
+  }, [currentPage, totalPages, onPageChange]);
 
   // Extract all unique tags and shuffle them
   const allTags = useMemo(() => {
@@ -42,16 +54,14 @@ export function MarketGrid({ markets, onCreateMarket, onVoteClick, onRefreshMark
     return shuffleArray(sortedTags);
   }, [markets]);
 
-  // Filter and sort markets
+  // Filter and sort markets (already current-page bounded by backend fetch logic)
   const filteredMarkets = useMemo(() => {
     let filtered = markets;
 
-    // Filter by tag
     if (selectedTag) {
       filtered = filtered.filter((m) => m.tags.includes(selectedTag));
     }
 
-    // Filter by search query
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(
@@ -62,13 +72,13 @@ export function MarketGrid({ markets, onCreateMarket, onVoteClick, onRefreshMark
       );
     }
 
-    // Sort by creation date (newest first)
     return [...filtered].sort(
       (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     );
   }, [markets, selectedTag, searchQuery]);
 
-  // Show "More" button when there are more than 20 tags
+  const visibleStart = marketCount === 0 ? 0 : Math.max(0, marketCount - ((currentPage - 1) * pageSize) - 1);
+  const visibleEnd = marketCount === 0 ? 0 : Math.max(0, visibleStart - pageSize + 1);
 
   const handleRefreshMarkets = async () => {
     if (isRefreshing || !onRefreshMarkets) return;
@@ -83,7 +93,6 @@ export function MarketGrid({ markets, onCreateMarket, onVoteClick, onRefreshMark
   return (
     <div className="min-h-screen pt-20 pb-12">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        {/* Page Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -92,7 +101,10 @@ export function MarketGrid({ markets, onCreateMarket, onVoteClick, onRefreshMark
           <div>
             <h1 className="font-syne text-3xl font-bold text-foreground">Markets</h1>
             <p className="mt-1 font-outfit text-muted-foreground">
-              {markets.length} prediction {markets.length === 1 ? "market" : "markets"} available
+              {marketCount} prediction {marketCount === 1 ? "market" : "markets"} available
+            </p>
+            <p className="mt-1 font-outfit text-sm text-muted-foreground">
+              Page {currentPage} of {totalPages} • Range {visibleStart} - {visibleEnd}
             </p>
           </div>
 
@@ -127,19 +139,17 @@ export function MarketGrid({ markets, onCreateMarket, onVoteClick, onRefreshMark
           </div>
         </motion.div>
 
-        {/* Search & Filter Bar */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
           className="mb-6 space-y-4"
         >
-          {/* Search Input */}
           <div className="relative">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               type="text"
-              placeholder="Search markets..."
+              placeholder="Search markets on this page..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="h-11 rounded-xl border-amber-100/60 bg-amber-50/60 backdrop-blur-lg pl-10 font-outfit placeholder:text-muted-foreground focus:border-primary/50 focus:ring-primary/20 shadow-[inset_0_1px_2px_hsl(220_30%_15%/0.05)] dark:border-border/50 dark:bg-card dark:backdrop-blur-none dark:shadow-none"
@@ -154,7 +164,6 @@ export function MarketGrid({ markets, onCreateMarket, onVoteClick, onRefreshMark
             )}
           </div>
 
-          {/* Tags Filter */}
           {allTags.length > 0 && (
             <div className="flex flex-wrap gap-2">
               <button
@@ -191,7 +200,6 @@ export function MarketGrid({ markets, onCreateMarket, onVoteClick, onRefreshMark
             </div>
           )}
 
-          {/* All Tags Modal */}
           <Dialog open={showAllTags} onOpenChange={setShowAllTags}>
             <DialogContent className="max-w-md bg-card/95 backdrop-blur-sm border-border/50">
               <DialogHeader>
@@ -235,7 +243,6 @@ export function MarketGrid({ markets, onCreateMarket, onVoteClick, onRefreshMark
           </Dialog>
         </motion.div>
 
-        {/* Markets Grid or Empty State */}
         <AnimatePresence mode="wait">
           {isLoading ? (
             <motion.div
@@ -256,7 +263,7 @@ export function MarketGrid({ markets, onCreateMarket, onVoteClick, onRefreshMark
               exit={{ opacity: 0 }}
               className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
             >
-                  {filteredMarkets.map((market, index) => (
+              {filteredMarkets.map((market, index) => (
                 <motion.div
                   key={market.id}
                   initial={{ opacity: 0, y: 20 }}
@@ -298,6 +305,18 @@ export function MarketGrid({ markets, onCreateMarket, onVoteClick, onRefreshMark
             </motion.div>
           )}
         </AnimatePresence>
+
+        {marketCount > 0 && (
+          <div className="mt-8 flex items-center justify-center gap-2">
+            <Button variant="outline" size="icon" onClick={() => onPageChange(Math.max(1, currentPage - 1))} disabled={currentPage === 1 || isLoading}>
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <span className="px-3 py-2 text-sm text-muted-foreground">{currentPage} / {totalPages}</span>
+            <Button variant="outline" size="icon" onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))} disabled={currentPage === totalPages || isLoading}>
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );
