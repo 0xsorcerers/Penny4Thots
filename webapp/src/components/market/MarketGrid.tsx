@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ProfileDropdown } from "@/components/profile/ProfileDropdown";
+import { MarketSearchIndex } from "@/lib/marketSearchIndex";
 
 // Fisher-Yates shuffle algorithm
 const shuffleArray = <T,>(array: T[]): T[] => {
@@ -18,8 +19,11 @@ const shuffleArray = <T,>(array: T[]): T[] => {
   return shuffled;
 };
 
+const SEARCH_DEBOUNCE_MS = 3000;
+
 interface MarketGridProps {
   markets: Market[];
+  allMarkets: Market[];
   marketCount: number;
   currentPage: number;
   pageSize: number;
@@ -27,12 +31,14 @@ interface MarketGridProps {
   onCreateMarket: () => void;
   onVoteClick?: (marketId: number, signal: boolean) => void;
   onRefreshMarkets?: () => void;
+  onSearchResultsChange?: (marketIds: number[]) => void;
   isLoading?: boolean;
 }
 
-export function MarketGrid({ markets, marketCount, currentPage, pageSize, onPageChange, onCreateMarket, onVoteClick, onRefreshMarkets, isLoading = false }: MarketGridProps) {
+export function MarketGrid({ markets, allMarkets, marketCount, currentPage, pageSize, onPageChange, onCreateMarket, onVoteClick, onRefreshMarkets, onSearchResultsChange, isLoading = false }: MarketGridProps) {
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
   const [showAllTags, setShowAllTags] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -44,38 +50,62 @@ export function MarketGrid({ markets, marketCount, currentPage, pageSize, onPage
     }
   }, [currentPage, totalPages, onPageChange]);
 
-  // Extract all unique tags and shuffle them
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setDebouncedQuery(searchQuery.trim());
+    }, SEARCH_DEBOUNCE_MS);
+
+    return () => window.clearTimeout(timer);
+  }, [searchQuery]);
+
+  // Extract all unique tags and shuffle them (from all network markets)
   const allTags = useMemo(() => {
     const tagSet = new Set<string>();
-    markets.forEach((market) => {
+    allMarkets.forEach((market) => {
       market.tags.forEach((tag) => tagSet.add(tag));
     });
     const sortedTags = Array.from(tagSet).sort();
     return shuffleArray(sortedTags);
-  }, [markets]);
+  }, [allMarkets]);
 
-  // Filter and sort markets (already current-page bounded by backend fetch logic)
+  const searchIndex = useMemo(() => new MarketSearchIndex(allMarkets), [allMarkets]);
+  const allMarketMap = useMemo(() => new Map(allMarkets.map((m) => [m.indexer, m])), [allMarkets]);
+
+  const isNumericSearch = debouncedQuery.length > 0 && /^\d+$/.test(debouncedQuery);
+
+  const searchedMarketIds = useMemo(() => {
+    if (!debouncedQuery) return [];
+    if (isNumericSearch) {
+      return searchIndex.findById(Number(debouncedQuery));
+    }
+    return searchIndex.search(debouncedQuery);
+  }, [debouncedQuery, isNumericSearch, searchIndex]);
+
+  // Filter and sort markets
   const filteredMarkets = useMemo(() => {
-    let filtered = markets;
+    const sourceMarkets = debouncedQuery
+      ? searchedMarketIds.map((id) => allMarketMap.get(id)).filter((m): m is Market => Boolean(m))
+      : markets;
+
+    let filtered = sourceMarkets;
 
     if (selectedTag) {
       filtered = filtered.filter((m) => m.tags.includes(selectedTag));
     }
 
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(
-        (m) =>
-          m.title.toLowerCase().includes(query) ||
-          m.subtitle.toLowerCase().includes(query) ||
-          m.description.toLowerCase().includes(query)
-      );
-    }
-
     return [...filtered].sort(
       (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     );
-  }, [markets, selectedTag, searchQuery]);
+  }, [markets, selectedTag, debouncedQuery, searchedMarketIds, allMarketMap]);
+
+  useEffect(() => {
+    const idsToHydrate = filteredMarkets
+      .map((m) => m.indexer)
+      .filter((id): id is number => typeof id === "number")
+      .slice(0, pageSize);
+
+    onSearchResultsChange?.(idsToHydrate);
+  }, [filteredMarkets, onSearchResultsChange, pageSize]);
 
   const visibleStart = marketCount === 0 ? 0 : Math.max(0, marketCount - ((currentPage - 1) * pageSize) - 1);
   const visibleEnd = marketCount === 0 ? 0 : Math.max(0, visibleStart - pageSize + 1);
@@ -98,7 +128,7 @@ export function MarketGrid({ markets, marketCount, currentPage, pageSize, onPage
 
   const renderPagePicker = (className = "") => (
     <div className={`flex flex-wrap items-center justify-center gap-2 rounded-xl border border-border/40 bg-card/35 px-3 py-2 backdrop-blur-sm ${className}`}>
-      <Button variant="outline" className="bg-background/35 border-border/45" size="icon" onClick={() => onPageChange(Math.max(1, currentPage - 1))} disabled={currentPage === 1 || isLoading}>
+      <Button variant="outline" className="bg-background/35 border-border/45" size="icon" onClick={() => onPageChange(Math.max(1, currentPage - 1))} disabled={currentPage === 1 || isLoading || !!debouncedQuery}>
         <ChevronLeft className="h-4 w-4" />
       </Button>
       {getPagePickerItems().map((item, idx) => {
@@ -111,14 +141,14 @@ export function MarketGrid({ markets, marketCount, currentPage, pageSize, onPage
             variant={currentPage === item ? "default" : "outline"}
             size="sm"
             onClick={() => onPageChange(item)}
-            disabled={isLoading}
+            disabled={isLoading || !!debouncedQuery}
             className={currentPage === item ? "bg-primary/85" : "bg-background/35 border-border/45"}
           >
             {item}
           </Button>
         );
       })}
-      <Button variant="outline" className="bg-background/35 border-border/45" size="icon" onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))} disabled={currentPage === totalPages || isLoading}>
+      <Button variant="outline" className="bg-background/35 border-border/45" size="icon" onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))} disabled={currentPage === totalPages || isLoading || !!debouncedQuery}>
         <ChevronRight className="h-4 w-4" />
       </Button>
     </div>
@@ -148,7 +178,9 @@ export function MarketGrid({ markets, marketCount, currentPage, pageSize, onPage
               {marketCount} prediction {marketCount === 1 ? "market" : "markets"} available
             </p>
             <p className="mt-1 font-outfit text-sm text-muted-foreground">
-              Page {currentPage} of {totalPages} • Range {visibleStart} - {visibleEnd}
+              {debouncedQuery
+                ? `Search results: ${filteredMarkets.length}`
+                : `Page ${currentPage} of ${totalPages} • Range ${visibleStart} - ${visibleEnd}`}
             </p>
           </div>
 
@@ -193,7 +225,7 @@ export function MarketGrid({ markets, marketCount, currentPage, pageSize, onPage
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               type="text"
-              placeholder="Search markets on this page..."
+              placeholder="Search markets by id, title, subtitle, description, or tags..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="h-11 rounded-xl border-amber-100/60 bg-amber-50/60 backdrop-blur-lg pl-10 font-outfit placeholder:text-muted-foreground focus:border-primary/50 focus:ring-primary/20 shadow-[inset_0_1px_2px_hsl(220_30%_15%/0.05)] dark:border-border/50 dark:bg-card dark:backdrop-blur-none dark:shadow-none"
@@ -245,13 +277,13 @@ export function MarketGrid({ markets, marketCount, currentPage, pageSize, onPage
           )}
 
           <Dialog open={showAllTags} onOpenChange={setShowAllTags}>
-            <DialogContent className="max-w-md bg-card/95 backdrop-blur-sm border-border/50">
+            <DialogContent className="max-w-2xl bg-card/95 backdrop-blur-sm border-border/50 max-h-[80vh] overflow-hidden">
               <DialogHeader>
                 <DialogTitle className="text-xl font-bold">Filter by Tag</DialogTitle>
               </DialogHeader>
-              <div className="space-y-4">
+              <div className="space-y-4 overflow-y-auto pr-1">
                 <p className="text-sm text-muted-foreground">Select a tag to filter markets</p>
-                <div className="flex flex-wrap gap-2">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
                   <button
                     onClick={() => {
                       setSelectedTag(null);
@@ -287,7 +319,7 @@ export function MarketGrid({ markets, marketCount, currentPage, pageSize, onPage
           </Dialog>
         </motion.div>
 
-        {marketCount > 0 && renderPagePicker("mb-6") }
+        {!debouncedQuery && marketCount > 0 && renderPagePicker("mb-6") }
 
         <AnimatePresence mode="wait">
           {isLoading ? (
@@ -352,7 +384,7 @@ export function MarketGrid({ markets, marketCount, currentPage, pageSize, onPage
           )}
         </AnimatePresence>
 
-        {marketCount > 0 && renderPagePicker("mt-6")}
+        {!debouncedQuery && marketCount > 0 && renderPagePicker("mt-6")}
       </div>
     </div>
   );
