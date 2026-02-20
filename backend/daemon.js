@@ -27,10 +27,10 @@ const deepseekai = new OpenAI({
   apiKey: process.env.DEEPSEEK_API_KEY
 });
 
-// const perplexity = new OpenAI({
-//   baseURL: 'https://api.perplexity.ai',
-//   apiKey: process.env.PERPLEXITY_API_KEY
-// });
+const perplexity = new OpenAI({
+  baseURL: 'https://api.perplexity.ai',
+  apiKey: process.env.PERPLEXITY_API_KEY
+});
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY
@@ -76,6 +76,69 @@ No commentary.
 Strict JSON only.
 `;
 
+// ================= JUDGE REGISTRY =================
+
+const AI_JUDGES = {
+  openai: {
+    label: "OpenAI(gpt-4o)",
+    fn: async (payload) => {
+      const res = await openai.chat.completions.create({
+        model: "gpt-4o",
+        temperature: 0,
+        messages: [
+          { role: "system", content: resolutionInstruction },
+          { role: "user", content: payload }
+        ]
+      });
+      return safeParseArray(res.choices[0].message.content.trim());
+    }
+  },
+
+  deepseek: {
+    label: "DeepSeek(deepseek-chat)",
+    fn: async (payload) => {
+      const res = await deepseekai.chat.completions.create({
+        model: "deepseek-chat",
+        temperature: 0,
+        messages: [
+          { role: "system", content: resolutionInstruction },
+          { role: "user", content: payload }
+        ]
+      });
+      return safeParseArray(res.choices[0].message.content.trim());
+    }
+  },
+
+  anthropic: {
+    label: "Anthropic(claude-haiku-3-5)",
+    fn: async (payload) => {
+      const res = await anthropic.messages.create({
+        model: "claude-haiku-3-5-20241022",
+        max_tokens: 2000,
+        system: resolutionInstruction,
+        messages: [{ role: "user", content: payload }]
+      });
+      return safeParseArray(res.content[0].text.trim());
+    }
+  },
+
+   perplexity: {
+    label: "Perplexity(Sonar-pro)",
+    fn: async (payload) => {
+      const res = await perplexity.chat.completions.create({
+        model: "sonar-pro",
+        temperature: 0,
+        messages: [
+          { role: "system", content: resolutionInstruction },
+          { role: "user", content: payload }
+        ]
+      });
+      return safeParseArray(res.choices[0].message.content.trim());
+    }
+  }
+};
+
+
 // ================= UTILS =================
 function safeParseArray(raw) {
   try {
@@ -90,9 +153,40 @@ function safeParseArray(raw) {
   }
 }
 
+// ================= DETERMINISTIC SHUFFLE =================
+
+function deterministicShuffle(array, seedHex) {
+  const arr = [...array];
+
+  for (let i = arr.length - 1; i > 0; i--) {
+    const hash = crypto
+      .createHash("sha256")
+      .update(seedHex + "-" + i)
+      .digest("hex");
+
+    const j = parseInt(hash.slice(0, 8), 16) % (i + 1);
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+
+  return arr;
+}
+
+function pickSittingJudges(latestBlockHash, indexer, count = 3) {
+  const judgeKeys = Object.keys(AI_JUDGES);
+
+  const seed = crypto
+    .createHash("sha256")
+    .update(`${latestBlockHash}-${indexer}`)
+    .digest("hex");
+
+  const shuffled = deterministicShuffle(judgeKeys, seed);
+
+  return shuffled.slice(0, Math.min(count, shuffled.length));
+}
+
 // ================= CONSENSUS ENGINE =================
-async function batchDetermineWinners(expiredMarkets) {
-  if (!expiredMarkets.length) {
+async function batchDetermineWinners(expiredMarkets, latestBlockHash) {
+    if (!expiredMarkets.length) {
     return { resolved: [], voteMap: {} };
   }
 
@@ -138,7 +232,7 @@ async function batchDetermineWinners(expiredMarkets) {
   async function queryAnthropic() {
     try {
       const res = await anthropic.messages.create({
-        model: "claude-3-7-sonnet-20250219",
+        model: "claude-haiku-3-5-20241022",
         max_tokens: 2000,
         system: resolutionInstruction,
         messages: [{ role: "user", content: payload }]
@@ -151,39 +245,50 @@ async function batchDetermineWinners(expiredMarkets) {
     }
   }
 
-  const [openaiRes, deepseekRes, anthropicRes] = await Promise.all([
-    queryOpenAI(),
-    queryDeepSeek(),
-    queryAnthropic()
-  ]);
-
-  const modelOutputs = [openaiRes, deepseekRes, anthropicRes].filter(r => Array.isArray(r));
-  if (modelOutputs.length < 2) {
-    log(`Not enough AI responses for consensus.`);
-    return { resolved: [], voteMap: {} };
-  }
-
+  const perMarketResults = {};
   const voteMap = {};
-  const modelNames = ["openai", "deepseek", "anthropic"];
-  const modelOutputsRaw = [openaiRes, deepseekRes, anthropicRes];
-
-  for (let m = 0; m < modelOutputsRaw.length; m++) {
-    const output = modelOutputsRaw[m];
-    const modelName = modelNames[m];
-    if (!Array.isArray(output)) continue;
-
-    for (const item of output) {
-      const decision = String(item?.decision || "").toUpperCase();
-      if (!item?.indexer || !["A", "B"].includes(decision)) continue;
-
-      if (!voteMap[item.indexer]) {
-        voteMap[item.indexer] = { votes: { A: 0, B: 0 }, models: {} };
+    
+    for (const market of expiredMarkets) {
+      const payloadSingle = JSON.stringify([market]);
+    
+      // 🔥 deterministic judge selection
+      const sittingJudges = pickSittingJudges(
+        latestBlockHash,
+        market.indexer,
+        3
+      );
+    
+      log(`Market ${market.indexer} sitting judges → ${sittingJudges.join(", ")}`);
+    
+      const judgePromises = sittingJudges.map(async (judgeName) => {
+        try {
+          const result = await AI_JUDGES[judgeName].fn(payloadSingle);
+          return { judgeName, result };
+        } catch (err) {
+          log(`${judgeName} error: ${err.message}`);
+          return null;
+        }
+      });
+    
+      const responses = (await Promise.all(judgePromises)).filter(Boolean);
+    
+      for (const resp of responses) {
+        const { judgeName, result } = resp;
+        if (!Array.isArray(result)) continue;
+    
+        for (const item of result) {
+          const decision = String(item?.decision || "").toUpperCase();
+          if (!item?.indexer || !["A", "B"].includes(decision)) continue;
+    
+          if (!voteMap[item.indexer]) {
+            voteMap[item.indexer] = { votes: { A: 0, B: 0 }, models: {} };
+          }
+    
+          voteMap[item.indexer].votes[decision]++;
+          voteMap[item.indexer].models[judgeName] = decision;
+        }
       }
-
-      voteMap[item.indexer].votes[item.decision]++;
-      voteMap[item.indexer].models[modelName] = decision;
     }
-  }
 
   const finalResults = [];
   for (const [indexer, data] of Object.entries(voteMap)) {
@@ -236,7 +341,7 @@ async function finalArbiterResolve(market, luckyJudge) {
 
     if (luckyJudge === "anthropic") {
       const res = await anthropic.messages.create({
-        model: "claude-3-7-sonnet-20250219",
+        model: "claude-haiku-3-5-20241022",
         max_tokens: 2000,
         system: resolutionInstruction,
         messages: [{ role: "user", content: payload }]
@@ -449,7 +554,12 @@ async function monitorNetwork(networkConfig) {
   for (let i = 0; i < expiredMarkets.length; i += aiChunkSize) {
     const aiChunk = expiredMarkets.slice(i, i + aiChunkSize);
     log(`[${name}] AI consensus batch ${Math.floor(i / aiChunkSize) + 1} (${aiChunk.length} markets)`);
-    const consensusResult = await batchDetermineWinners(aiChunk);
+    
+    const latestBlockForConsensus = await provider.getBlock("latest");
+    const consensusResult = await batchDetermineWinners(
+      aiChunk,
+      latestBlockForConsensus.hash
+    );
 
     if (consensusResult?.resolved?.length > 0) {
       decisions.push(...consensusResult.resolved);
@@ -476,11 +586,14 @@ async function monitorNetwork(networkConfig) {
   const resolvedIds = new Set(decisions.map(d => d.indexer));
 
     for (const market of expiredMarkets) {
+        
         const seed = crypto
           .createHash("sha256")
           .update(`${latestBlock.hash}-${market.indexer}`)
           .digest("hex");
-        const judges = ["openai", "deepseek", "anthropic"];
+          
+        const judges = Object.keys(AI_JUDGES);
+        
         const index = parseInt(seed.slice(0, 8), 16) % judges.length;
         const luckyJudge = judges[index];
     
@@ -540,7 +653,7 @@ async function monitorNetwork(networkConfig) {
       const modelLabelMap = {
         openai: "OpenAI(gpt-4o)",
         deepseek: "DeepSeek(deepseek-chat)",
-        anthropic: "Anthropic(claude-3-7-sonnet)"
+        anthropic: "Anthropic(claude-4-6-sonnet)"
       };
 
       const judgeEntries = Object.entries(result.models || {}).map(
