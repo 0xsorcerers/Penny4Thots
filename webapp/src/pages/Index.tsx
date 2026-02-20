@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { GetStartedPage } from "@/components/landing/GetStartedPage";
 import { Header } from "@/components/layout/Header";
 import { MarketGrid } from "@/components/market/MarketGrid";
@@ -29,6 +29,7 @@ export default function Index() {
   const { writeMarket, isPending, error } = useWriteMarket();
   const { vote, isPending: isVoting } = useVote();
   const { approve, isPending: isApproving } = useTokenApprove();
+  const lastSearchHydrationKeyRef = useRef<string>("");
 
   // Smart fetch: hydrate immutable market info in background, keep mutable data fresh per visible page.
   const loadMarketsFromBlockchain = useCallback(async () => {
@@ -128,6 +129,30 @@ export default function Index() {
     const marketMap = new Map(markets.map((m) => [m.indexer, m]));
     return pageIds.map((id) => marketMap.get(id)).filter((m): m is Market => Boolean(m));
   })();
+
+
+  const handleSearchResultsChange = useCallback(async (marketIds: number[]) => {
+    if (!marketIds.length) {
+      lastSearchHydrationKeyRef.current = "";
+      return;
+    }
+
+    const idsToRead = marketIds.slice(0, MARKETS_PER_PAGE);
+    const hydrationKey = idsToRead.join(",");
+    if (hydrationKey === lastSearchHydrationKeyRef.current) return;
+
+    lastSearchHydrationKeyRef.current = hydrationKey;
+
+    try {
+      const pageData = await fetchMarketDataFromBlockchain(idsToRead);
+      const dataMap = new Map(
+        pageData.map((data, idx) => [idsToRead[idx], { ...data, indexer: idsToRead[idx] }])
+      );
+      updateMarketData(dataMap);
+    } catch (err) {
+      console.error("Failed to hydrate search result market data:", err);
+    }
+  }, [updateMarketData]);
 
   const handleConnect = () => {
     setIsConnected(!isConnected);
@@ -336,6 +361,7 @@ export default function Index() {
       <div className="relative z-10">
         <MarketGrid
           markets={marketsForCurrentPage}
+          allMarkets={markets}
           marketCount={marketCount}
           currentPage={currentPage}
           pageSize={MARKETS_PER_PAGE}
@@ -343,6 +369,7 @@ export default function Index() {
           onCreateMarket={() => setIsCreateModalOpen(true)}
           onVoteClick={handleVoteClick}
           onRefreshMarkets={handleRefreshAllMarkets}
+          onSearchResultsChange={handleSearchResultsChange}
           isLoading={isLoadingFromBlockchain}
         />
       </div>
