@@ -32,6 +32,11 @@ const perplexity = new OpenAI({
   apiKey: process.env.PERPLEXITY_API_KEY
 });
 
+const xai = new OpenAI({
+  baseURL: 'https://api.x.ai/v1',
+  apiKey: process.env.XAI_API_KEY
+});
+
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY
 });
@@ -123,7 +128,7 @@ const AI_JUDGES = {
   },
 
    perplexity: {
-    label: "Perplexity(Sonar-pro)",
+    label: "Perplexity(sonar-pro)",
     fn: async (payload) => {
       const res = await perplexity.chat.completions.create({
         model: "sonar-pro",
@@ -135,7 +140,22 @@ const AI_JUDGES = {
       });
       return safeParseArray(res.choices[0].message.content.trim());
     }
-  }
+   },
+
+   xai: {
+    label: "Grok(4.1)",
+    fn: async (payload) => {
+      const res = await xai.chat.completions.create({
+        model: "grok-beta",
+        temperature: 0,
+        messages: [
+          { role: "system", content: resolutionInstruction },
+          { role: "user", content: payload }
+        ]
+      });
+      return safeParseArray(res.choices[0].message.content.trim());
+    }
+   }
 };
 
 
@@ -350,6 +370,35 @@ async function finalArbiterResolve(market, luckyJudge) {
       if (parsed?.[0]) return { ...parsed[0], deadlockBrokenBy: luckyJudge };
       return null;
     }
+    
+    if (luckyJudge === "perplexity") {
+      const res = await perplexity.chat.completions.create({
+        model: "sonar-pro",
+        temperature: 0,
+        messages: [
+          { role: "system", content: resolutionInstruction },
+          { role: "user", content: payload }
+        ]
+      });
+      const parsed = safeParseArray(res.choices[0].message.content.trim());
+      if (parsed?.[0]) return { ...parsed[0], deadlockBrokenBy: luckyJudge };
+      return null;
+    }
+    
+    if (luckyJudge === "xai") {
+      const res = await xai.chat.completions.create({
+        model: "grok-beta",
+        temperature: 0,
+        messages: [
+          { role: "system", content: resolutionInstruction },
+          { role: "user", content: payload }
+        ]
+      });
+      const parsed = safeParseArray(res.choices[0].message.content.trim());
+      if (parsed?.[0]) return { ...parsed[0], deadlockBrokenBy: luckyJudge };
+      return null;
+    }
+    
   } catch (err) {
     log(`Final arbiter error: ${err.message}`);
     return null;

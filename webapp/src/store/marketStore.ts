@@ -50,7 +50,7 @@ const buildMarkets = (
       tradeOptions: data?.status || false,
       yesVotes: data?.aVotes || 0,
       noVotes: data?.bVotes || 0,
-      createdAt: new Date().toISOString(),
+      createdAt: data?.startTime ? new Date(data.startTime * 1000).toISOString() : new Date().toISOString(),
       marketBalance: data?.marketBalance?.toString() || "0",
       status: data?.status || false,
       optionA: info.optionA || "Yes",
