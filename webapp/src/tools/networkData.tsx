@@ -20,16 +20,6 @@ const sepolia: NetworkConfig = {
   contract_address: '0x7DeA875A4D644aB78e0914FFF8b760bE5e8F54cb' as Address,
 };
 
-const manta: NetworkConfig = {
-  name: 'Manta Network (Live)',
-  chainId: 169,
-  rpc: 'https://pacific-rpc.manta.network/http',
-  blockExplorer: 'https://pacific-explorer.manta.network/',
-  decimals: 18,
-  symbol: 'ETH',
-  contract_address: '0x83D8EeeB23539CEB139DDbD00dc26eE57Bb3F2Bd' as Address,
-};
-
 const bnb: NetworkConfig = {
   name: 'BNB Network (Live)',
   chainId: 56,
@@ -40,6 +30,25 @@ const bnb: NetworkConfig = {
   contract_address: '0x13B9CD2340E8224D4c1CC86d3481c217d9078AAe' as Address,
 };
 
+const base: NetworkConfig = {
+  name: 'Base (Live)',
+  chainId: 8453,
+  rpc: 'https://gateway.tenderly.co/public/base',
+  blockExplorer: 'https://basescan.org',
+  decimals: 18,
+  symbol: 'ETH',
+  contract_address: '0xe8f5b91e8e4c49f499002745bA49dc9fEE7670C6' as Address,
+};
+
+const manta: NetworkConfig = {
+  name: 'Manta Network (Live)',
+  chainId: 169,
+  rpc: 'https://pacific-rpc.manta.network/http',
+  blockExplorer: 'https://pacific-explorer.manta.network/',
+  decimals: 18,
+  symbol: 'ETH',
+  contract_address: '0x83D8EeeB23539CEB139DDbD00dc26eE57Bb3F2Bd' as Address,
+};
 const opbnb: NetworkConfig = {
   name: 'opBNB L2 (Live)',
   chainId: 204,
@@ -50,6 +59,6 @@ const opbnb: NetworkConfig = {
   contract_address: '0x8d4a1A116Fd092D21b47Aa29a1882995af234353' as Address,
 };
 
-const chains: NetworkConfig[] = [sepolia, manta, bnb, opbnb];
+const chains: NetworkConfig[] = [sepolia, bnb, base, manta, opbnb];
 
-export { chains, type NetworkConfig };
+export { chains };
