@@ -129,6 +129,22 @@ export default function Index() {
     return pageIds.map((id) => marketMap.get(id)).filter((m): m is Market => Boolean(m));
   })();
 
+
+  const handleSearchResultsChange = useCallback(async (marketIds: number[]) => {
+    if (!marketIds.length) return;
+
+    const idsToRead = marketIds.slice(0, MARKETS_PER_PAGE);
+    try {
+      const pageData = await fetchMarketDataFromBlockchain(idsToRead);
+      const dataMap = new Map(
+        pageData.map((data, idx) => [idsToRead[idx], { ...data, indexer: idsToRead[idx] }])
+      );
+      updateMarketData(dataMap);
+    } catch (err) {
+      console.error("Failed to hydrate search result market data:", err);
+    }
+  }, [updateMarketData]);
+
   const handleConnect = () => {
     setIsConnected(!isConnected);
   };
@@ -336,6 +352,7 @@ export default function Index() {
       <div className="relative z-10">
         <MarketGrid
           markets={marketsForCurrentPage}
+          allMarkets={markets}
           marketCount={marketCount}
           currentPage={currentPage}
           pageSize={MARKETS_PER_PAGE}
@@ -343,6 +360,7 @@ export default function Index() {
           onCreateMarket={() => setIsCreateModalOpen(true)}
           onVoteClick={handleVoteClick}
           onRefreshMarkets={handleRefreshAllMarkets}
+          onSearchResultsChange={handleSearchResultsChange}
           isLoading={isLoadingFromBlockchain}
         />
       </div>
