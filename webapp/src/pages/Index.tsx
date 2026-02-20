@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { GetStartedPage } from "@/components/landing/GetStartedPage";
 import { Header } from "@/components/layout/Header";
 import { MarketGrid } from "@/components/market/MarketGrid";
@@ -29,6 +29,7 @@ export default function Index() {
   const { writeMarket, isPending, error } = useWriteMarket();
   const { vote, isPending: isVoting } = useVote();
   const { approve, isPending: isApproving } = useTokenApprove();
+  const lastSearchHydrationKeyRef = useRef<string>("");
 
   // Smart fetch: hydrate immutable market info in background, keep mutable data fresh per visible page.
   const loadMarketsFromBlockchain = useCallback(async () => {
@@ -131,9 +132,17 @@ export default function Index() {
 
 
   const handleSearchResultsChange = useCallback(async (marketIds: number[]) => {
-    if (!marketIds.length) return;
+    if (!marketIds.length) {
+      lastSearchHydrationKeyRef.current = "";
+      return;
+    }
 
     const idsToRead = marketIds.slice(0, MARKETS_PER_PAGE);
+    const hydrationKey = idsToRead.join(",");
+    if (hydrationKey === lastSearchHydrationKeyRef.current) return;
+
+    lastSearchHydrationKeyRef.current = hydrationKey;
+
     try {
       const pageData = await fetchMarketDataFromBlockchain(idsToRead);
       const dataMap = new Map(

@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Plus, Search, X, Sparkles, Loader2, RotateCcw, ChevronLeft, ChevronRight } from "lucide-react";
 import type { Market } from "@/types/market";
@@ -9,17 +9,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { ProfileDropdown } from "@/components/profile/ProfileDropdown";
 import { MarketSearchIndex } from "@/lib/marketSearchIndex";
 
-// Fisher-Yates shuffle algorithm
-const shuffleArray = <T,>(array: T[]): T[] => {
-  const shuffled = [...array];
-  for (let i = shuffled.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-  }
-  return shuffled;
-};
-
 const SEARCH_DEBOUNCE_MS = 3000;
+
+
 
 interface MarketGridProps {
   markets: Market[];
@@ -58,14 +50,13 @@ export function MarketGrid({ markets, allMarkets, marketCount, currentPage, page
     return () => window.clearTimeout(timer);
   }, [searchQuery]);
 
-  // Extract all unique tags and shuffle them (from all network markets)
+  // Extract all unique tags in stable order (from all network markets)
   const allTags = useMemo(() => {
     const tagSet = new Set<string>();
     allMarkets.forEach((market) => {
       market.tags.forEach((tag) => tagSet.add(tag));
     });
-    const sortedTags = Array.from(tagSet).sort();
-    return shuffleArray(sortedTags);
+    return Array.from(tagSet).sort();
   }, [allMarkets]);
 
   const searchIndex = useMemo(() => new MarketSearchIndex(allMarkets), [allMarkets]);
@@ -98,14 +89,25 @@ export function MarketGrid({ markets, allMarkets, marketCount, currentPage, page
     );
   }, [markets, selectedTag, debouncedQuery, searchedMarketIds, allMarketMap]);
 
+  const lastHydratedSearchIdsRef = useRef<string>("");
+
   useEffect(() => {
+    if (!debouncedQuery || !onSearchResultsChange) {
+      lastHydratedSearchIdsRef.current = "";
+      return;
+    }
+
     const idsToHydrate = filteredMarkets
       .map((m) => m.indexer)
       .filter((id): id is number => typeof id === "number")
       .slice(0, pageSize);
 
-    onSearchResultsChange?.(idsToHydrate);
-  }, [filteredMarkets, onSearchResultsChange, pageSize]);
+    const hydrationKey = idsToHydrate.join(",");
+    if (hydrationKey === lastHydratedSearchIdsRef.current) return;
+
+    lastHydratedSearchIdsRef.current = hydrationKey;
+    onSearchResultsChange(idsToHydrate);
+  }, [filteredMarkets, onSearchResultsChange, pageSize, debouncedQuery]);
 
   const visibleStart = marketCount === 0 ? 0 : Math.max(0, marketCount - ((currentPage - 1) * pageSize) - 1);
   const visibleEnd = marketCount === 0 ? 0 : Math.max(0, visibleStart - pageSize + 1);
