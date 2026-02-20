@@ -314,7 +314,6 @@ export function CountdownTimerLarge({ endTime, closed, sharesFinalized, classNam
         </div>
       ) : (
         <div className="flex items-center justify-center gap-2">
-          <CheckCircle2 className="h-5 w-5 text-slate-600 dark:text-slate-400" />
           {adjudicators ? (
             <span className="font-outfit text-lg text-slate-600 dark:text-slate-400">
               {renderParsedAdjudicators(getStatusMessage(adjudicators))}

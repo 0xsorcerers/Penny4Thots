@@ -173,14 +173,15 @@ async function batchDetermineWinners(expiredMarkets) {
     if (!Array.isArray(output)) continue;
 
     for (const item of output) {
-      if (!item?.indexer || !["A", "B"].includes(item.decision)) continue;
+      const decision = String(item?.decision || "").toUpperCase();
+      if (!item?.indexer || !["A", "B"].includes(decision)) continue;
 
       if (!voteMap[item.indexer]) {
         voteMap[item.indexer] = { votes: { A: 0, B: 0 }, models: {} };
       }
 
       voteMap[item.indexer].votes[item.decision]++;
-      voteMap[item.indexer].models[modelName] = item.decision;
+      voteMap[item.indexer].models[modelName] = decision;
     }
   }
 
@@ -472,45 +473,46 @@ async function monitorNetwork(networkConfig) {
 
   const latestBlock = await provider.getBlock("latest");
 
-  for (const market of expiredMarkets) {
-    const seed = crypto
-      .createHash("sha256")
-      .update(`${latestBlock.hash}-${market.indexer}`)
-      .digest("hex");
-    const judges = ["openai", "deepseek", "anthropic"];
-    const index = parseInt(seed.slice(0, 8), 16) % judges.length;
-    const luckyJudge = judges[index];
+  const resolvedIds = new Set(decisions.map(d => d.indexer));
 
-    const id = market.indexer;
-    const resolvedIds = new Set(decisions.map(d => d.indexer));
-
-    if (resolvedIds.has(id)) {
-      state.markets[id].consensusAttempts = 0;
-      continue;
-    }
-
-    state.markets[id].consensusAttempts = (state.markets[id].consensusAttempts || 0) + 1;
-    log(`[${name}] Market ${id} deadlock attempt ${state.markets[id].consensusAttempts}`);
-
-    if (state.markets[id].consensusAttempts >= 3) {
-      const arbiterDecision = await finalArbiterResolve(market, luckyJudge);
-
-      if (arbiterDecision && ["A", "B"].includes(arbiterDecision.decision)) {
-        log(`[${name}] Final arbiter resolved market ${id} → ${arbiterDecision.decision}`);
-        decisions.push({
-          indexer: id,
-          decision: arbiterDecision.decision,
-          models: state.markets[id].lastVoteModels || {},
-          deadlockBrokenBy: arbiterDecision.deadlockBrokenBy
-        });
-        state.markets[id].consensusAttempts = 0;
-      } else {
-        log(`[${name}] Final arbiter failed for market ${id}. Will retry next run.`);
+    for (const market of expiredMarkets) {
+        const seed = crypto
+          .createHash("sha256")
+          .update(`${latestBlock.hash}-${market.indexer}`)
+          .digest("hex");
+        const judges = ["openai", "deepseek", "anthropic"];
+        const index = parseInt(seed.slice(0, 8), 16) % judges.length;
+        const luckyJudge = judges[index];
+    
+        const id = market.indexer;
+        const resolvedIds = new Set(decisions.map(d => d.indexer));
+    
+        if (resolvedIds.has(id)) {
+          continue;
+        }
+    
+        state.markets[id].consensusAttempts = (state.markets[id].consensusAttempts || 0) + 1;
+        log(`[${name}] Market ${id} deadlock attempt ${state.markets[id].consensusAttempts}`);
+    
+        if (state.markets[id].consensusAttempts >= 3) {
+          const arbiterDecision = await finalArbiterResolve(market, luckyJudge);
+    
+          if (arbiterDecision && ["A", "B"].includes(arbiterDecision.decision)) {
+            log(`[${name}] Final arbiter resolved market ${id} → ${arbiterDecision.decision}`);
+            decisions.push({
+              indexer: id,
+              decision: arbiterDecision.decision,
+              models: state.markets[id].lastVoteModels || {},
+              deadlockBrokenBy: arbiterDecision.deadlockBrokenBy
+            });
+            state.markets[id].consensusAttempts = 0;
+          } else {
+            log(`[${name}] Final arbiter failed for market ${id}. Will retry next run.`);
+          }
+        }
       }
-    }
-  }
-
-  saveState(name, state);
+    
+      saveState(name, state);
 
   // ================= SEQUENTIAL CLOSURE =================
   for (const result of decisions) {
@@ -579,6 +581,7 @@ async function monitorNetwork(networkConfig) {
       const minedBlockFinal = await provider.getBlock(receipt.blockNumber);
 
       state.markets[result.indexer].closed = true;
+      state.markets[result.indexer].consensusAttempts = 0; 
       saveState(name, state);
 
       log(`[${name}] Market ${result.indexer} closed → ${result.decision}`);
