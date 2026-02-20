@@ -146,7 +146,7 @@ const AI_JUDGES = {
     label: "Grok(4.1)",
     fn: async (payload) => {
       const res = await xai.chat.completions.create({
-        model: "grok-beta",
+        model: "grok-4-1-fast-reasoning",
         temperature: 0,
         messages: [
           { role: "system", content: resolutionInstruction },
@@ -387,7 +387,7 @@ async function finalArbiterResolve(market, luckyJudge) {
     
     if (luckyJudge === "xai") {
       const res = await xai.chat.completions.create({
-        model: "grok-beta",
+        model: "grok-4-1-fast-reasoning",
         temperature: 0,
         messages: [
           { role: "system", content: resolutionInstruction },
