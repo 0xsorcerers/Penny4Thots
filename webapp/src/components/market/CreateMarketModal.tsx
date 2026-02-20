@@ -451,7 +451,7 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
                             <p className="text-xs text-success font-semibold">Valid image URL ✓</p>
                           )}
                           <p className="text-xs text-muted-foreground">
-                            Required: Try Pinterest for lots of free images. (HINT: copy image address, not page URL 😉)
+                            Try Pinterest for lots of free images. (HINT: copy image address, not page URL 😉)
                           </p>
                         </div>
 
