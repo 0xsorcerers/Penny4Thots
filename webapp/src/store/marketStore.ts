@@ -146,9 +146,13 @@ export const useMarketStore = create<MarketStore>()((set, get) => {
     },
 
     updateMarketData: (dataMap) => {
-      const { marketInfos } = get();
-      const markets = buildMarkets(marketInfos, dataMap);
-      set({ markets, marketDataMap: dataMap });
+      const { marketInfos, marketDataMap } = get();
+      const mergedDataMap = new Map(marketDataMap);
+      dataMap.forEach((value, key) => {
+        mergedDataMap.set(key, value);
+      });
+      const markets = buildMarkets(marketInfos, mergedDataMap);
+      set({ markets, marketDataMap: mergedDataMap });
     },
 
     addMarket: (data) => {

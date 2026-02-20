@@ -7,8 +7,8 @@ import { VoteModal } from "@/components/market/VoteModal";
 import { useMarketStore } from "@/store/marketStore";
 import { useNetworkStore } from "@/store/networkStore";
 import { useActiveAccount } from "thirdweb/react";
-import { useWriteMarket, useVote, useTokenApprove, fetchMarketsFromBlockchain, fetchMarketDataFromBlockchain, readMarketCount, readPaymentToken, readTokenAllowance, readTokenBalance, readTokenDecimals, toWei, toTokenSmallestUnit, fromTokenSmallestUnit, isZeroAddress, getBlockchain, formatEther, type VoteParams } from "@/tools/utils";
-import type { CreateMarketData } from "@/types/market";
+import { useWriteMarket, useVote, useTokenApprove, fetchMarketsFromBlockchain, fetchMarketDataFromBlockchain, readMarketCount, readPaymentToken, readTokenAllowance, readTokenBalance, readTokenDecimals, toWei, toTokenSmallestUnit, fromTokenSmallestUnit, isZeroAddress, getBlockchain, formatEther, getMarketIdsForPage, MARKETS_PER_PAGE, type VoteParams } from "@/tools/utils";
+import type { CreateMarketData, Market } from "@/types/market";
 import type { Address } from "viem";
 import { toast } from "sonner";
 
@@ -23,69 +23,75 @@ export default function Index() {
   const [lastFetchedCount, setLastFetchedCount] = useState(0);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [currentNetworkChainId, setCurrentNetworkChainId] = useState(selectedNetwork.chainId);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [marketCount, setMarketCount] = useState(0);
   const account = useActiveAccount();
   const { writeMarket, isPending, error } = useWriteMarket();
   const { vote, isPending: isVoting } = useVote();
   const { approve, isPending: isApproving } = useTokenApprove();
 
-  // Smart fetch that only loads new markets not already in localStorage
+  // Smart fetch: hydrate immutable market info in background, keep mutable data fresh per visible page.
   const loadMarketsFromBlockchain = useCallback(async () => {
     try {
       const currentMarketCount = await readMarketCount();
+      setMarketCount(currentMarketCount);
 
       // If no markets exist, clear and return early
       if (currentMarketCount === 0) {
         const { clearAllMarkets } = useMarketStore.getState();
         clearAllMarkets();
         setLastFetchedCount(0);
+        setCurrentPage(1);
         return;
       }
 
-      // If we already have all markets cached and counts match, only refresh vote data
-      if (currentMarketCount === lastFetchedCount && marketInfos.length > 0) {
-        // Just refresh market data (votes, status) without fetching market info
-        // Don't show loading state for silent updates
+      const totalPages = Math.max(1, Math.ceil(currentMarketCount / MARKETS_PER_PAGE));
+      const nextPage = Math.min(currentPage, totalPages);
+      if (nextPage !== currentPage) {
+        setCurrentPage(nextPage);
+      }
+
+      const pageIds = getMarketIdsForPage(currentMarketCount, nextPage, MARKETS_PER_PAGE);
+
+      // If immutable data is stale/missing, fetch and persist all of it in background-sized batches.
+      if (currentMarketCount !== lastFetchedCount || marketInfos.length !== currentMarketCount) {
+        setIsLoadingFromBlockchain(true);
         try {
-          const marketDataMap = await fetchMarketDataFromBlockchain(
-            marketInfos.map(m => m.indexer)
+          const blockchainInfos = await fetchMarketsFromBlockchain();
+          const pageData = await fetchMarketDataFromBlockchain(pageIds);
+          const pageDataMap = new Map(
+            pageData.map((data, idx) => [pageIds[idx], { ...data, indexer: pageIds[idx] }])
           );
-          const dataMap = new Map(
-            marketDataMap.map((data, idx) => [marketInfos[idx].indexer, data])
-          );
-          updateMarketData(dataMap);
-        } catch (err) {
-          console.error("Failed to refresh market data:", err);
+          setMarketsFromBlockchain(blockchainInfos, pageDataMap);
+          setLastFetchedCount(currentMarketCount);
+        } finally {
+          setIsLoadingFromBlockchain(false);
         }
         return;
       }
 
-      // New markets detected - fetch all market info and data with loading state
-      setIsLoadingFromBlockchain(true);
+      // Immutable data already cached: fetch mutable data only for the current page.
       try {
-        const blockchainInfos = await fetchMarketsFromBlockchain();
-        const marketDataMap = await fetchMarketDataFromBlockchain(
-          blockchainInfos.map(m => m.indexer)
-        );
+        const pageData = await fetchMarketDataFromBlockchain(pageIds);
         const dataMap = new Map(
-          marketDataMap.map((data, idx) => [blockchainInfos[idx].indexer, data])
+          pageData.map((data, idx) => [pageIds[idx], { ...data, indexer: pageIds[idx] }])
         );
-        // Update all at once after all data is collected
-        setMarketsFromBlockchain(blockchainInfos, dataMap);
-        setLastFetchedCount(currentMarketCount);
-      } finally {
-        setIsLoadingFromBlockchain(false);
+        updateMarketData(dataMap);
+      } catch (err) {
+        console.error("Failed to refresh page market data:", err);
       }
     } catch (err) {
       console.error("Failed to load markets from blockchain:", err);
       toast.error("Failed to load markets from blockchain");
       setIsLoadingFromBlockchain(false);
     }
-  }, [lastFetchedCount, marketInfos, setMarketsFromBlockchain, updateMarketData, setIsLoadingFromBlockchain]);
+  }, [currentPage, lastFetchedCount, marketInfos.length, setMarketsFromBlockchain, updateMarketData, setIsLoadingFromBlockchain]);
 
   const handleRefreshAllMarkets = useCallback(async () => {
     const { clearAllMarkets } = useMarketStore.getState();
     clearAllMarkets();
     setLastFetchedCount(0);
+    setCurrentPage(1);
     await loadMarketsFromBlockchain();
   }, [loadMarketsFromBlockchain]);
 
@@ -110,6 +116,18 @@ export default function Index() {
       loadMarketsFromBlockchain();
     }
   }, [account, isInitialLoad, marketInfos.length, loadMarketsFromBlockchain, currentNetworkChainId, selectedNetwork.chainId]);
+
+
+  useEffect(() => {
+    if (!account || isInitialLoad) return;
+    loadMarketsFromBlockchain();
+  }, [account, currentPage, isInitialLoad, loadMarketsFromBlockchain]);
+
+  const marketsForCurrentPage = (() => {
+    const pageIds = getMarketIdsForPage(marketCount, currentPage, MARKETS_PER_PAGE);
+    const marketMap = new Map(markets.map((m) => [m.indexer, m]));
+    return pageIds.map((id) => marketMap.get(id)).filter((m): m is Market => Boolean(m));
+  })();
 
   const handleConnect = () => {
     setIsConnected(!isConnected);
@@ -312,11 +330,16 @@ export default function Index() {
         onNetworkChange={() => {
           // Trigger reload when network changes
           setLastFetchedCount(0);
+          setCurrentPage(1);
         }}
       />
       <div className="relative z-10">
         <MarketGrid
-          markets={markets}
+          markets={marketsForCurrentPage}
+          marketCount={marketCount}
+          currentPage={currentPage}
+          pageSize={MARKETS_PER_PAGE}
+          onPageChange={setCurrentPage}
           onCreateMarket={() => setIsCreateModalOpen(true)}
           onVoteClick={handleVoteClick}
           onRefreshMarkets={handleRefreshAllMarkets}
