@@ -1,11 +1,56 @@
 # Penny4Thots
 
-Monorepo containing the frontend webapp and backend services for Penny4Thots on BNB Chain, opBNB, Sepolia and coming host of networks.
+Monorepo containing the frontend webapp and backend services for Penny4Thots on BNB Chain, Base, Scroll, Manta, opBNB and coming host of networks.
+From those itchy sport bets with buds in front of the TV to Naruto for avid manga fans to even the cosmic predilections of the Zodiac, demo on Sepolia to understand how to create or vote on your 'thots' as well as the thoughts of others before going live on any mainnet of choice. 
 
-Structure:
+# Value Proposition
+✅ Zero-sum take to Prediction Marketplaces.
+
+✅ Lowers the barrier of entry into prediction marketplaces by allowing users to use native coins or any token on their network of choice.
+
+✅ Creators earn market fees for their thots.
+
+✅ Communities vote to stake a position.
+
+✅ Users can vote multiple times to increase their stake and vote any side they choose every time.
+
+✅ Users can earn yield in various promotional tokens by engaging.
+
+✅ Time and capital weighted positions, the earlier one stakes the more one keeps for winning positions!
+
+✅ Penalty window to game the gamers.
+
+✅ Simplified dual option system, just more profit less risk.
+
+✅ Kamikaze trades are available to cut your losses and reposition you for the win!
+
+✅ Decentralized cross model AI consensus from Anthropic, Grok, Deepseek, OpenAI, Perplexity and a coming host of others to decide on your 'thots'.
+
+Have fun engaging a prediction market that trades your very own thoughts so why not earn a penny for your thoughts? (pun intended) 😉.
+
+
+# Structure
 
 - `webapp/` — React frontend (Thirdweb wallet integration, Tailwind)
 - `backend/` — API and server code (if present)
+
+
+# Setup
+
+1. Frontend
+
+```bash
+cd webapp
+npm install
+npm run dev
+```
+
+2. Backend
+
+```bash
+cd backend
+# install & run as appropriate for backend stack
+```
 
 ### Network Switching & Multi-Chain Support
 
@@ -216,27 +261,9 @@ Both the Create Market dialog feature flexible payment method selection:
 - This eliminates unnecessary approval transactions and saves gas for repeat voters
 
 ### Theme
-
-
 The application uses dark mode as the default theme for all new users. Users can switch between light and dark mode at any time using the theme toggle button in the header.
 
-Setup
 
-1. Frontend
-
-```bash
-cd webapp
-npm install
-npm run dev
-```
-
-2. Backend
-
-```bash
-cd backend
-# install & run as appropriate for backend stack
-```
-
-Notes
+# Notes
 
 - This repository was initialized and a first professional commit was made locally. You can push to GitHub with the instructions below.
