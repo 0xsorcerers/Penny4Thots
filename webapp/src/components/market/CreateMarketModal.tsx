@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Plus, Image as ImageIcon, ThumbsUp, ThumbsDown, Calendar, Clock, AlertCircle } from "lucide-react";
+import { X, Plus, Image as ImageIcon, ArrowLeft, ArrowRight, Calendar, Clock, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -883,7 +883,7 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
                               }`}
                             >
                               <div className="flex flex-col items-center gap-2">
-                                <ThumbsUp
+                                <ArrowLeft
                                   className={`h-5 w-5 ${
                                     initialVote === "YES" ? "text-primary" : "text-muted-foreground"
                                   }`}
@@ -907,7 +907,7 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
                               }`}
                             >
                               <div className="flex flex-col items-center gap-2">
-                                <ThumbsDown
+                                <ArrowRight
                                   className={`h-5 w-5 ${
                                     initialVote === "NO" ? "text-destructive" : "text-muted-foreground"
                                   }`}
