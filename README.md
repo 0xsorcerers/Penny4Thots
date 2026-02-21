@@ -29,7 +29,7 @@ From those itchy sport bets with buds in front of the TV to Naruto for avid mang
 Have fun engaging a prediction market that trades your very own thoughts so why not earn a penny for your thoughts? (pun intended) 😉.
 
 
-Structure:
+# Structure
 
 - `webapp/` — React frontend (Thirdweb wallet integration, Tailwind)
 - `backend/` — API and server code (if present)
