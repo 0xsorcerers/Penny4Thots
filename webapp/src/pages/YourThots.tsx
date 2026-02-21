@@ -69,6 +69,7 @@ export default function YourThots() {
   const [loadingProgress, setLoadingProgress] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
+  const [uniqueMarketCount, setUniqueMarketCount] = useState(0);
   const [isVoteModalOpen, setIsVoteModalOpen] = useState(false);
   const [voteModalData, setVoteModalData] = useState<{
     marketId: number;
@@ -125,6 +126,7 @@ export default function YourThots() {
       const validIds = [...new Set(allIds.filter((id) => id >= 0))];
       validIds.sort((a, b) => b - a);
       setAllMarketIds(validIds);
+      setUniqueMarketCount(validIds.length);
       setCurrentPage(1);
     } catch (error) {
       console.error("Error fetching user markets:", error);
@@ -372,6 +374,7 @@ export default function YourThots() {
       // Reset state and refetch
       setAllMarketIds([]);
       setMarkets([]);
+      setUniqueMarketCount(0);
       setCurrentPage(1);
       await fetchAllMarketIds();
     } finally {
@@ -421,7 +424,7 @@ export default function YourThots() {
           >
             <div className="rounded-full bg-violet-500/10 px-4 py-2">
               <span className="font-mono text-sm text-violet-500">
-                {allMarketIds.length} {allMarketIds.length === 1 ? "market" : "markets"}
+                {uniqueMarketCount} {uniqueMarketCount === 1 ? "market" : "markets"}
               </span>
             </div>
             {totalPages > 1 && (
