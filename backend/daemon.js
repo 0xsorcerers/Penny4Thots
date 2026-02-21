@@ -440,6 +440,16 @@ const networks = [
     contract: '0x13B9CD2340E8224D4c1CC86d3481c217d9078AAe'
   },
   {
+    name: 'base',
+    rpc: 'https://gateway.tenderly.co/public/base',
+    contract: '0xe8f5b91e8e4c49f499002745bA49dc9fEE7670C6'
+  },
+  {
+    name: 'manta',
+    rpc: 'https://pacific-rpc.manta.network/http',
+    contract: '0x83D8EeeB23539CEB139DDbD00dc26eE57Bb3F2Bd'
+  },
+  {
     name: 'opbnb',
     rpc: 'https://opbnb-mainnet-rpc.bnbchain.org',
     contract: '0x8d4a1A116Fd092D21b47Aa29a1882995af234353'
