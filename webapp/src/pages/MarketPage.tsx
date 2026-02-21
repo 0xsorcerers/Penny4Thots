@@ -455,7 +455,14 @@ export default function MarketPage() {
           className="fixed left-4 top-4 z-20 sm:left-6 sm:top-6"
         >
           <Button
-            onClick={() => navigate(-1)}
+            onClick={() => {
+              // Check if there's previous app history, if not go home (deep link scenario)
+              if (window.history.length <= 2) {
+                navigate("/");
+              } else {
+                navigate(-1);
+              }
+            }}
             variant="ghost"
             className="rounded-xl border border-white/50 bg-white/70 backdrop-blur-xl hover:bg-white/80 shadow-[0_2px_12px_-2px_hsl(220_30%_15%/0.08)] dark:border-border/50 dark:bg-card/80 dark:backdrop-blur-sm dark:hover:bg-card dark:shadow-none"
           >
