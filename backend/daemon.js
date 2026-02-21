@@ -128,7 +128,7 @@ const AI_JUDGES = {
     label: "Anthropic(claude-haiku-3-5)",
     fn: async (payload) => {
       const res = await anthropic.messages.create({
-        model: "claude-haiku-3-5-20241022",
+        model: "claude-haiku-3-5",
         max_tokens: 2000,
         system: resolutionInstruction,
         messages: [{ role: "user", content: payload }]
@@ -262,7 +262,7 @@ async function batchDetermineWinners(expiredMarkets, latestBlockHash) {
   async function queryAnthropic() {
     try {
       const res = await anthropic.messages.create({
-        model: "claude-haiku-3-5-20241022",
+        model: "claude-haiku-3-5",
         max_tokens: 2000,
         system: resolutionInstruction,
         messages: [{ role: "user", content: payload }]
@@ -371,7 +371,7 @@ async function finalArbiterResolve(market, luckyJudge) {
 
     if (luckyJudge === "anthropic") {
       const res = await anthropic.messages.create({
-        model: "claude-haiku-3-5-20241022",
+        model: "claude-haiku-3-5",
         max_tokens: 2000,
         system: resolutionInstruction,
         messages: [{ role: "user", content: payload }]
