@@ -1,6 +1,22 @@
 # Penny4Thots
 
-Monorepo containing the frontend webapp and backend services for Penny4Thots on BNB Chain, opBNB, Sepolia and coming host of networks.
+Monorepo containing the frontend webapp and backend services for Penny4Thots on BNB Chain, Base, Scroll, Manta, opBNB and coming host of networks.
+From those itchy sport bets with buds in front of the TV to Naruto for avid manga fans to even the cosmic predilections of the Zodiac, demo on Sepolia to understand how to create or vote on your 'thots' as well as the thoughts of others before going live on any mainnet of choice. 
+
+# ValueProposition
+Zero-sum take to Prediction Marketplaces.
+Lowering the barrier of entry into prediction marketplaces by allowing users to use native coins or any token on their network of choice.
+Creators earn market fees for their thots.
+Communities vote to stake a position.
+Users can vote multiple times to increase their stake and vote any side they choose every time.
+Users can earn yield in various promotional tokens by engaging.
+Time and capital weighted positions, the earlier one stakes the more one keeps for winning positions!
+Penalty window to game the gamers.
+Simplified dual option system, just more profit less risk.
+Kamikaze trades are available to cut your losses and reposition you for the win!
+Decentralized cross model AI consensus from Anthropic, Grok, Deepseek, OpenAI, Perplexity and a coming host of others to decide on your 'thots'!
+Have fun engaging a prediction market that trades your very own thoughts.
+Why not earn a penny for you thoughts? (pun intended) 😉.
 
 Structure:
 
