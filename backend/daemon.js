@@ -69,6 +69,16 @@ For each market:
 - Choose "A" if optionA is correct.
 - Choose "B" if optionB is correct.
 
+Each market includes:
+- startTime (UNIX timestamp when the market was created)
+- endTime (UNIX timestamp when the market expired)
+
+Interpret relative time expressions such as "tomorrow", "next week", or "this month"
+relative to the market's startTime.
+
+Use startTime as the reference point for temporal context,
+NOT the current date.
+
 Return STRICT JSON:
 
 [
@@ -532,6 +542,7 @@ async function monitorNetwork(networkConfig) {
           const info = marketInfoArray[j];
         
           state.markets[id] = {
+            startTime: Number(data.startTime),
             endTime: Number(data.endTime),
             closed: data.closed,
             finalized: false,
@@ -602,6 +613,7 @@ async function monitorNetwork(networkConfig) {
         description: info.description,
         optionA: state.markets[id].optionA,
         optionB: state.markets[id].optionB,
+        startTime: state.markets[id].startTime,
         endTime: state.markets[id].endTime
       });
     }
@@ -714,20 +726,16 @@ async function monitorNetwork(networkConfig) {
         .update(`${result.indexer}-${result.decision}-${JSON.stringify(result.models || {})}`)
         .digest('hex');
 
-      const modelLabelMap = {
-        openai: "OpenAI(gpt-4o)",
-        deepseek: "DeepSeek(deepseek-chat)",
-        anthropic: "Anthropic(claude-4-6-sonnet)"
-      };
-
       const judgeEntries = Object.entries(result.models || {}).map(
           ([model, vote]) => {
+            const judgeLabel = AI_JUDGES[model]?.label || model;
+        
             const optionText =
               vote === "A"
                 ? marketState.optionA
                 : marketState.optionB;
         
-            return `${modelLabelMap[model]} voted "${optionText}"`;
+            return `${judgeLabel} voted "${optionText}"`;
           }
       );
 
