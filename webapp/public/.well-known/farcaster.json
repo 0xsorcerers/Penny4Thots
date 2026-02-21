@@ -1,0 +1,33 @@
+{
+  "accountAssociation": {
+    "header": "eyJmaWQiOjE1MjY3NTksInR5cGUiOiJjdXN0b2R5Iiwia2V5IjoiMHgwNjYwNWUyM0M1NkQyQzFhQjM4RDFlOTRFRDQyOUYwNmQxRWU2MUQ1In0",
+    "payload": "eyJkb21haW4iOiJjeWJlcm5hdXRzLmZ1biJ9",
+    "signature": "4vv97+j9hW4n9npPaG7In/S9roRRcTulCd5Sa+EfMqAiwhXDhutp1hb2FkKKr//BOyLb//2AJHJIUwpCl3vFvRs="
+  },
+  "baseBuilder": {
+    "ownerAddress": "0x87AFFF5BBDCAeBc2283E181f619268Ca717755Fd"
+  },
+  "miniapp": {
+    "version": "1",
+    "name": "Jesse and the Cybernauts",
+    "homeUrl": "https://play.cybernauts.fun/",
+    "iconUrl": "https://cybernauts.fun/assets/images/logo512.png",
+    "splashImageUrl": "https://cybernauts.fun/assets/images/Coverpiece.jpg",
+    "splashBackgroundColor": "#FFFFFF",
+    "webhookUrl": "https://cybernauts.fun/api/webhook",
+    "subtitle": "A fun wealth distribution game",
+    "description": "In a digital age with the coming of the singularity, mankind has transcended mortal form. Earn and win Jesse credits by destroying the remanants of mortality.",
+    "screenshotUrls": [
+      "https://cybernauts.fun/assets/images/screenshot-1.png",
+      "https://cybernauts.fun/assets/images/screenshot-2.png",
+      "https://cybernauts.fun/assets/images/screenshot-3.png"
+    ],
+    "primaryCategory": "games",
+    "tags": ["money", "jesse", "cybernaut", "yield", "airdrop"],
+    "heroImageUrl": "https://cybernauts.fun/assets/images/Coverpiece.jpg",
+    "tagline": "Play, Earn, Win with jesse!",
+    "ogTitle": "Jesse and the Cybernauts",
+    "ogDescription": "With the Singularity, mankind has transcended mortal form. Destroy the remnants of mortality.",
+    "ogImageUrl": "https://cybernauts.fun/assets/images/banner.jpg"
+  }
+}

@@ -31,13 +31,23 @@ const bnb: NetworkConfig = {
 };
 
 const base: NetworkConfig = {
-  name: 'Base (Live)',
+  name: 'Base Network (Live)',
   chainId: 8453,
   rpc: 'https://gateway.tenderly.co/public/base',
   blockExplorer: 'https://basescan.org',
   decimals: 18,
   symbol: 'ETH',
   contract_address: '0xe8f5b91e8e4c49f499002745bA49dc9fEE7670C6' as Address,
+};
+
+const scroll: NetworkConfig = {
+  name: 'Scroll Network (Live)',
+  chainId: 534352,
+  rpc: 'https://rpc.scroll.io',
+  blockExplorer: 'https://scrollscan.com/',
+  decimals: 18,
+  symbol: 'ETH',
+  contract_address: '0x06F94c107808bC4d9c27fA8476C3E2f5F83A9c3C' as Address,
 };
 
 const manta: NetworkConfig = {
@@ -49,6 +59,7 @@ const manta: NetworkConfig = {
   symbol: 'ETH',
   contract_address: '0x83D8EeeB23539CEB139DDbD00dc26eE57Bb3F2Bd' as Address,
 };
+
 const opbnb: NetworkConfig = {
   name: 'opBNB L2 (Live)',
   chainId: 204,
@@ -59,6 +70,6 @@ const opbnb: NetworkConfig = {
   contract_address: '0x8d4a1A116Fd092D21b47Aa29a1882995af234353' as Address,
 };
 
-const chains: NetworkConfig[] = [sepolia, bnb, base, manta, opbnb];
+const chains: NetworkConfig[] = [sepolia, bnb, base, scroll, manta, opbnb];
 
 export { chains };

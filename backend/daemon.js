@@ -445,6 +445,11 @@ const networks = [
     contract: '0xe8f5b91e8e4c49f499002745bA49dc9fEE7670C6'
   },
   {
+    name: 'scroll',
+    rpc: 'https://rpc.scroll.io',
+    contract: '0x06F94c107808bC4d9c27fA8476C3E2f5F83A9c3C'
+  },
+  {
     name: 'manta',
     rpc: 'https://pacific-rpc.manta.network/http',
     contract: '0x83D8EeeB23539CEB139DDbD00dc26eE57Bb3F2Bd'
