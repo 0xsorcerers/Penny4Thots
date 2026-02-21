@@ -34,6 +34,24 @@ Have fun engaging a prediction market that trades your very own thoughts so why 
 - `webapp/` — React frontend (Thirdweb wallet integration, Tailwind)
 - `backend/` — API and server code (if present)
 
+
+# Setup
+
+1. Frontend
+
+```bash
+cd webapp
+npm install
+npm run dev
+```
+
+2. Backend
+
+```bash
+cd backend
+# install & run as appropriate for backend stack
+```
+
 ### Network Switching & Multi-Chain Support
 
 The app now supports multiple blockchain networks with per-network data persistence:
@@ -243,27 +261,9 @@ Both the Create Market dialog feature flexible payment method selection:
 - This eliminates unnecessary approval transactions and saves gas for repeat voters
 
 ### Theme
-
-
 The application uses dark mode as the default theme for all new users. Users can switch between light and dark mode at any time using the theme toggle button in the header.
 
-Setup
 
-1. Frontend
-
-```bash
-cd webapp
-npm install
-npm run dev
-```
-
-2. Backend
-
-```bash
-cd backend
-# install & run as appropriate for backend stack
-```
-
-Notes
+# Notes
 
 - This repository was initialized and a first professional commit was made locally. You can push to GitHub with the instructions below.
