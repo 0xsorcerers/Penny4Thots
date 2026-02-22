@@ -539,23 +539,22 @@ const CHAIN_COUNT = chains.length;
 
 // Put your per-network floral backgrounds here, by chain index.
 export const NETWORK_LIGHT_BACKGROUND_IMAGES: string[] = [
-  "/src/assets/images/lightblue-flora.webp",
-  "/src/assets/images/light-flora.webp",
-  "/src/assets/images/lightblue-flora.webp",
-  "/src/assets/images/light-flora.webp",
-  "/src/assets/images/seagreen-flora.webp",
-  "/src/assets/images/light-flora.webp",
+  "/assets/images/lightblue-flora.webp",
+  "/assets/images/light-flora.webp",
+  "/assets/images/lightblue-flora.webp",
+  "/assets/images/light-flora.webp",
+  "/assets/images/seagreen-flora.webp",
+  "/assets/images/light-flora.webp",
 ];
 
 export const NETWORK_DARK_BACKGROUND_IMAGES: string[] = [
-  "/src/assets/images/blue-flora.webp",
-  "/src/assets/images/dark-flora.webp",
-  "/src/assets/images/blue-flora.webp",
-  "/src/assets/images/dark-flora.webp",
-  "/src/assets/images/oceanblue-flora.webp",
-  "/src/assets/images/dark-flora.webp",
+  "/assets/images/blue-flora.webp",
+  "/assets/images/dark-flora.webp",
+  "/assets/images/blue-flora.webp",
+  "/assets/images/dark-flora.webp",
+  "/assets/images/oceanblue-flora.webp",
+  "/assets/images/dark-flora.webp",
 ];
-
 
 const hexToHslChannels = (hexColor: string): string => {
   const hex = hexColor.replace("#", "").trim();
