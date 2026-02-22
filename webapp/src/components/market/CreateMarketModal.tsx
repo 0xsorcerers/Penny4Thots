@@ -714,33 +714,33 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
                               onClick={handleTogglePayment}
                               className={`relative inline-flex h-8 w-16 items-center rounded-full border transition-colors shadow-sm ${
                                 useToken 
-                                  ? "bg-amber-100 border-amber-300 dark:bg-accent dark:border-0" 
-                                  : "bg-amber-100 border-amber-300 dark:bg-primary dark:border-0"
+                                  ? "bg-accent/20 border-accent/40" 
+                                  : "bg-primary/15 border-primary/40"
                               }`}
                               whileHover={{ scale: 1.02 }}
                               whileTap={{ scale: 0.98 }}
                             >
                               <motion.div
-                                className="absolute h-6 w-6 rounded-full bg-white border-amber-400 shadow-md dark:bg-foreground dark:border-0"
+                                className="absolute h-6 w-6 rounded-full bg-background border-border shadow-md"
                                 animate={{
                                   x: useToken ? 32 : 4,
                                 }}
                                 transition={{ type: "spring", stiffness: 400, damping: 25 }}
                               />
                               <div className="absolute inset-0 flex items-center justify-between px-3 pointer-events-none">
-                                <span className={`text-xs font-semibold transition-opacity ${
+                                <span className={`text-xs font-semibold transition-opacity theme-option-a-gradient-text animate-shimmer-sweep ${
                                   useToken
-                                    ? "opacity-100 text-amber-700 dark:text-foreground/60"
+                                    ? "opacity-100"
                                     : "opacity-0"
                                 }`}>
                                   {selectedNetwork.symbol}
                                 </span>
-                                <span className={`text-xs font-semibold transition-opacity ${
+                                <span className={`text-xs font-semibold transition-opacity theme-option-a-gradient-text animate-shimmer-sweep ${
                                   useToken 
                                     ? "opacity-0" 
-                                    : "opacity-100 text-amber-700 dark:text-foreground/60"
+                                    : "opacity-100"
                                 }`}>
-                                  TKN
+                                  TOKEN
                                 </span>
                               </div>
                             </motion.button>
@@ -769,11 +769,7 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
                               >
                                 <p className="font-syne text-sm font-bold">
                                   Pay with{" "}
-                                  <span
-                                    style={{
-                                      color: useToken ? "hsl(var(--accent))" : "hsl(var(--primary))",
-                                    }}
-                                  >
+                                  <span className="theme-option-a-gradient-text animate-shimmer-sweep">
                                     {useToken && tokenSymbol ? tokenSymbol : useToken ? "Token" : selectedNetwork.symbol}
                                   </span>
                                 </p>
@@ -822,11 +818,7 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
                           <div className="space-y-2">
                             <Label htmlFor="balance" className="font-outfit text-foreground">
                               Spending Amount{" "}
-                              <span
-                                style={{
-                                  color: useToken ? "hsl(var(--accent))" : "hsl(var(--primary))",
-                                }}
-                              >
+                              <span className="theme-option-a-gradient-text animate-shimmer-sweep">
                                 ({useToken && tokenSymbol ? tokenSymbol : useToken ? "Token" : selectedNetwork.symbol})
                               </span>{" "}
                               *

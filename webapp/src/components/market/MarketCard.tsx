@@ -102,12 +102,7 @@ export function MarketCard({ market, onVoteClick }: MarketCardProps) {
       onClick={handleCardClick}
       className={cn(
         "group relative cursor-pointer overflow-hidden rounded-2xl transition-all duration-300",
-        // Light mode glassmorphism
-        "border border-amber-100/60 bg-amber-50/70 backdrop-blur-xl shadow-[0_4px_24px_-4px_hsl(220_30%_15%/0.1),inset_0_1px_0_hsl(38_25%_85%/0.8)]",
-        "hover:border-primary/30 hover:shadow-[0_8px_32px_-8px_hsl(220_30%_15%/0.15),0_0_30px_rgba(var(--primary),0.08)]",
-        // Dark mode
-        "dark:border-border/50 dark:bg-card/80 dark:backdrop-blur-sm dark:shadow-none",
-        "dark:hover:border-primary/30 dark:hover:shadow-[0_0_30px_rgba(var(--primary),0.1)] dark:hover:bg-card",
+        "border theme-surface theme-surface-hover",
         market.closed && "opacity-60 grayscale hover:opacity-70"
       )}
     >
@@ -141,7 +136,7 @@ export function MarketCard({ market, onVoteClick }: MarketCardProps) {
           {market.tags.slice(0, 3).map((tag) => (
             <span
               key={tag}
-              className="rounded-full bg-primary/10 px-2.5 py-0.5 font-mono text-xs text-primary"
+              className="rounded-full border px-2.5 py-0.5 font-mono text-xs theme-option-a-chip"
             >
               {tag}
             </span>
@@ -149,7 +144,7 @@ export function MarketCard({ market, onVoteClick }: MarketCardProps) {
           {market.tags.length > 3 && (
             <button
               onClick={handleShowMoreTags}
-              className="rounded-full bg-muted px-2.5 py-0.5 font-mono text-xs text-muted-foreground transition-colors hover:bg-muted/80 hover:text-foreground"
+              className="rounded-full border px-2.5 py-0.5 font-mono text-xs transition-colors theme-chip-secondary"
             >
               +{market.tags.length - 3} tags
             </button>
@@ -160,10 +155,10 @@ export function MarketCard({ market, onVoteClick }: MarketCardProps) {
         <h3 className="mb-1 font-syne text-lg font-bold leading-tight text-foreground">
           {market.title}
         </h3>
-        <p className="mb-3 font-outfit text-sm text-muted-foreground">{market.subtitle}</p>
+        <p className="mb-3 font-outfit text-sm theme-text-accent">{market.subtitle}</p>
 
         {/* Description */}
-        <p className="mb-4 line-clamp-2 flex-grow font-outfit text-sm text-foreground/70">
+        <p className="mb-4 line-clamp-2 flex-grow font-outfit text-sm theme-text-support">
           {market.description}
         </p>
 
@@ -216,7 +211,7 @@ export function MarketCard({ market, onVoteClick }: MarketCardProps) {
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                   onClick={handleVoteClick}
-                  className="flex w-full items-center justify-center gap-2 rounded-xl py-2.5 font-outfit text-sm font-medium transition-all bg-primary/10 text-primary hover:bg-primary/20"
+                  className="flex w-full items-center justify-center gap-2 rounded-xl border py-2.5 font-outfit text-sm font-medium transition-all theme-option-a-action"
                 >
                   {buttonText}
                 </motion.button>
@@ -261,7 +256,7 @@ export function MarketCard({ market, onVoteClick }: MarketCardProps) {
               {market.tags.map((tag) => (
                 <span
                   key={tag}
-                  className="rounded-full bg-primary/10 px-3 py-1.5 font-mono text-sm text-primary"
+                  className="rounded-full border px-3 py-1.5 font-mono text-sm theme-option-a-chip"
                 >
                   {tag}
                 </span>
