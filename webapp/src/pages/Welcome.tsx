@@ -260,14 +260,7 @@ export default function Welcome() {
             Penny4
           </motion.span>
           <motion.span
-            className="relative ml-2 inline-block bg-clip-text text-transparent sm:ml-4"
-            style={{
-              background: "linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--accent)) 50%, hsl(var(--primary)) 100%)",
-              backgroundSize: "200% 200%",
-              WebkitBackgroundClip: "text",
-              backgroundClip: "text",
-              animation: "gradient-shift 4s ease infinite",
-            }}
+            className="relative ml-2 inline-block theme-option-a-gradient-text animate-shimmer-sweep sm:ml-4"
           >
             Thots
           </motion.span>
@@ -355,13 +348,6 @@ export default function Welcome() {
           className="absolute bottom-8 h-px w-32 bg-gradient-to-r from-transparent via-primary/40 to-transparent sm:w-48"
         />
       </div>
-
-      <style>{`
-        @keyframes gradient-shift {
-          0%, 100% { background-position: 0% 50%; }
-          50% { background-position: 100% 50%; }
-        }
-      `}</style>
     </div>
   );
 }
