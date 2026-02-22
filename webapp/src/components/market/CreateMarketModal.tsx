@@ -467,7 +467,7 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
                               onKeyDown={handleKeyDown}
                               placeholder="Add a tag..."
                               disabled={formData.tags.length >= 7}
-                              className="rounded-xl border-border/50 bg-background font-outfit"
+                              className="rounded-xl border-border/50 bg-background font-outfit theme-text-positive placeholder:text-muted-foreground"
                             />
                             <Button
                               type="button"
@@ -493,13 +493,13 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
                                   initial={{ scale: 0 }}
                                   animate={{ scale: 1 }}
                                   exit={{ scale: 0 }}
-                                  className="flex items-center gap-1 rounded-full bg-primary/10 px-3 py-1 font-mono text-xs text-primary"
+                                  className="theme-option-a-chip flex items-center gap-1 rounded-full border px-3 py-1 font-mono text-xs"
                                 >
                                   {tag}
                                   <button
                                     type="button"
                                     onClick={() => handleRemoveTag(tag)}
-                                    className="ml-1 rounded-full p-0.5 hover:bg-primary/20"
+                                    className="ml-1 rounded-full p-0.5 hover:bg-yes/20"
                                   >
                                     <X className="h-3 w-3" />
                                   </button>
@@ -681,7 +681,7 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
                                 {formData.tags.map((tag) => (
                                   <span
                                     key={tag}
-                                    className="text-xs rounded-full bg-primary/10 px-2 py-1 text-primary"
+                                    className="theme-option-a-chip text-xs rounded-full border px-2 py-1"
                                   >
                                     {tag}
                                   </span>
@@ -870,14 +870,14 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
                               whileTap={{ scale: 0.98 }}
                               className={`relative rounded-xl border-2 p-4 transition-colors ${
                                 initialVote === "YES"
-                                  ? "border-primary bg-primary/10"
-                                  : "border-border/50 bg-muted/50 hover:border-primary/50"
+                                  ? "border-yes bg-yes/10"
+                                  : "border-border/50 bg-muted/50 hover:border-yes/50"
                               }`}
                             >
                               <div className="flex flex-col items-center gap-2">
                                 <ArrowLeft
                                   className={`h-5 w-5 ${
-                                    initialVote === "YES" ? "text-primary" : "text-muted-foreground"
+                                    initialVote === "YES" ? "text-yes" : "text-muted-foreground"
                                   }`}
                                 />
                                 <span className="font-outfit font-semibold text-foreground">{formData.optionA}</span>
