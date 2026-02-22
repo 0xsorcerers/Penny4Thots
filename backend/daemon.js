@@ -69,6 +69,16 @@ For each market:
 - Choose "A" if optionA is correct.
 - Choose "B" if optionB is correct.
 
+Each market includes:
+- startTime (UNIX timestamp when the market was created)
+- endTime (UNIX timestamp when the market expired)
+
+Interpret relative time expressions such as "tomorrow", "next week", or "this month"
+relative to the market's startTime.
+
+Use startTime as the reference point for temporal context,
+NOT the current date.
+
 Return STRICT JSON:
 
 [
@@ -115,10 +125,10 @@ const AI_JUDGES = {
   },
 
   anthropic: {
-    label: "Anthropic(claude-haiku-3-5)",
+    label: "Anthropic(claude-3-5-haiku-latest)",
     fn: async (payload) => {
       const res = await anthropic.messages.create({
-        model: "claude-haiku-3-5",
+        model: "claude-3-5-haiku-latest",
         max_tokens: 2000,
         system: resolutionInstruction,
         messages: [{ role: "user", content: payload }]
@@ -252,7 +262,7 @@ async function batchDetermineWinners(expiredMarkets, latestBlockHash) {
   async function queryAnthropic() {
     try {
       const res = await anthropic.messages.create({
-        model: "claude-haiku-3-5",
+        model: "claude-3-5-haiku-latest",
         max_tokens: 2000,
         system: resolutionInstruction,
         messages: [{ role: "user", content: payload }]
@@ -361,7 +371,7 @@ async function finalArbiterResolve(market, luckyJudge) {
 
     if (luckyJudge === "anthropic") {
       const res = await anthropic.messages.create({
-        model: "claude-haiku-3-5",
+        model: "claude-3-5-haiku-latest",
         max_tokens: 2000,
         system: resolutionInstruction,
         messages: [{ role: "user", content: payload }]
@@ -532,6 +542,7 @@ async function monitorNetwork(networkConfig) {
           const info = marketInfoArray[j];
         
           state.markets[id] = {
+            startTime: Number(data.startTime),
             endTime: Number(data.endTime),
             closed: data.closed,
             finalized: false,
@@ -553,7 +564,7 @@ async function monitorNetwork(networkConfig) {
       if (i + readLimit < newIds.length) await sleep(batchDelayMs);
     }
 
-    state.lastProcessedMarketId = totalMarkets;
+    state.lastProcessedMarketId = totalMarkets - 1;
     saveState(name, state);
   } else {
     log(`[${name}] No new markets.`);
@@ -564,10 +575,22 @@ async function monitorNetwork(networkConfig) {
   const now = Math.floor(Date.now() / 1000);
   const expiredIds = [];
 
-  for (const [marketId, market] of Object.entries(state.markets)) {
-    if (!market.closed && market.endTime <= now) {
-      expiredIds.push(Number(marketId));
-    }
+  const entries = Object.entries(state.markets);
+    const BATCH_SIZE = 100;
+    
+    for (let i = 0; i < entries.length; i++) {
+    
+      const [marketId, market] = entries[i];
+      const lock = await readContract.allMarketLocks(marketId);
+    
+      if (!market.closed && market.endTime <= now && !lock.sharesFinalized) {
+        expiredIds.push(Number(marketId));
+      }
+    
+      // Pause every 100 reads
+      if ((i + 1) % BATCH_SIZE === 0) {
+        await sleep(2000); // 2 sec cooldown
+      }
   }
 
   if (expiredIds.length === 0) {
@@ -602,6 +625,7 @@ async function monitorNetwork(networkConfig) {
         description: info.description,
         optionA: state.markets[id].optionA,
         optionB: state.markets[id].optionB,
+        startTime: state.markets[id].startTime,
         endTime: state.markets[id].endTime
       });
     }
@@ -662,8 +686,7 @@ async function monitorNetwork(networkConfig) {
         const luckyJudge = judges[index];
     
         const id = market.indexer;
-        const resolvedIds = new Set(decisions.map(d => d.indexer));
-    
+
         if (resolvedIds.has(id)) {
           continue;
         }
@@ -714,20 +737,16 @@ async function monitorNetwork(networkConfig) {
         .update(`${result.indexer}-${result.decision}-${JSON.stringify(result.models || {})}`)
         .digest('hex');
 
-      const modelLabelMap = {
-        openai: "OpenAI(gpt-4o)",
-        deepseek: "DeepSeek(deepseek-chat)",
-        anthropic: "Anthropic(claude-4-6-sonnet)"
-      };
-
       const judgeEntries = Object.entries(result.models || {}).map(
           ([model, vote]) => {
+            const judgeLabel = AI_JUDGES[model]?.label || model;
+        
             const optionText =
               vote === "A"
                 ? marketState.optionA
                 : marketState.optionB;
         
-            return `${modelLabelMap[model]} voted "${optionText}"`;
+            return `${judgeLabel} voted "${optionText}"`;
           }
       );
 
@@ -887,6 +906,8 @@ async function AntiAbuseBlacklister(marketInfoArray, writeContract) {
     await tx.wait();
 
     log(`Blacklist confirmed.`);
+    
+    delete state.markets[id];
   } catch (error) {
     log(`OpenAI API Error: ${error.message}`);
   }
