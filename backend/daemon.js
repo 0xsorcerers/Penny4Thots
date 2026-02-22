@@ -63,17 +63,14 @@ const blacklistInstructionManual = `You are a content moderation engine.
 const resolutionInstruction = `
 You are a deterministic prediction market judge.
 
-You receive an array of EXPIRED markets.
+You receive an array of markets to decide as fairly and as truthfully as you can on.
 
 For each market, search the internet for information associated with the information provided in the array for context and truth.
-Identify disinformation and misinformation whenever possible. Each market also includes:
-- startTime (UNIX timestamp when the market was created)
-- endTime (UNIX timestamp when the market expired)
-
-So interpret relative time expressions such as "tomorrow", "next week", or "this month"
+Identify disinformation and misinformation whenever possible. Each market also includes
+- startTime (UNIX timestamp when the market was created) so interpret relative time expressions such as "tomorrow", "next week", or "this month"
 relative to the market's startTime.
 
-Use startTime as the reference point for temporal context, NOT the current date.
+Use startTime as the reference point for temporal context of which the user is requesting to whatever is being brought up, NOT the current date, so it is quite possible an event or core of deliberation is now in the past or still in the future or is abstract and timeless.
 
 After an expedite all round research, you are allowed the discretion to:
 
@@ -92,6 +89,16 @@ No explanation.
 No commentary.
 Strict JSON only.
 `;
+
+// ================= JUDGE TIERS =================
+
+const CHIEF_JUDGES = ["openai", "xai"];
+
+const JUNIOR_JUDGES = [
+  "perplexity",
+  "deepseek",
+  "anthropic"
+];
 
 // ================= JUDGE REGISTRY =================
 
@@ -203,17 +210,24 @@ function deterministicShuffle(array, seedHex) {
   return arr;
 }
 
-function pickSittingJudges(latestBlockHash, indexer, count = 3) {
-  const judgeKeys = Object.keys(AI_JUDGES);
+function pickSittingJudges(latestBlockHash, indexer) {
 
+  // Chiefs always sit
+  const chiefs = [...CHIEF_JUDGES];
+
+  // Deterministic seed
   const seed = crypto
     .createHash("sha256")
     .update(`${latestBlockHash}-${indexer}`)
     .digest("hex");
 
-  const shuffled = deterministicShuffle(judgeKeys, seed);
+  // Shuffle juniors deterministically
+  const shuffledJuniors = deterministicShuffle(JUNIOR_JUDGES, seed);
 
-  return shuffled.slice(0, Math.min(count, shuffled.length));
+  // Pick 1 junior
+  const selectedJunior = shuffledJuniors[0];
+
+  return [...chiefs, selectedJunior];
 }
 
 // ================= CONSENSUS ENGINE =================
@@ -677,15 +691,14 @@ async function monitorNetwork(networkConfig) {
 
     for (const market of expiredMarkets) {
         
-        const seed = crypto
+        // Deadlocks resolved only by chief judges (deterministic pick)
+        const chiefSeed = crypto
           .createHash("sha256")
-          .update(`${latestBlock.hash}-${market.indexer}`)
+          .update(`${latestBlock.hash}-chief-${market.indexer}`)
           .digest("hex");
-          
-        const judges = Object.keys(AI_JUDGES);
         
-        const index = parseInt(seed.slice(0, 8), 16) % judges.length;
-        const luckyJudge = judges[index];
+        const chiefIndex = parseInt(chiefSeed.slice(0, 8), 16) % CHIEF_JUDGES.length;
+        const luckyJudge = CHIEF_JUDGES[chiefIndex];
     
         const id = market.indexer;
 
@@ -757,7 +770,8 @@ async function monitorNetwork(networkConfig) {
         `was reached by ${judgeEntries.length} judges: ${judgeEntries.join(", ")}.`;
 
       if (result.deadlockBrokenBy) {
-        adjudicatorString += ` The deadlock was broken by ${modelLabelMap[result.deadlockBrokenBy]}.`;
+        const label = AI_JUDGES[result.deadlockBrokenBy]?.label || result.deadlockBrokenBy;
+        adjudicatorString += ` The deadlock was broken by ${label}.`;
       }
 
       // 🔐 Static call
