@@ -166,16 +166,7 @@ export function GetStartedPage({ onGetStarted }: GetStartedPageProps) {
           className="mb-6 text-center font-syne text-5xl font-bold leading-tight tracking-tight sm:text-6xl md:text-7xl lg:text-8xl"
         >
           <span className="block text-foreground">Penny4</span>
-          <span
-            className="block animate-shimmer-sweep bg-clip-text text-transparent"
-            style={{
-              background:
-                "linear-gradient(90deg, hsl(var(--primary)) 0%, hsl(var(--accent)) 50%, hsl(var(--primary)) 100%)",
-              backgroundSize: "200% 100%",
-              WebkitBackgroundClip: "text",
-              backgroundClip: "text",
-            }}
-          >
+          <span className="block theme-option-a-gradient-text animate-shimmer-sweep">
             Thots
           </span>
         </motion.h1>
