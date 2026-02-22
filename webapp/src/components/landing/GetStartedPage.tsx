@@ -6,6 +6,7 @@ import { useActiveAccount } from "thirdweb/react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { useTheme } from "@/hooks/useTheme";
 
 interface GetStartedPageProps {
   onGetStarted?: () => void;
@@ -15,6 +16,8 @@ export function GetStartedPage({ onGetStarted }: GetStartedPageProps) {
   const account = useActiveAccount();
   const navigate = useNavigate();
   const [showConnectNotice, setShowConnectNotice] = useState(true);
+  const { theme } = useTheme();
+  const logoSrc = theme === "dark" ? "/logo-white-no-bkg.webp" : "/logo-black-no-bkg.webp";
 
   // Redirect to main app when connected
   useEffect(() => {
@@ -132,9 +135,9 @@ export function GetStartedPage({ onGetStarted }: GetStartedPageProps) {
           transition={{ duration: 0.6, delay: 0.2 }}
           className="mb-8"
         >
-          <div className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-amber-50/60 backdrop-blur-lg px-4 py-2 shadow-[0_2px_12px_-2px_hsl(220_30%_15%/0.08)] dark:bg-primary/10 dark:backdrop-blur-sm dark:shadow-none">
-            <Sparkles className="h-4 w-4 text-primary" />
-            <span className="font-mono text-sm text-primary">Next Gen Prediction Market</span>
+          <div className="theme-option-a-chip inline-flex items-center gap-2 rounded-full border px-4 py-2 backdrop-blur-lg shadow-[0_2px_12px_-2px_hsl(220_30%_15%/0.08)] dark:backdrop-blur-sm dark:shadow-none">
+            <Sparkles className="h-4 w-4 theme-text-positive" />
+            <span className="inline-block font-mono text-sm theme-option-a-gradient-text">Next Gen Prediction Market</span>
           </div>
         </motion.div>
 
@@ -147,7 +150,7 @@ export function GetStartedPage({ onGetStarted }: GetStartedPageProps) {
         >
           <div className="relative mx-auto h-24 w-24 sm:h-32 sm:w-32">
             <img
-              src="/logo-white-no-bkg.webp"
+              src={logoSrc}
               alt="Penny4Thots Logo"
               className="h-full w-full object-contain drop-shadow-lg"
             />

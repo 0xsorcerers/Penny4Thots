@@ -4,10 +4,13 @@ import { Connector } from "@/tools/utils";
 import { useActiveAccount } from "thirdweb/react";
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTheme } from "@/hooks/useTheme";
 
 export default function Welcome() {
   const account = useActiveAccount();
   const navigate = useNavigate();
+  const { theme } = useTheme();
+  const logoSrc = theme === "dark" ? "/logo-white-no-bkg.webp" : "/logo-black-no-bkg.webp";
 
   // Redirect to main app when connected
   useEffect(() => {
@@ -217,7 +220,7 @@ export default function Welcome() {
               />
               {/* Logo */}
               <img
-                src="/logo-white-no-bkg.webp"
+                src={logoSrc}
                 alt="Penny4Thots Logo"
                 className="h-full w-full object-contain drop-shadow-lg"
                 style={{ transform: "translateZ(20px)" }}
@@ -235,9 +238,9 @@ export default function Welcome() {
           transition={{ duration: 0.6, delay: 0.4 }}
           className="mb-6"
         >
-          <div className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-4 py-2 backdrop-blur-sm">
-            <Sparkles className="h-4 w-4 text-primary" />
-            <span className="font-mono text-sm text-primary">Next Gen Prediction Market</span>
+          <div className="theme-option-a-chip inline-flex items-center gap-2 rounded-full border px-4 py-2 backdrop-blur-sm">
+            <Sparkles className="h-4 w-4 theme-text-positive" />
+            <span className="inline-block font-mono text-sm theme-option-a-gradient-text">Next Gen Prediction Market</span>
           </div>
         </motion.div>
 
