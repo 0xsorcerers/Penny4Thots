@@ -550,7 +550,7 @@ export default function MarketPage() {
               {market.tags.map((tag) => (
                 <span
                   key={tag}
-                  className="rounded-full bg-primary/10 px-3 py-1 font-mono text-xs text-primary"
+                  className="rounded-full border px-3 py-1 font-mono text-xs theme-option-a-chip"
                 >
                   {tag}
                 </span>
@@ -561,7 +561,7 @@ export default function MarketPage() {
               {market.title}
             </h1>
             {/* Subtitle */}
-            <p className="mb-6 font-outfit text-xl text-muted-foreground">{market.subtitle}</p>
+            <p className="mb-6 font-outfit text-xl theme-text-accent">{market.subtitle}</p>
             {/* Market Balance - Volume Traded */}
             {market.marketBalance && (
               <div className="mb-6">
@@ -572,13 +572,13 @@ export default function MarketPage() {
               </div>
             )}
             {/* Meta info */}
-            <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+            <div className="flex flex-wrap items-center gap-4 text-sm theme-text-support">
               {/* Market Status Badge */}
               <span className="flex items-center gap-1.5">
                 <Clock className="h-4 w-4" />
                 Created {formatDate(market.createdAt)}
               </span>
-              <span className="flex items-center gap-1.5">
+              <span className="flex items-center gap-1.5 theme-text-accent">
                 <Users className="h-4 w-4" />
                 {totalVotes} {totalVotes === 1 ? "vote" : "votes"}
               </span>
@@ -634,8 +634,8 @@ export default function MarketPage() {
             transition={{ delay: 0.3 }}
             className="mb-8 rounded-2xl border border-white/60 bg-white/70 p-6 backdrop-blur-xl shadow-[0_4px_24px_-4px_hsl(220_30%_15%/0.1),inset_0_1px_0_hsl(0_0%_100%/0.8)] dark:border-border/50 dark:bg-card/50 dark:backdrop-blur-sm dark:shadow-none"
           >
-            <h2 className="mb-3 font-syne text-lg font-bold text-foreground">About this market</h2>
-            <p className="font-outfit leading-relaxed text-foreground/80">{market.description}</p>
+            <h2 className="mb-3 font-syne text-lg font-bold theme-option-a-gradient-text animate-shimmer-sweep">About this market</h2>
+            <p className="font-outfit leading-relaxed theme-text-support">{market.description}</p>
           </motion.div>
           {/* Voting Section */}
           <motion.div
@@ -644,7 +644,7 @@ export default function MarketPage() {
             transition={{ delay: 0.4 }}
             className="mb-8 rounded-2xl border border-white/60 bg-white/70 p-6 backdrop-blur-xl shadow-[0_4px_24px_-4px_hsl(220_30%_15%/0.1),inset_0_1px_0_hsl(0_0%_100%/0.8)] dark:border-border/50 dark:bg-card/50 dark:backdrop-blur-sm dark:shadow-none"
           >
-            <h2 className="mb-4 font-syne text-lg font-bold text-foreground">Cast your vote</h2>
+            <h2 className="mb-4 font-syne text-lg font-bold theme-option-a-gradient-text animate-shimmer-sweep">Cast your vote</h2>
             {/* Progress bar */}
             <div className="mb-6">
               <div className="mb-2 flex items-center justify-between text-sm">
@@ -665,9 +665,9 @@ export default function MarketPage() {
                   transition={{ duration: 0.8, ease: "easeOut" }}
                 />
               </div>
-              <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
-                <span>{market.yesVotes} votes</span>
-                <span>{market.noVotes} votes</span>
+              <div className="mt-2 flex items-center justify-between text-xs">
+                <span className="theme-text-positive">{market.yesVotes} votes</span>
+                <span className="theme-text-negative">{market.noVotes} votes</span>
               </div>
             </div>
             {/* Stats Section - Just Vote Stats */}
@@ -683,13 +683,10 @@ export default function MarketPage() {
             {/* Platform Fee Display */}
             {platformFeePercentage !== null && (
               <div className="mb-6 text-center sm:text-left">
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs theme-text-support">
                   Platform fee:{" "}
                   <span
-                    style={{
-                      color: "hsl(var(--primary))",
-                    }}
-                    className="font-semibold"
+                    className="font-semibold theme-text-accent"
                   >
                     {platformFeePercentage.toFixed(2)}%
                   </span>
@@ -708,7 +705,7 @@ export default function MarketPage() {
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                     onClick={() => handleVoteClick(true)}
-                    className="w-full relative overflow-hidden rounded-xl py-5 font-syne text-xl font-bold transition-all bg-gradient-to-r from-amber-700/20 to-yellow-600/20 text-amber-600 hover:from-amber-700 hover:to-yellow-600 hover:text-white dark:from-amber-700/30 dark:to-yellow-600/30 dark:text-amber-500 dark:hover:from-amber-700 dark:hover:to-yellow-600 dark:hover:text-white border border-amber-700/30"
+                    className="w-full relative overflow-hidden rounded-xl border py-5 font-syne text-xl font-bold transition-all theme-option-a-action"
                   >
                     <span className="relative z-10 flex items-center justify-center gap-2">
                       <TrendingUp className="h-6 w-6" />
@@ -748,7 +745,7 @@ export default function MarketPage() {
                 whileTap={{ scale: 0.98 }}
                 onClick={handleClaim}
                 disabled={isClaiming}
-                className="w-full relative overflow-hidden rounded-xl py-5 font-syne text-xl font-bold transition-all bg-gradient-to-r from-amber-500/20 to-orange-500/20 text-amber-500 hover:from-amber-500 hover:to-orange-500 hover:text-white dark:from-amber-500/30 dark:to-orange-500/30 dark:text-amber-400 dark:hover:from-amber-500 dark:hover:to-orange-500 dark:hover:text-white border border-amber-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full relative overflow-hidden rounded-xl border py-5 font-syne text-xl font-bold transition-all theme-action-claim disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <span className="relative z-10 flex items-center justify-center gap-2">
                   {isClaiming ? (
@@ -768,7 +765,7 @@ export default function MarketPage() {
             transition={{ delay: 0.5 }}
             className="rounded-2xl border border-white/60 bg-white/70 p-6 backdrop-blur-xl shadow-[0_4px_24px_-4px_hsl(220_30%_15%/0.1),inset_0_1px_0_hsl(0_0%_100%/0.8)] dark:border-border/50 dark:bg-card/50 dark:backdrop-blur-sm dark:shadow-none"
           >
-            <h2 className="mb-4 font-syne text-lg font-bold text-foreground">Trade <span className="text-xs font-normal text-muted-foreground">[Kamikaze trades have a 50% haircut for anyone desiring to alternate a vote position]</span></h2>
+            <h2 className="mb-4 font-syne text-lg font-bold theme-option-a-gradient-text animate-shimmer-sweep">Trade <span className="text-xs font-normal theme-text-support">[Kamikaze trades have a 50% haircut for anyone desiring to alternate a vote position]</span></h2>
             
             <AnimatePresence mode="wait">
               {tradeMode === "idle" ? (
@@ -784,7 +781,7 @@ export default function MarketPage() {
                     className={cn(
                       "w-full rounded-xl py-6 font-outfit text-lg font-semibold transition-all",
                       market.tradeOptions
-                        ? "bg-primary/10 text-primary hover:bg-primary/20"
+                        ? "border theme-action-vote"
                         : "cursor-not-allowed bg-muted/50 text-muted-foreground opacity-50"
                     )}
                   >

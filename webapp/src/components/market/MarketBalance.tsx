@@ -5,7 +5,6 @@ import { useNetworkStore } from "@/store/networkStore";
 import type { Address } from "viem";
 import erc20 from "@/abi/ERC20.json";
 import { Abi } from "viem";
-import { useTheme } from "@/hooks/useTheme";
 
 interface MarketBalanceProps {
   marketBalance: bigint; // Raw balance in token's smallest unit
@@ -16,9 +15,7 @@ export function MarketBalance({ marketBalance, paymentToken }: MarketBalanceProp
   const selectedNetwork = useNetworkStore((state) => state.selectedNetwork);
   const [symbol, setSymbol] = useState<string>(selectedNetwork.symbol);
   const [tokenDecimals, setTokenDecimals] = useState<number>(18);
-  const { theme } = useTheme();
   const isNativeToken = !paymentToken || isZeroAddress(paymentToken);
-  const isLight = theme === "light";
 
   useEffect(() => {
     if (isNativeToken) {
@@ -74,19 +71,14 @@ export function MarketBalance({ marketBalance, paymentToken }: MarketBalanceProp
     }
   })();
 
-  const symbolColor =
-    symbol === selectedNetwork.symbol
-      ? isLight
-        ? "text-amber-600"
-        : "text-primary"
-      : "text-accent";
+  const symbolColor = "text-yes";
 
   return (
-    <div className="flex items-center gap-1.5 rounded-full bg-accent/10 px-3 py-1.5 font-mono text-xs">
-      <Wallet className="h-3 w-3 text-slate-400" />
-      <span className="text-blue-500 dark:text-foreground font-semibold">{displayBalance}</span>
+    <div className="flex items-center gap-1.5 rounded-full border px-3 py-1.5 font-mono text-xs theme-chip-secondary">
+      <Wallet className="h-3 w-3 text-muted-foreground" />
+      <span className="font-semibold text-foreground">{displayBalance}</span>
       <span className={`font-bold ${symbolColor}`}>{symbol}</span>
-      <span className="text-slate-400 dark:text-foreground">staked.</span>
+      <span className="text-muted-foreground">staked.</span>
     </div>
   );
 }
