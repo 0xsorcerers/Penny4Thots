@@ -8,6 +8,8 @@ import { AutoConnect } from "thirdweb/react";
 import { client, wallets } from "@/tools/utils";
 import { useNetworkStore } from "@/store/networkStore";
 import { useMarketStore } from "@/store/marketStore";
+import { useTheme } from "@/hooks/useTheme";
+import { applyNetworkTheme } from "@/tools/networkTheme";
 import Welcome from "./pages/Welcome";
 import Index from "./pages/Index";
 import MarketPage from "./pages/MarketPage";
@@ -29,6 +31,17 @@ function NetworkMarketCacheSync() {
   return null;
 }
 
+function NetworkThemeSync() {
+  const chainId = useNetworkStore((state) => state.selectedNetwork.chainId);
+  const { theme } = useTheme();
+
+  useEffect(() => {
+    applyNetworkTheme(chainId, theme);
+  }, [chainId, theme]);
+
+  return null;
+}
+
 const App = () => (
   <>
     <AutoConnect
@@ -44,6 +57,7 @@ const App = () => (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <NetworkMarketCacheSync />
+        <NetworkThemeSync />
         <Toaster />
         <Sonner />
         <BrowserRouter>

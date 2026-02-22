@@ -175,11 +175,11 @@ export function MarketGrid({ markets, allMarkets, marketCount, currentPage, page
           className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
         >
           <div>
-            <h1 className="font-syne text-3xl font-bold text-foreground">Markets</h1>
-            <p className="mt-1 font-outfit text-muted-foreground">
+            <h1 className="font-syne text-3xl font-bold theme-option-a-gradient-text animate-shimmer-sweep">Markets</h1>
+            <p className="mt-1 font-outfit theme-text-accent">
               {marketCount} prediction {marketCount === 1 ? "market" : "markets"} available
             </p>
-            <p className="mt-1 font-outfit text-sm text-muted-foreground">
+            <p className="mt-1 font-outfit text-sm theme-text-support">
               {debouncedQuery
                 ? `Search results: ${filteredMarkets.length}`
                 : `Page ${currentPage} of ${totalPages} • Range ${visibleStart} - ${visibleEnd}`}
@@ -192,7 +192,7 @@ export function MarketGrid({ markets, allMarkets, marketCount, currentPage, page
               disabled={isRefreshing || isLoading}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              className="relative flex h-11 w-11 items-center justify-center rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              className="relative flex h-11 w-11 items-center justify-center rounded-full border transition-all theme-vote-chip disabled:opacity-50 disabled:cursor-not-allowed"
               title="Refresh all markets from blockchain"
             >
               <motion.div
@@ -230,7 +230,7 @@ export function MarketGrid({ markets, allMarkets, marketCount, currentPage, page
               placeholder="Search markets by id, title, subtitle, description, or tags..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="h-11 rounded-xl border-amber-100/60 bg-amber-50/60 backdrop-blur-lg pl-10 font-outfit placeholder:text-muted-foreground focus:border-primary/50 focus:ring-primary/20 shadow-[inset_0_1px_2px_hsl(220_30%_15%/0.05)] dark:border-border/50 dark:bg-card dark:backdrop-blur-none dark:shadow-none"
+              className="h-11 rounded-xl pl-10 font-outfit placeholder:text-muted-foreground focus:border-primary/50 focus:ring-primary/20"
             />
             {searchQuery && (
               <button
@@ -330,10 +330,10 @@ export function MarketGrid({ markets, allMarkets, marketCount, currentPage, page
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-amber-100/50 bg-amber-50/50 backdrop-blur-lg py-20 dark:border-border/50 dark:bg-card/50 dark:backdrop-blur-none"
+              className="flex flex-col items-center justify-center rounded-2xl border border-dashed py-20 theme-surface-soft"
             >
               <Loader2 className="h-10 w-10 animate-spin text-primary mb-4" />
-              <p className="font-outfit text-muted-foreground">Loading markets from blockchain...</p>
+              <p className="font-outfit theme-text-support">Loading markets from blockchain...</p>
             </motion.div>
           ) : filteredMarkets.length > 0 ? (
             <motion.div
@@ -360,15 +360,15 @@ export function MarketGrid({ markets, allMarkets, marketCount, currentPage, page
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-amber-100/50 bg-amber-50/50 backdrop-blur-lg py-20 dark:border-border/50 dark:bg-card/50 dark:backdrop-blur-none"
+              className="flex flex-col items-center justify-center rounded-2xl border border-dashed py-20 theme-surface-soft"
             >
               <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
-                <Sparkles className="h-8 w-8 text-primary" />
+                <Sparkles className="h-8 w-8 theme-text-accent" />
               </div>
               <h3 className="mb-2 font-syne text-xl font-bold text-foreground">
                 {searchQuery || selectedTag ? "No markets found" : "No markets yet"}
               </h3>
-              <p className="mb-6 max-w-sm text-center font-outfit text-muted-foreground">
+              <p className="mb-6 max-w-sm text-center font-outfit theme-text-support">
                 {searchQuery || selectedTag
                   ? "Try adjusting your search or filter criteria."
                   : "Be the first to create a prediction market and share your insights with the world."}
@@ -391,3 +391,4 @@ export function MarketGrid({ markets, allMarkets, marketCount, currentPage, page
     </div>
   );
 }
+
