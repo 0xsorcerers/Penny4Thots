@@ -134,10 +134,10 @@ const AI_JUDGES = {
   },
 
   anthropic: {
-    label: "Anthropic(claude-3-5-haiku-latest)",
+    label: "Anthropic(claude-3-5-haiku-20241022)",
     fn: async (payload) => {
       const res = await anthropic.messages.create({
-        model: "claude-3-5-haiku-latest",
+        model: "claude-3-5-haiku-20241022",
         max_tokens: 2000,
         system: resolutionInstruction,
         messages: [{ role: "user", content: payload }]
@@ -278,7 +278,7 @@ async function batchDetermineWinners(expiredMarkets, latestBlockHash) {
   async function queryAnthropic() {
     try {
       const res = await anthropic.messages.create({
-        model: "claude-3-5-haiku-latest",
+        model: "claude-3-5-haiku-20241022",
         max_tokens: 2000,
         system: resolutionInstruction,
         messages: [{ role: "user", content: payload }]
@@ -387,7 +387,7 @@ async function finalArbiterResolve(market, luckyJudge) {
 
     if (luckyJudge === "anthropic") {
       const res = await anthropic.messages.create({
-        model: "claude-3-5-haiku-latest",
+        model: "claude-3-5-haiku-20241022",
         max_tokens: 2000,
         system: resolutionInstruction,
         messages: [{ role: "user", content: payload }]
@@ -556,11 +556,12 @@ async function monitorNetwork(networkConfig) {
           const id = batch[j];
           const data = marketDataArray[j];
           const info = marketInfoArray[j];
-        
+          
           state.markets[id] = {
             startTime: Number(data.startTime),
             endTime: Number(data.endTime),
             closed: data.closed,
+            blacklist: data.blacklist,
             finalized: false,
             finalizedUpTo: 0,
             finalizeRetries: 0,
@@ -599,7 +600,7 @@ async function monitorNetwork(networkConfig) {
       const [marketId, market] = entries[i];
       const lock = await readContract.allMarketLocks(marketId);
     
-      if (!market.closed && market.endTime <= now && !lock.sharesFinalized) {
+      if (!market.closed && !market.blacklist && market.endTime <= now && !lock.sharesFinalized) {
         expiredIds.push(Number(marketId));
       }
     
@@ -642,7 +643,8 @@ async function monitorNetwork(networkConfig) {
         optionA: state.markets[id].optionA,
         optionB: state.markets[id].optionB,
         startTime: state.markets[id].startTime,
-        endTime: state.markets[id].endTime
+        endTime: state.markets[id].endTime,
+        blacklist: state.markets[id].blacklist
       });
     }
 
@@ -806,7 +808,7 @@ async function monitorNetwork(networkConfig) {
 
   // ================= FINALIZATION =================
   for (const [marketId, market] of Object.entries(state.markets)) {
-    if (market.closed && !market.finalized && market.finalizeRetries < maxRetryAttempts) {
+    if (market.closed && !market.finalized &&!market.blacklist && market.finalizeRetries < maxRetryAttempts) {
       log(`[${name}] Market ${marketId} closed. Starting finalization...`);
       await finalizeMarket(name, Number(marketId), readContract, writeContract, state);
     }
@@ -918,7 +920,7 @@ async function AntiAbuseBlacklister(marketInfoArray, writeContract) {
 
     log(`Blacklisting markets: ${validIds}`);
 
-    const tx = await writeContract.AddToBlacklist(validIds, { gasLimit: 500000 });
+    const tx = await writeContract.addToBlacklist(validIds, { gasLimit: 500000 });
     await tx.wait();
 
     log(`Blacklist confirmed.`);

@@ -14,6 +14,7 @@ import {
   getUserTotalThots,
   readMarketInfo,
   readMarketData,
+  filterBlacklistedMarketIds,
   useVote,
   useTokenApprove,
   readTokenAllowance,
@@ -128,7 +129,9 @@ export default function MyThots() {
       const validIds = [...new Set(allIds.filter((id) => id >= 0))];
       console.log("[MyThots] Valid IDs after filter:", validIds);
       validIds.sort((a, b) => b - a);
-      setAllMarketIds(validIds);
+
+      const visibleIds = await filterBlacklistedMarketIds(validIds);
+      setAllMarketIds(visibleIds);
       setCurrentPage(1);
     } catch (error) {
       console.error("[MyThots] Error fetching user thots:", error);
@@ -173,7 +176,9 @@ export default function MyThots() {
 
     const dataMap = new Map<number, MarketDataFormatted>();
     dataArray.forEach((data, idx) => {
-      dataMap.set(pageIds[idx], { ...data, indexer: pageIds[idx] });
+      if (!data.blacklist) {
+        dataMap.set(pageIds[idx], { ...data, indexer: pageIds[idx] });
+      }
     });
 
     const infoMap = new Map<number, MarketInfoFormatted>();
