@@ -44,6 +44,7 @@ export interface MarketInfo {
 export interface MarketData {
   creator: Address;
   status: boolean;
+  blacklist: boolean;
   marketBalance: bigint;
   activity: bigint;
   aVotes: bigint;
@@ -74,6 +75,7 @@ export interface MarketDataFormatted {
   indexer: number;
   creator: string;
   status: boolean;
+  blacklist: boolean;
   marketBalance: bigint; // Keep as bigint - let display layer handle formatting
   activity: string;
   aVotes: number;
@@ -294,6 +296,7 @@ export const readMarketData = async (ids: number[]): Promise<MarketDataFormatted
     indexer: 0, // Will be filled from context
     creator: marketData.creator,
     status: marketData.status,
+    blacklist: marketData.blacklist,
     closed: marketData.closed,
     marketBalance: marketData.marketBalance, // Keep as bigint - let display layer handle formatting
     activity: formatEther(marketData.activity),
@@ -602,6 +605,26 @@ export const fetchMarketDataFromBlockchain = async (ids: number[]): Promise<Mark
   if (ids.length === 0) return [];
   const marketData = await readMarketData(ids);
   return marketData;
+};
+
+/**
+ * Filter out blacklisted markets by reading mutable market data in chunks.
+ */
+export const filterBlacklistedMarketIds = async (ids: number[]): Promise<number[]> => {
+  if (ids.length === 0) return [];
+
+  const visibleIds: number[] = [];
+  for (let i = 0; i < ids.length; i += MUTABLE_MARKET_FETCH_LIMIT) {
+    const chunkIds = ids.slice(i, i + MUTABLE_MARKET_FETCH_LIMIT);
+    const chunkData = await readMarketData(chunkIds);
+    chunkData.forEach((marketData, idx) => {
+      if (!marketData.blacklist) {
+        visibleIds.push(chunkIds[idx]);
+      }
+    });
+  }
+
+  return visibleIds;
 };
 
 

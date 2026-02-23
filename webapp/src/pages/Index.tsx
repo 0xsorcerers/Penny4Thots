@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { GetStartedPage } from "@/components/landing/GetStartedPage";
 import { Header } from "@/components/layout/Header";
 import { MarketGrid } from "@/components/market/MarketGrid";
@@ -7,7 +7,7 @@ import { VoteModal } from "@/components/market/VoteModal";
 import { useMarketStore } from "@/store/marketStore";
 import { useNetworkStore } from "@/store/networkStore";
 import { useActiveAccount } from "thirdweb/react";
-import { useWriteMarket, useVote, useTokenApprove, fetchMarketsFromBlockchain, fetchMarketDataFromBlockchain, readMarketCount, readPaymentToken, readTokenAllowance, readTokenBalance, readTokenDecimals, toWei, toTokenSmallestUnit, fromTokenSmallestUnit, isZeroAddress, getBlockchain, formatEther, getMarketIdsForPage, MARKETS_PER_PAGE, type VoteParams } from "@/tools/utils";
+import { useWriteMarket, useVote, useTokenApprove, fetchMarketsFromBlockchain, fetchMarketDataFromBlockchain, readMarketCount, readPaymentToken, readTokenAllowance, readTokenBalance, readTokenDecimals, toWei, toTokenSmallestUnit, fromTokenSmallestUnit, isZeroAddress, getBlockchain, formatEther, MARKETS_PER_PAGE, filterBlacklistedMarketIds, type VoteParams } from "@/tools/utils";
 import type { CreateMarketData, Market } from "@/types/market";
 import type { Address } from "viem";
 import { toast } from "sonner";
@@ -25,6 +25,8 @@ export default function Index() {
   const [currentNetworkChainId, setCurrentNetworkChainId] = useState(selectedNetwork.chainId);
   const [currentPage, setCurrentPage] = useState(1);
   const [marketCount, setMarketCount] = useState(0);
+  const [visibleMarketIds, setVisibleMarketIds] = useState<number[]>([]);
+  const [visibleIdsSourceCount, setVisibleIdsSourceCount] = useState(0);
   const account = useActiveAccount();
   const { writeMarket, isPending, error } = useWriteMarket();
   const { vote, isPending: isVoting } = useVote();
@@ -35,7 +37,6 @@ export default function Index() {
   const loadMarketsFromBlockchain = useCallback(async () => {
     try {
       const currentMarketCount = await readMarketCount();
-      setMarketCount(currentMarketCount);
 
       // If no markets exist, clear and return early
       if (currentMarketCount === 0) {
@@ -43,16 +44,31 @@ export default function Index() {
         clearAllMarkets();
         setLastFetchedCount(0);
         setCurrentPage(1);
+        setMarketCount(0);
+        setVisibleMarketIds([]);
+        setVisibleIdsSourceCount(0);
         return;
       }
 
-      const totalPages = Math.max(1, Math.ceil(currentMarketCount / MARKETS_PER_PAGE));
+      let currentVisibleMarketIds = visibleMarketIds;
+      if (currentMarketCount !== visibleIdsSourceCount || visibleMarketIds.length === 0) {
+        const allIdsDesc = Array.from({ length: currentMarketCount }, (_, idx) => currentMarketCount - idx - 1);
+        currentVisibleMarketIds = await filterBlacklistedMarketIds(allIdsDesc);
+        setVisibleMarketIds(currentVisibleMarketIds);
+        setVisibleIdsSourceCount(currentMarketCount);
+      }
+
+      setMarketCount(currentVisibleMarketIds.length);
+
+      const totalPages = Math.max(1, Math.ceil(currentVisibleMarketIds.length / MARKETS_PER_PAGE));
       const nextPage = Math.min(currentPage, totalPages);
       if (nextPage !== currentPage) {
         setCurrentPage(nextPage);
       }
 
-      const pageIds = getMarketIdsForPage(currentMarketCount, nextPage, MARKETS_PER_PAGE);
+      const startIdx = (nextPage - 1) * MARKETS_PER_PAGE;
+      const endIdx = startIdx + MARKETS_PER_PAGE;
+      const pageIds = currentVisibleMarketIds.slice(startIdx, endIdx);
 
       // If immutable data is stale/missing, fetch and persist all of it in background-sized batches.
       if (currentMarketCount !== lastFetchedCount || marketInfos.length !== currentMarketCount) {
@@ -124,11 +140,19 @@ export default function Index() {
     loadMarketsFromBlockchain();
   }, [account, currentPage, isInitialLoad, loadMarketsFromBlockchain]);
 
-  const marketsForCurrentPage = (() => {
-    const pageIds = getMarketIdsForPage(marketCount, currentPage, MARKETS_PER_PAGE);
+  const marketsForCurrentPage = useMemo(() => {
+    const startIdx = (currentPage - 1) * MARKETS_PER_PAGE;
+    const endIdx = startIdx + MARKETS_PER_PAGE;
+    const pageIds = visibleMarketIds.slice(startIdx, endIdx);
     const marketMap = new Map(markets.map((m) => [m.indexer, m]));
     return pageIds.map((id) => marketMap.get(id)).filter((m): m is Market => Boolean(m));
-  })();
+  }, [currentPage, markets, visibleMarketIds]);
+
+  const visibleMarketIdSet = useMemo(() => new Set(visibleMarketIds), [visibleMarketIds]);
+  const visibleMarkets = useMemo(
+    () => markets.filter((m) => m.indexer !== undefined && visibleMarketIdSet.has(m.indexer)),
+    [markets, visibleMarketIdSet]
+  );
 
 
   const handleSearchResultsChange = useCallback(async (marketIds: number[]) => {
@@ -137,7 +161,7 @@ export default function Index() {
       return;
     }
 
-    const idsToRead = marketIds.slice(0, MARKETS_PER_PAGE);
+    const idsToRead = marketIds.filter((id) => visibleMarketIdSet.has(id)).slice(0, MARKETS_PER_PAGE);
     const hydrationKey = idsToRead.join(",");
     if (hydrationKey === lastSearchHydrationKeyRef.current) return;
 
@@ -152,7 +176,7 @@ export default function Index() {
     } catch (err) {
       console.error("Failed to hydrate search result market data:", err);
     }
-  }, [updateMarketData]);
+  }, [updateMarketData, visibleMarketIdSet]);
 
   const handleConnect = () => {
     setIsConnected(!isConnected);
@@ -361,7 +385,7 @@ export default function Index() {
       <div className="relative z-10">
         <MarketGrid
           markets={marketsForCurrentPage}
-          allMarkets={markets}
+          allMarkets={visibleMarkets}
           marketCount={marketCount}
           currentPage={currentPage}
           pageSize={MARKETS_PER_PAGE}

@@ -14,6 +14,7 @@ import {
   getUserTotalMarkets,
   readMarketInfo,
   readMarketData,
+  filterBlacklistedMarketIds,
   useVote,
   useTokenApprove,
   readTokenAllowance,
@@ -125,8 +126,9 @@ export default function YourThots() {
 
       const validIds = [...new Set(allIds.filter((id) => id >= 0))];
       validIds.sort((a, b) => b - a);
-      setAllMarketIds(validIds);
-      setUniqueMarketCount(validIds.length);
+      const visibleIds = await filterBlacklistedMarketIds(validIds);
+      setAllMarketIds(visibleIds);
+      setUniqueMarketCount(visibleIds.length);
       setCurrentPage(1);
     } catch (error) {
       console.error("Error fetching user markets:", error);
@@ -171,7 +173,9 @@ export default function YourThots() {
 
     const dataMap = new Map<number, MarketDataFormatted>();
     dataArray.forEach((data, idx) => {
-      dataMap.set(pageIds[idx], { ...data, indexer: pageIds[idx] });
+      if (!data.blacklist) {
+        dataMap.set(pageIds[idx], { ...data, indexer: pageIds[idx] });
+      }
     });
 
     const infoMap = new Map<number, MarketInfoFormatted>();
