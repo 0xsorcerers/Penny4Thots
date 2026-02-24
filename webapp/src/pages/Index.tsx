@@ -25,6 +25,7 @@ export default function Index() {
   const [currentNetworkChainId, setCurrentNetworkChainId] = useState(selectedNetwork.chainId);
   const [currentPage, setCurrentPage] = useState(1);
   const [marketCount, setMarketCount] = useState(0);
+  const [showClosedMarkets, setShowClosedMarkets] = useState(true);
   const [visibleMarketIds, setVisibleMarketIds] = useState<number[]>([]);
   const [visibleIdsSourceCount, setVisibleIdsSourceCount] = useState(0);
   const account = useActiveAccount();
@@ -140,15 +141,34 @@ export default function Index() {
     loadMarketsFromBlockchain();
   }, [account, currentPage, isInitialLoad, loadMarketsFromBlockchain]);
 
+  const marketByIndexer = useMemo(() => new Map(markets.map((m) => [m.indexer, m])), [markets]);
+
+  const filteredVisibleMarketIds = useMemo(() => {
+    if (showClosedMarkets) return visibleMarketIds;
+
+    return visibleMarketIds.filter((id) => {
+      const market = marketByIndexer.get(id);
+      if (!market) return true;
+      return !market.closed;
+    });
+  }, [marketByIndexer, showClosedMarkets, visibleMarketIds]);
+
+  useEffect(() => {
+    const totalPages = Math.max(1, Math.ceil(filteredVisibleMarketIds.length / MARKETS_PER_PAGE));
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+    setMarketCount(filteredVisibleMarketIds.length);
+  }, [currentPage, filteredVisibleMarketIds.length]);
+
   const marketsForCurrentPage = useMemo(() => {
     const startIdx = (currentPage - 1) * MARKETS_PER_PAGE;
     const endIdx = startIdx + MARKETS_PER_PAGE;
-    const pageIds = visibleMarketIds.slice(startIdx, endIdx);
-    const marketMap = new Map(markets.map((m) => [m.indexer, m]));
-    return pageIds.map((id) => marketMap.get(id)).filter((m): m is Market => Boolean(m));
-  }, [currentPage, markets, visibleMarketIds]);
+    const pageIds = filteredVisibleMarketIds.slice(startIdx, endIdx);
+    return pageIds.map((id) => marketByIndexer.get(id)).filter((m): m is Market => Boolean(m));
+  }, [currentPage, filteredVisibleMarketIds, marketByIndexer]);
 
-  const visibleMarketIdSet = useMemo(() => new Set(visibleMarketIds), [visibleMarketIds]);
+  const visibleMarketIdSet = useMemo(() => new Set(filteredVisibleMarketIds), [filteredVisibleMarketIds]);
   const visibleMarkets = useMemo(
     () => markets.filter((m) => m.indexer !== undefined && visibleMarketIdSet.has(m.indexer)),
     [markets, visibleMarketIdSet]
@@ -394,6 +414,8 @@ export default function Index() {
           onVoteClick={handleVoteClick}
           onRefreshMarkets={handleRefreshAllMarkets}
           onSearchResultsChange={handleSearchResultsChange}
+          showClosedMarkets={showClosedMarkets}
+          onToggleClosedMarkets={() => setShowClosedMarkets((prev) => !prev)}
           isLoading={isLoadingFromBlockchain}
         />
       </div>
