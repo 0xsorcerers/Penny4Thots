@@ -1,18 +1,40 @@
 import { useState, useEffect, useMemo } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, TrendingUp, TrendingDown, BarChart3, Users, Clock, Share2, Loader2, CircleDot, CircleOff, Hourglass, Gift, Copy, Send, MessageCircle } from "lucide-react";
+import { ArrowLeft, TrendingUp, TrendingDown, Users, Clock, Share2, Loader2, CircleDot, CircleOff, Hourglass, Gift, Copy, Send, MessageCircle, AlertTriangle } from "lucide-react";
 import { useActiveAccount, useActiveWallet, useActiveWalletChain, useDisconnect, useIsAutoConnecting, useSwitchActiveWalletChain } from "thirdweb/react";
 import { defineChain } from "thirdweb/chains";
 import { useMarketStore } from "@/store/marketStore";
 import { useNetworkStore } from "@/store/networkStore";
 import { useMarketDataHydration } from "@/hooks/useMarketDataHydration";
-import { useVote, useTokenApprove, readPaymentToken, readTokenAllowance, isZeroAddress, fetchDataConstants, calculatePlatformFeePercentage, fetchMarketDataFromBlockchain, getClaimablePositions, getAllUserPositions, useBatchClaim, readMarketLock, type VoteParams } from "@/tools/utils";
+import {
+  useVote,
+  useTokenApprove,
+  readPaymentToken,
+  readTokenAllowance,
+  readTokenDecimals,
+  readTokenSymbol,
+  isZeroAddress,
+  fetchDataConstants,
+  calculatePlatformFeePercentage,
+  fetchMarketDataFromBlockchain,
+  getClaimablePositions,
+  getAllUserPositions,
+  useBatchClaim,
+  useBatchKamikaze,
+  readMarketLock,
+  getUserPositionCount,
+  getUserPositions,
+  getPositionDetailsBatch,
+  formatTokenAmount,
+  type VoteParams,
+} from "@/tools/utils";
 import { VoteModal } from "@/components/market/VoteModal";
 import { VoteStats } from "@/components/market/VoteStats";
 import { MarketBalance } from "@/components/market/MarketBalance";
 import { CountdownTimerLarge } from "@/components/market/CountdownTimer";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { CHAIN_ID_QUERY_PARAM } from "@/lib/marketRoutes";
 import type { Address } from "viem";
@@ -57,10 +79,10 @@ export default function MarketPage() {
   const { vote, isPending: isVoting } = useVote();
   const { approve, isPending: isApproving } = useTokenApprove();
   const { batchClaim, isPending: isClaiming } = useBatchClaim();
+  const { batchKamikaze, isPending: isBatchKamikazing } = useBatchKamikaze();
   const [isVoteModalOpen, setIsVoteModalOpen] = useState(false);
   const [selectedVoteSignal, setSelectedVoteSignal] = useState<boolean | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [tradeMode, setTradeMode] = useState<"idle" | "active">("idle");
   const [isShareMenuOpen, setIsShareMenuOpen] = useState(false);
   const [paymentToken, setPaymentToken] = useState<Address | null>(null);
   const [platformFeePercentage, setPlatformFeePercentage] = useState<number | null>(null);
@@ -68,6 +90,16 @@ export default function MarketPage() {
   const [sharesFinalized, setSharesFinalized] = useState<boolean | null>(null);
   const [userPositions, setUserPositions] = useState<number[]>([]);
   const [isLoadingPositions, setIsLoadingPositions] = useState(false);
+  const [isSellModalOpen, setIsSellModalOpen] = useState(false);
+  const [isLoadingKamikazePositions, setIsLoadingKamikazePositions] = useState(false);
+  const [kamikazePositionIds, setKamikazePositionIds] = useState<number[]>([]);
+  const [kamikazeDisplayPositionIds, setKamikazeDisplayPositionIds] = useState<number[]>([]);
+  const [kamikazedPositionIds, setKamikazedPositionIds] = useState<Set<number>>(new Set());
+  const [kamikazePositionCapital, setKamikazePositionCapital] = useState<Map<number, bigint>>(new Map());
+  const [selectedKamikazeIds, setSelectedKamikazeIds] = useState<Set<number>>(new Set());
+  const [kamikazeTokenSymbol, setKamikazeTokenSymbol] = useState<string>(selectedNetwork.symbol);
+  const [kamikazeTokenDecimals, setKamikazeTokenDecimals] = useState<number>(selectedNetwork.decimals);
+  const [isSubmittingKamikaze, setIsSubmittingKamikaze] = useState(false);
 
   const shareUrl = useMemo(() => {
     const url = new URL(window.location.href);
@@ -420,14 +452,263 @@ export default function MarketPage() {
       setIsSubmitting(false);
     }
   };
-  const handleTradeClick = () => {
-    if (market.tradeOptions) {
-      setTradeMode(tradeMode === "idle" ? "active" : "idle");
+  const getOrdinalLabel = (index: number): string => {
+    const labels = ["First", "Second", "Third", "Fourth", "Fifth", "Sixth", "Seventh", "Eighth", "Ninth", "Tenth"];
+    return labels[index] || `${index + 1}th`;
+  };
+  const loadKamikazePositions = async (): Promise<{ eligible: number[]; display: number[] }> => {
+    if (!market || market.indexer === undefined || !account?.address) return { eligible: [], display: [] };
+
+    setIsLoadingKamikazePositions(true);
+    try {
+      const totalPositions = await getUserPositionCount(market.indexer, account.address as Address);
+      console.log("[Kamikaze] userPositionCount", {
+        marketId: market.indexer,
+        user: account.address,
+        totalPositions,
+      });
+      if (totalPositions === 0) {
+        setKamikazePositionIds([]);
+        setKamikazeDisplayPositionIds([]);
+        setKamikazedPositionIds(new Set());
+        setKamikazePositionCapital(new Map());
+        return { eligible: [], display: [] };
+      }
+
+      const rangeLimit = 200;
+      const callsRequired = Math.ceil(totalPositions / rangeLimit);
+      const collectedPositionIds: number[] = [];
+      for (let i = 0; i < callsRequired; i++) {
+        const start = i * rangeLimit;
+        const finish = Math.min(start + rangeLimit, totalPositions);
+        const chunk = await getUserPositions(market.indexer, account.address as Address, start, finish);
+        console.log("[Kamikaze] getUserPositions chunk", {
+          marketId: market.indexer,
+          user: account.address,
+          start,
+          finish,
+          chunkCount: chunk.length,
+          chunk,
+        });
+        collectedPositionIds.push(...chunk);
+      }
+
+      const positionIds = Array.from(new Set(collectedPositionIds));
+      console.log("[Kamikaze] combined positionIds", {
+        marketId: market.indexer,
+        user: account.address,
+        count: positionIds.length,
+        positionIds,
+      });
+
+      if (positionIds.length === 0) {
+        setKamikazePositionIds([]);
+        setKamikazeDisplayPositionIds([]);
+        setKamikazedPositionIds(new Set());
+        setKamikazePositionCapital(new Map());
+        return { eligible: [], display: [] };
+      }
+
+      const details = await getPositionDetailsBatch(market.indexer, positionIds);
+      console.log("[Kamikaze] position details", {
+        marketId: market.indexer,
+        user: account.address,
+        detailCount: details.length,
+        details: details.map((d) => ({
+          positionId: d.positionId,
+          user: d.user,
+          amount: d.amount.toString(),
+          claimed: d.claimed,
+          kamikazed: d.kamikazed,
+          side: d.side,
+          timestamp: d.timestamp,
+        })),
+      });
+      const normalizedAddress = (account.address as Address).toLowerCase();
+      const displayable = details
+        .filter((p) => p.user.toLowerCase() === normalizedAddress && p.amount > 0n && !p.claimed)
+        .map((p) => p.positionId);
+      const kamikazedSet = new Set(
+        details
+          .filter((p) => p.user.toLowerCase() === normalizedAddress && p.amount > 0n && !p.claimed && p.kamikazed)
+          .map((p) => p.positionId)
+      );
+      const eligible = details
+        .filter((p) => p.user.toLowerCase() === normalizedAddress && p.amount > 0n && !p.claimed && !p.kamikazed)
+        .map((p) => p.positionId);
+      console.log("[Kamikaze] eligible positions", {
+        marketId: market.indexer,
+        user: account.address,
+        eligibleCount: eligible.length,
+        eligible,
+      });
+
+      const capitalMap = new Map<number, bigint>();
+      details.forEach((p) => {
+        if (displayable.includes(p.positionId)) {
+          capitalMap.set(p.positionId, p.amount);
+        }
+      });
+
+      const marketToken = paymentToken ?? await readPaymentToken(market.indexer);
+      if (marketToken && !isZeroAddress(marketToken)) {
+        const [symbol, decimals] = await Promise.all([
+          readTokenSymbol(marketToken),
+          readTokenDecimals(marketToken),
+        ]);
+        setKamikazeTokenSymbol(symbol);
+        setKamikazeTokenDecimals(decimals);
+      } else {
+        setKamikazeTokenSymbol(selectedNetwork.symbol);
+        setKamikazeTokenDecimals(selectedNetwork.decimals);
+      }
+
+      setKamikazePositionIds(eligible);
+      setKamikazeDisplayPositionIds(displayable);
+      setKamikazedPositionIds(kamikazedSet);
+      setKamikazePositionCapital(capitalMap);
+      return { eligible, display: displayable };
+    } finally {
+      setIsLoadingKamikazePositions(false);
     }
   };
-  const handleBuySell = (action: "buy" | "sell") => {
-    setTradeMode("idle");
+  const handleOpenKamikazeModal = async () => {
+    if (!account?.address) {
+      toast.error("Please connect your wallet first");
+      return;
+    }
+    if (!market || market.indexer === undefined) {
+      toast.error("Market data not loaded");
+      return;
+    }
+    if (market.closed) {
+      toast.error("Kamikaze is disabled for this market");
+      return;
+    }
+
+    setSelectedKamikazeIds(new Set());
+    setKamikazePositionIds([]);
+    setKamikazeDisplayPositionIds([]);
+    setKamikazedPositionIds(new Set());
+    setKamikazePositionCapital(new Map());
+    setIsSellModalOpen(true);
+
+    const { eligible, display } = await loadKamikazePositions();
+    if (display.length === 0) {
+      toast.info("No positions found for this market");
+    } else if (eligible.length === 0) {
+      toast.info("All listed positions are already kamikazed");
+    }
   };
+
+  const submitBatchKamikaze = async (positionIds: number[]) => {
+    if (!market || market.indexer === undefined) {
+      throw new Error("Market data not loaded");
+    }
+
+    const uniqueIds = Array.from(new Set(positionIds)).filter((id) => Number.isInteger(id) && id >= 0);
+    if (uniqueIds.length === 0) {
+      throw new Error("No positions selected for kamikaze");
+    }
+
+    console.log("[Kamikaze] batchKamikaze payload", {
+      marketId: market.indexer,
+      positionIds: uniqueIds,
+      count: uniqueIds.length,
+    });
+
+    await batchKamikaze({
+      marketId: market.indexer,
+      positionIds: uniqueIds,
+    });
+  };
+
+  const handleKamikazeAll = async () => {
+    if (!account?.address) {
+      toast.error("Please connect your wallet first");
+      return;
+    }
+    if (!market || market.indexer === undefined) {
+      toast.error("Market data not loaded");
+      return;
+    }
+    if (market.closed) {
+      toast.error("Kamikaze is disabled for this market");
+      return;
+    }
+
+    setIsSubmittingKamikaze(true);
+    try {
+      const { eligible } = await loadKamikazePositions();
+      const ids = eligible;
+      if (ids.length === 0) {
+        toast.error("No positions available for kamikaze");
+        return;
+      }
+
+      await submitBatchKamikaze(ids);
+      toast.success("Kamikaze successful", {
+        description: `Kamikazed ${ids.length} position${ids.length > 1 ? "s" : ""}.`,
+      });
+      setSelectedKamikazeIds(new Set());
+      setKamikazePositionIds([]);
+      setKamikazeDisplayPositionIds([]);
+      setKamikazedPositionIds(new Set());
+      setKamikazePositionCapital(new Map());
+    } catch (err) {
+      console.error("Kamikaze all failed:", err);
+      toast.error("Kamikaze failed", {
+        description: err instanceof Error ? err.message : "Please try again",
+      });
+    } finally {
+      setIsSubmittingKamikaze(false);
+    }
+  };
+  const handleSubmitSelectedKamikaze = async () => {
+    if (!market || market.indexer === undefined) return;
+
+    const selected = kamikazePositionIds.filter((id) => selectedKamikazeIds.has(id));
+    if (selected.length === 0) {
+      toast.error("Select at least one position");
+      return;
+    }
+
+    setIsSubmittingKamikaze(true);
+    try {
+      await submitBatchKamikaze(selected);
+      toast.success("Kamikaze successful", {
+        description: `Kamikazed ${selected.length} position${selected.length > 1 ? "s" : ""}.`,
+      });
+      setIsSellModalOpen(false);
+      setSelectedKamikazeIds(new Set());
+      setKamikazePositionIds([]);
+      setKamikazeDisplayPositionIds([]);
+      setKamikazedPositionIds(new Set());
+      setKamikazePositionCapital(new Map());
+    } catch (err) {
+      console.error("Kamikaze failed:", err);
+      toast.error("Kamikaze failed", {
+        description: err instanceof Error ? err.message : "Please try again",
+      });
+    } finally {
+      setIsSubmittingKamikaze(false);
+    }
+  };
+  const toggleKamikazeSelection = (positionId: number) => {
+    if (kamikazedPositionIds.has(positionId)) return;
+
+    setSelectedKamikazeIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(positionId)) {
+        next.delete(positionId);
+      } else {
+        next.add(positionId);
+      }
+      return next;
+    });
+  };
+  const isKamikazeUnavailable = market.closed;
+  const isKamikazeBusy = isLoadingKamikazePositions || isSubmittingKamikaze || isBatchKamikazing;
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("en-US", {
       year: "numeric",
@@ -766,57 +1047,50 @@ export default function MarketPage() {
             className="rounded-2xl border border-white/60 bg-white/70 p-6 backdrop-blur-xl shadow-[0_4px_24px_-4px_hsl(220_30%_15%/0.1),inset_0_1px_0_hsl(0_0%_100%/0.8)] dark:border-border/50 dark:bg-card/50 dark:backdrop-blur-sm dark:shadow-none"
           >
             <h2 className="mb-4 font-syne text-lg font-bold theme-option-a-gradient-text animate-shimmer-sweep">Trade <span className="text-xs font-normal theme-text-support">[Kamikaze trades have a 50% haircut for anyone desiring to alternate a vote position]</span></h2>
-            
-            <AnimatePresence mode="wait">
-              {tradeMode === "idle" ? (
-                <motion.div
-                  key="trade-button"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
+            {isKamikazeUnavailable ? (
+              <div>
+                <Button
+                  disabled
+                  className="w-full rounded-xl py-6 font-outfit text-lg font-semibold cursor-not-allowed bg-muted/50 text-muted-foreground opacity-50"
                 >
-                  <Button
-                    onClick={handleTradeClick}
-                    disabled={!market.tradeOptions}
-                    className={cn(
-                      "w-full rounded-xl py-6 font-outfit text-lg font-semibold transition-all",
-                      market.tradeOptions
-                        ? "border theme-action-vote"
-                        : "cursor-not-allowed bg-muted/50 text-muted-foreground opacity-50"
-                    )}
-                  >
-                    <BarChart3 className="mr-2 h-5 w-5" />
-                    {market.tradeOptions ? "Kamikaze This Market" : "Kamikaze Disabled"}
-                  </Button>
-                  {!market.tradeOptions && (
-                    <p className="mt-2 text-center font-outfit text-sm text-muted-foreground">
-                      Trading is currently not available for this market
-                    </p>
+                  Kamikaze Disabled
+                </Button>
+                <p className="mt-2 text-center font-outfit text-sm text-muted-foreground">
+                  Trading is currently not available for this market
+                </p>
+              </div>
+            ) : (
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Button
+                  onClick={handleOpenKamikazeModal}
+                  disabled={isKamikazeBusy}
+                  className="rounded-xl bg-red-500 py-6 font-outfit text-lg font-bold text-white transition-all hover:bg-red-600 hover:shadow-[0_0_30px_rgba(239,68,68,0.3)] disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {isLoadingKamikazePositions ? (
+                    <>
+                      <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                      Loading...
+                    </>
+                  ) : (
+                    "Kamikaze"
                   )}
-                </motion.div>
-              ) : (
-                <motion.div
-                  key="buy-sell-buttons"
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  className="grid gap-4 sm:grid-cols-2"
+                </Button>
+                <Button
+                  onClick={handleKamikazeAll}
+                  disabled={isKamikazeBusy}
+                  className="rounded-xl bg-red-700 py-6 font-outfit text-lg font-bold text-white transition-all hover:bg-red-800 hover:shadow-[0_0_30px_rgba(185,28,28,0.3)] disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  <Button
-                    onClick={() => handleBuySell("buy")}
-                    className="rounded-xl bg-yes py-6 font-outfit text-lg font-bold text-yes-foreground transition-all hover:bg-yes/90 hover:shadow-[0_0_30px_rgba(var(--yes),0.3)]"
-                  >
-                    Kamikaze
-                  </Button>
-                  <Button
-                    onClick={() => handleBuySell("sell")}
-                    className="rounded-xl bg-no py-6 font-outfit text-lg font-bold text-no-foreground transition-all hover:bg-no/90 hover:shadow-[0_0_30px_rgba(var(--no),0.3)]"
-                  >
-                    Full Kamikaze
-                  </Button>
-                </motion.div>
-              )}
-            </AnimatePresence>
+                  {isSubmittingKamikaze || isBatchKamikazing ? (
+                    <>
+                      <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                      Processing...
+                    </>
+                  ) : (
+                    "Kamikaze All"
+                  )}
+                </Button>
+              </div>
+            )}
           </motion.div>
         </div>
       </div>
@@ -834,6 +1108,131 @@ export default function MarketPage() {
           optionB={market.optionB}
         />
       )}
+      <Dialog open={isSellModalOpen} onOpenChange={setIsSellModalOpen}>
+        <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="font-syne text-xl">Kamikaze Positions</DialogTitle>
+            <DialogDescription className="font-outfit">
+              Toggle the positions you want to kamikaze in this market.
+            </DialogDescription>
+          </DialogHeader>
+
+          {selectedKamikazeIds.size > 0 && (
+            <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm">
+              <div className="flex items-center gap-2 font-outfit text-red-700 dark:text-red-300">
+                <AlertTriangle className="h-4 w-4" />
+                Kamikaze positions carry a 50% haircut of capital
+              </div>
+              <p className="mt-1 font-mono text-xs text-red-700/90 dark:text-red-200/90">
+                Selected intended capital:{" "}
+                {kamikazePositionIds
+                  .filter((id) => selectedKamikazeIds.has(id))
+                  .map((id, idx) => {
+                    const amount = kamikazePositionCapital.get(id) ?? 0n;
+                    const slashed = amount / 2n;
+                    return `${getOrdinalLabel(idx)}=${formatTokenAmount(slashed, kamikazeTokenDecimals, 6)} ${kamikazeTokenSymbol}`;
+                  })
+                  .join(" | ")}
+              </p>
+            </div>
+          )}
+
+          <div className="max-h-[48vh] overflow-y-auto pr-2">
+            {isLoadingKamikazePositions ? (
+              <div className="flex items-center justify-center py-6 text-muted-foreground">
+                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                Loading positions...
+              </div>
+            ) : kamikazeDisplayPositionIds.length === 0 ? (
+              <p className="py-4 text-center font-outfit text-sm text-muted-foreground">
+                No positions found for this market.
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {kamikazeDisplayPositionIds.map((positionId, idx) => {
+                  const amount = kamikazePositionCapital.get(positionId) ?? 0n;
+                  const slashed = amount / 2n;
+                  const isOn = selectedKamikazeIds.has(positionId);
+                  const isKamikazed = kamikazedPositionIds.has(positionId);
+
+                  return (
+                    <div
+                      key={positionId}
+                      className={cn(
+                        "rounded-lg border p-3 transition-colors",
+                        isKamikazed
+                          ? "border-border/40 bg-muted/30 opacity-60"
+                          : isOn
+                            ? "border-red-500/40 bg-red-500/5"
+                            : "border-border/60 bg-background/40"
+                      )}
+                    >
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="font-syne text-sm font-semibold">
+                            {getOrdinalLabel(idx)} position
+                          </p>
+                          <p className="font-mono text-xs text-muted-foreground">
+                            Capital: {formatTokenAmount(amount, kamikazeTokenDecimals, 6)} {kamikazeTokenSymbol}
+                          </p>
+                          {isKamikazed && (
+                            <p className="font-mono text-xs text-muted-foreground">
+                              Status: Kamikazed
+                            </p>
+                          )}
+                          {isOn && (
+                            <p className="font-mono text-xs text-red-600 dark:text-red-300">
+                              Slashed to: {formatTokenAmount(slashed, kamikazeTokenDecimals, 6)} {kamikazeTokenSymbol}
+                            </p>
+                          )}
+                        </div>
+                        <Button
+                          type="button"
+                          variant={isKamikazed ? "outline" : isOn ? "default" : "outline"}
+                          className={cn(
+                            "min-w-20 font-outfit",
+                            isKamikazed ? "cursor-not-allowed opacity-70" : isOn ? "bg-red-600 text-white hover:bg-red-700" : ""
+                          )}
+                          disabled={isKamikazed}
+                          onClick={() => toggleKamikazeSelection(positionId)}
+                        >
+                          {isKamikazed ? "Kamikazed" : isOn ? "On" : "Off"}
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsSellModalOpen(false)}
+              disabled={isSubmittingKamikaze || isBatchKamikazing}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              className="bg-red-600 text-white hover:bg-red-700"
+              onClick={handleSubmitSelectedKamikaze}
+              disabled={selectedKamikazeIds.size === 0 || isSubmittingKamikaze || isBatchKamikazing}
+            >
+              {isSubmittingKamikaze || isBatchKamikazing ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Processing...
+                </>
+              ) : (
+                "Kamikaze Selected"
+              )}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
