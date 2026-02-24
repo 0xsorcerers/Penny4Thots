@@ -1226,6 +1226,14 @@ export const getUserPositionCount = async (marketId: number, userAddress: Addres
 };
 
 /**
+ * Get the total number of user positions for a market.
+ * Alias used by trade/kamikaze UI flows.
+ */
+export const totalUserMarket = async (marketId: number, userAddress: Address): Promise<number> => {
+  return getUserPositionCount(marketId, userAddress);
+};
+
+/**
  * Get user's positions in a market for a given range
  * Returns array of position IDs
  */
@@ -1252,6 +1260,74 @@ export const getUserPositionsInRange = async (
     console.error('Error fetching user positions:', err);
     return [];
   }
+};
+
+/**
+ * Alias for getUserPositionsInRange used by trade/kamikaze UI flows.
+ */
+export const getUserPositions = async (
+  marketId: number,
+  userAddress: Address,
+  start: number,
+  finish: number
+): Promise<number[]> => {
+  return getUserPositionsInRange(marketId, userAddress, start, finish);
+};
+
+export interface PositionDetails {
+  positionId: number;
+  user: Address;
+  side: Side;
+  amount: bigint;
+  timestamp: number;
+  claimed: boolean;
+  kamikazed: boolean;
+}
+
+/**
+ * Read position details in a single multicall batch to reduce RPC pressure.
+ */
+export const getPositionDetailsBatch = async (
+  marketId: number,
+  positionIds: number[]
+): Promise<PositionDetails[]> => {
+  if (positionIds.length === 0) return [];
+
+  const allDetails: PositionDetails[] = [];
+  const callsRequired = Math.ceil(positionIds.length / POSITION_FETCH_LIMIT);
+
+  for (let i = 0; i < callsRequired; i++) {
+    const start = i * POSITION_FETCH_LIMIT;
+    const finish = Math.min(start + POSITION_FETCH_LIMIT, positionIds.length);
+    const chunk = positionIds.slice(start, finish);
+
+    const results = await Promise.allSettled(
+      chunk.map((positionId) =>
+        getPublicClient().readContract({
+          address: getBlockchain().contract_address,
+          abi: contractABI,
+          functionName: "positions",
+          args: [BigInt(marketId), BigInt(positionId)],
+        })
+      )
+    );
+
+    results.forEach((result, idx) => {
+      if (result.status !== "fulfilled") return;
+      const value = result.value as [Address, number, bigint, bigint, boolean, boolean];
+      allDetails.push({
+        positionId: chunk[idx],
+        user: value[0],
+        side: value[1] as Side,
+        amount: value[2],
+        timestamp: Number(value[3]),
+        claimed: value[4],
+        kamikazed: value[5],
+      });
+    });
+  }
+
+  return allDetails;
 };
 
 /**
@@ -1326,6 +1402,42 @@ export const useBatchClaim = () => {
   };
 
   return { batchClaim, isPending, error };
+};
+
+// ============================================================================
+// Batch Kamikaze Functions
+// ============================================================================
+
+export interface BatchKamikazeParams {
+  marketId: number;
+  positionIds: number[];
+}
+
+export const prepareBatchKamikaze = (params: BatchKamikazeParams) => {
+  return prepareContractCall({
+    contract: getPenny4ThotsContract(),
+    method: "function batchKamikaze(uint256 _market, uint256[] calldata _posIds) external",
+    params: [BigInt(params.marketId), params.positionIds.map(id => BigInt(id))],
+  });
+};
+
+export const useBatchKamikaze = () => {
+  const { mutateAsync: sendTx, isPending, error } = useSendTransaction();
+
+  const batchKamikaze = async (params: BatchKamikazeParams) => {
+    const transaction = prepareBatchKamikaze(params);
+    const result = await sendTx(transaction);
+
+    await waitForReceipt({
+      client,
+      chain: getThirdwebNetwork(),
+      transactionHash: result.transactionHash,
+    });
+
+    return result;
+  };
+
+  return { batchKamikaze, isPending, error };
 };
 
 // ============================================================================

@@ -11,7 +11,6 @@ const path = require('path');
 // const mysql = require('mysql');
 const crypto = require('crypto');
 const OpenAI = require('openai');  
-require('@anthropic-ai/sdk/shims/node');
 const Anthropic = require('@anthropic-ai/sdk');
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -134,10 +133,10 @@ const AI_JUDGES = {
   },
 
   anthropic: {
-    label: "Anthropic(claude-3-5-haiku-20241022)",
+    label: "Anthropic(claude-haiku-4-5-20251001)",
     fn: async (payload) => {
       const res = await anthropic.messages.create({
-        model: "claude-3-5-haiku-20241022",
+        model: "claude-haiku-4-5-20251001",
         max_tokens: 2000,
         system: resolutionInstruction,
         messages: [{ role: "user", content: payload }]
@@ -278,7 +277,7 @@ async function batchDetermineWinners(expiredMarkets, latestBlockHash) {
   async function queryAnthropic() {
     try {
       const res = await anthropic.messages.create({
-        model: "claude-3-5-haiku-20241022",
+        model: "claude-haiku-4-5-20251001",
         max_tokens: 2000,
         system: resolutionInstruction,
         messages: [{ role: "user", content: payload }]
@@ -387,7 +386,7 @@ async function finalArbiterResolve(market, luckyJudge) {
 
     if (luckyJudge === "anthropic") {
       const res = await anthropic.messages.create({
-        model: "claude-3-5-haiku-20241022",
+        model: "claude-haiku-4-5-20251001",
         max_tokens: 2000,
         system: resolutionInstruction,
         messages: [{ role: "user", content: payload }]
@@ -924,8 +923,6 @@ async function AntiAbuseBlacklister(marketInfoArray, writeContract) {
     await tx.wait();
 
     log(`Blacklist confirmed.`);
-    
-    delete state.markets[id];
   } catch (error) {
     log(`OpenAI API Error: ${error.message}`);
   }
@@ -951,3 +948,13 @@ run()
     logStream.end();
     process.exit(1);
   });
+  
+  
+// ===============logger =========
+// async function listModels() {
+//   const models = await anthropic.models.list();
+//   console.log(models.data.map(m => m.id));
+//   log("List of Access: ${models.data.map(m => m.id)}\n");
+// }
+
+// listModels();
