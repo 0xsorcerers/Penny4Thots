@@ -24,10 +24,26 @@ interface MarketGridProps {
   onVoteClick?: (marketId: number, signal: boolean) => void;
   onRefreshMarkets?: () => void;
   onSearchResultsChange?: (marketIds: number[]) => void;
+  showClosedMarkets?: boolean;
+  onToggleClosedMarkets?: () => void;
   isLoading?: boolean;
 }
 
-export function MarketGrid({ markets, allMarkets, marketCount, currentPage, pageSize, onPageChange, onCreateMarket, onVoteClick, onRefreshMarkets, onSearchResultsChange, isLoading = false }: MarketGridProps) {
+export function MarketGrid({
+  markets,
+  allMarkets,
+  marketCount,
+  currentPage,
+  pageSize,
+  onPageChange,
+  onCreateMarket,
+  onVoteClick,
+  onRefreshMarkets,
+  onSearchResultsChange,
+  showClosedMarkets = true,
+  onToggleClosedMarkets,
+  isLoading = false,
+}: MarketGridProps) {
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
@@ -129,33 +145,50 @@ export function MarketGrid({ markets, allMarkets, marketCount, currentPage, page
   };
 
   const renderPagePicker = (className = "") => (
-    <div className={`flex flex-wrap items-center justify-center gap-2 rounded-xl border border-border/40 bg-card/35 px-3 py-2 backdrop-blur-sm ${className}`}>
-      <Button variant="outline" className="bg-background/35 border-border/45" size="icon" onClick={() => onPageChange(Math.max(1, currentPage - 1))} disabled={currentPage === 1 || isLoading || !!debouncedQuery}>
-        <ChevronLeft className="h-4 w-4" />
-      </Button>
-      {getPagePickerItems().map((item, idx) => {
-        if (item === "ellipsis") {
-          return <span key={`ellipsis-${idx}`} className="px-2 text-sm text-muted-foreground">…</span>;
-        }
-        return (
-          <Button
-            key={item}
-            variant={currentPage === item ? "default" : "outline"}
-            size="sm"
-            onClick={() => onPageChange(item)}
-            disabled={isLoading || !!debouncedQuery}
-            className={currentPage === item ? "bg-primary/85" : "bg-background/35 border-border/45"}
-          >
-            {item}
-          </Button>
-        );
-      })}
-      <Button variant="outline" className="bg-background/35 border-border/45" size="icon" onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))} disabled={currentPage === totalPages || isLoading || !!debouncedQuery}>
-        <ChevronRight className="h-4 w-4" />
-      </Button>
+    <div className={`grid grid-cols-[1fr_auto_1fr] items-center gap-2 rounded-xl border border-border/40 bg-card/35 px-3 py-2 backdrop-blur-sm ${className}`}>
+      <div />
+      <div className="flex flex-wrap items-center justify-center gap-2">
+        <Button variant="outline" className="bg-background/35 border-border/45" size="icon" onClick={() => onPageChange(Math.max(1, currentPage - 1))} disabled={currentPage === 1 || isLoading || !!debouncedQuery}>
+          <ChevronLeft className="h-4 w-4" />
+        </Button>
+        {getPagePickerItems().map((item, idx) => {
+          if (item === "ellipsis") {
+            return <span key={`ellipsis-${idx}`} className="px-2 text-sm text-muted-foreground">...</span>;
+          }
+          return (
+            <Button
+              key={item}
+              variant={currentPage === item ? "default" : "outline"}
+              size="sm"
+              onClick={() => onPageChange(item)}
+              disabled={isLoading || !!debouncedQuery}
+              className={currentPage === item ? "bg-primary/85" : "bg-background/35 border-border/45"}
+            >
+              {item}
+            </Button>
+          );
+        })}
+        <Button variant="outline" className="bg-background/35 border-border/45" size="icon" onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))} disabled={currentPage === totalPages || isLoading || !!debouncedQuery}>
+          <ChevronRight className="h-4 w-4" />
+        </Button>
+      </div>
+      <div className="flex justify-end">
+        <button
+          type="button"
+          onClick={onToggleClosedMarkets}
+          className={`rounded-full border px-3 py-1.5 font-outfit text-xs transition-colors ${
+            showClosedMarkets
+              ? "border-primary/40 bg-primary/10 text-foreground hover:bg-primary/20"
+              : "border-border/50 bg-background/60 text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+          }`}
+        >
+          <span className="inline-block theme-option-a-gradient-text animate-shimmer-sweep">
+            {showClosedMarkets ? "Hide Closed Markets" : "Show Closed Markets"}
+          </span>
+        </button>
+      </div>
     </div>
   );
-
   const handleRefreshMarkets = async () => {
     if (isRefreshing || !onRefreshMarkets) return;
     setIsRefreshing(true);
@@ -391,4 +424,5 @@ export function MarketGrid({ markets, allMarkets, marketCount, currentPage, page
     </div>
   );
 }
+
 

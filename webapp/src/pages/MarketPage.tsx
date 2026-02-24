@@ -7,28 +7,11 @@ import { defineChain } from "thirdweb/chains";
 import { useMarketStore } from "@/store/marketStore";
 import { useNetworkStore } from "@/store/networkStore";
 import { useMarketDataHydration } from "@/hooks/useMarketDataHydration";
-import {
-  useVote,
-  useTokenApprove,
-  readPaymentToken,
-  readTokenAllowance,
-  readTokenDecimals,
-  readTokenSymbol,
-  isZeroAddress,
-  fetchDataConstants,
-  calculatePlatformFeePercentage,
-  fetchMarketDataFromBlockchain,
-  getClaimablePositions,
-  getAllUserPositions,
-  useBatchClaim,
-  useBatchKamikaze,
-  readMarketLock,
-  getUserPositionCount,
-  getUserPositions,
-  getPositionDetailsBatch,
-  formatTokenAmount,
-  type VoteParams,
-} from "@/tools/utils";
+import { useVote, useTokenApprove, readPaymentToken, readTokenAllowance, readTokenDecimals,
+  readTokenSymbol, isZeroAddress, fetchDataConstants, calculatePlatformFeePercentage,
+  fetchMarketDataFromBlockchain, getClaimablePositions, getAllUserPositions,
+  useBatchClaim, useBatchKamikaze, readMarketLock, getUserPositionCount, getUserPositions,
+  getPositionDetailsBatch, formatTokenAmount, type VoteParams } from "@/tools/utils";
 import { VoteModal } from "@/components/market/VoteModal";
 import { VoteStats } from "@/components/market/VoteStats";
 import { MarketBalance } from "@/components/market/MarketBalance";
