@@ -12,6 +12,8 @@ const path = require('path');
 const crypto = require('crypto');
 const OpenAI = require('openai');  
 const Anthropic = require('@anthropic-ai/sdk');
+const { GoogleGenerativeAI } = require("@google/generative-ai");
+
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -19,6 +21,21 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
   project: process.env.OPENAI_PROJECT_ID
+});
+
+const xai = new OpenAI({
+  baseURL: 'https://api.x.ai/v1',
+  apiKey: process.env.XAI_API_KEY
+});
+
+// const gemini = new OpenAI({
+//   baseURL: "https://generativelanguage.googleapis.com/v1beta/openai/", 
+//   apiKey: process.env.GEMINI_API_KEY
+// });
+
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const gemini = genAI.getGenerativeModel({
+  model: "gemini-3-flash-preview"
 });
 
 const deepseekai = new OpenAI({
@@ -29,11 +46,6 @@ const deepseekai = new OpenAI({
 const perplexity = new OpenAI({
   baseURL: 'https://api.perplexity.ai',
   apiKey: process.env.PERPLEXITY_API_KEY
-});
-
-const xai = new OpenAI({
-  baseURL: 'https://api.x.ai/v1',
-  apiKey: process.env.XAI_API_KEY
 });
 
 const anthropic = new Anthropic({
@@ -91,7 +103,7 @@ Strict JSON only.
 
 // ================= JUDGE TIERS =================
 
-const CHIEF_JUDGES = ["openai", "xai"];
+const CHIEF_JUDGES = ["openai", "xai", "gemini"];
 
 const JUNIOR_JUDGES = [
   "perplexity",
@@ -133,7 +145,7 @@ const AI_JUDGES = {
   },
 
   anthropic: {
-    label: "Anthropic(claude-haiku-4-5-20251001)",
+    label: "Anthropic(haiku-4-5)",
     fn: async (payload) => {
       const res = await anthropic.messages.create({
         model: "claude-haiku-4-5-20251001",
@@ -173,7 +185,28 @@ const AI_JUDGES = {
       });
       return safeParseArray(res.choices[0].message.content.trim());
     }
-   }
+   },
+
+    gemini: {
+      label: "Gemini(3-flash)",
+      fn: async (payload) => {
+        const res = await gemini.generateContent({
+          contents: [
+            {
+              role: "user",
+              parts: [{ text: payload }]
+            }
+          ],
+          generationConfig: {
+            temperature: 0
+          },
+          systemInstruction: resolutionInstruction
+        });
+    
+        const text = res.response.text();
+        return safeParseArray(text.trim());
+      }
+    }
 };
 
 
@@ -420,6 +453,35 @@ async function finalArbiterResolve(market, luckyJudge) {
         ]
       });
       const parsed = safeParseArray(res.choices[0].message.content.trim());
+      if (parsed?.[0]) return { ...parsed[0], deadlockBrokenBy: luckyJudge };
+      return null;
+    }
+    
+    if (luckyJudge === "gemini") {
+    //   const res = await gemini.chat.completions.create({
+    //     model: "gemini-3-flash-preview",
+    //     temperature: 0,
+    //     messages: [
+    //       { role: "system", content: resolutionInstruction },
+    //       { role: "user", content: payload }
+    //     ]
+    //   });
+    //   const parsed = safeParseArray(res.choices[0].message.content.trim());
+        const res = await gemini.generateContent({
+          contents: [
+            {
+              role: "user",
+              parts: [{ text: payload }]
+            }
+          ],
+          generationConfig: {
+            temperature: 0
+          },
+          systemInstruction: resolutionInstruction
+        });
+    
+        const text = res.response.text();
+      const parsed = safeParseArray(text.trim());
       if (parsed?.[0]) return { ...parsed[0], deadlockBrokenBy: luckyJudge };
       return null;
     }
