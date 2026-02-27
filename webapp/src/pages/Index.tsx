@@ -12,6 +12,8 @@ import type { CreateMarketData, Market } from "@/types/market";
 import type { Address } from "viem";
 import { toast } from "sonner";
 
+const SHOW_CLOSED_MARKETS_STORAGE_KEY = "prediction-market-show-closed";
+
 export default function Index() {
   const { markets, setMarketsFromBlockchain, updateMarketData, marketInfos, isLoadingFromBlockchain, setIsLoadingFromBlockchain } = useMarketStore();
   const { selectedNetwork } = useNetworkStore();
@@ -25,9 +27,13 @@ export default function Index() {
   const [currentNetworkChainId, setCurrentNetworkChainId] = useState(selectedNetwork.chainId);
   const [liveMarketsPage, setLiveMarketsPage] = useState(1);
   const [allMarketsPage, setAllMarketsPage] = useState(1);
-  const [showClosedMarkets, setShowClosedMarkets] = useState(true);
-  const [visibleMarketIds, setVisibleMarketIds] = useState<number[]>([]);
-  const [visibleIdsSourceCount, setVisibleIdsSourceCount] = useState(0);
+  const [showClosedMarkets, setShowClosedMarkets] = useState(() => {
+    const savedValue = localStorage.getItem(SHOW_CLOSED_MARKETS_STORAGE_KEY);
+    if (savedValue === "false") return false;
+    return true;
+  });
+  const [allVisibleMarketIds, setAllVisibleMarketIds] = useState<number[]>([]);
+  const [liveVisibleMarketIds, setLiveVisibleMarketIds] = useState<number[]>([]);
   const account = useActiveAccount();
   const { writeMarket, isPending, error } = useWriteMarket();
   const { vote, isPending: isVoting } = useVote();
@@ -46,27 +52,27 @@ export default function Index() {
         setLastFetchedCount(0);
         setLiveMarketsPage(1);
         setAllMarketsPage(1);
-        setVisibleMarketIds([]);
-        setVisibleIdsSourceCount(0);
+        setAllVisibleMarketIds([]);
+        setLiveVisibleMarketIds([]);
         return;
       }
 
-      let currentVisibleMarketIds = visibleMarketIds;
-      if (currentMarketCount !== visibleIdsSourceCount || visibleMarketIds.length === 0) {
+      let currentAllVisibleMarketIds = allVisibleMarketIds;
+      if (currentMarketCount !== allVisibleMarketIds.length || allVisibleMarketIds.length === 0) {
         const allIdsDesc = Array.from({ length: currentMarketCount }, (_, idx) => currentMarketCount - idx - 1);
-        currentVisibleMarketIds = await filterBlacklistedMarketIds(allIdsDesc);
-        setVisibleMarketIds(currentVisibleMarketIds);
-        setVisibleIdsSourceCount(currentMarketCount);
+        currentAllVisibleMarketIds = await filterBlacklistedMarketIds(allIdsDesc);
+        setAllVisibleMarketIds(currentAllVisibleMarketIds);
       }
 
       const marketMap = new Map(markets.map((market) => [market.indexer, market]));
-      const liveVisibleMarketIds = currentVisibleMarketIds.filter((id) => {
+      const currentLiveVisibleMarketIds = currentAllVisibleMarketIds.filter((id) => {
         const market = marketMap.get(id);
         return !market?.closed;
       });
+      setLiveVisibleMarketIds(currentLiveVisibleMarketIds);
 
       const activePage = showClosedMarkets ? allMarketsPage : liveMarketsPage;
-      const sourceIds = showClosedMarkets ? currentVisibleMarketIds : liveVisibleMarketIds;
+      const sourceIds = showClosedMarkets ? currentAllVisibleMarketIds : currentLiveVisibleMarketIds;
       const totalPages = Math.max(1, Math.ceil(sourceIds.length / MARKETS_PER_PAGE));
       const nextPage = Math.min(activePage, totalPages);
 
@@ -113,7 +119,7 @@ export default function Index() {
       toast.error("Failed to load markets from blockchain");
       setIsLoadingFromBlockchain(false);
     }
-  }, [allMarketsPage, lastFetchedCount, liveMarketsPage, marketInfos.length, markets, setMarketsFromBlockchain, showClosedMarkets, updateMarketData, setIsLoadingFromBlockchain, visibleIdsSourceCount, visibleMarketIds]);
+  }, [allMarketsPage, allVisibleMarketIds, lastFetchedCount, liveMarketsPage, marketInfos.length, markets, setMarketsFromBlockchain, showClosedMarkets, updateMarketData, setIsLoadingFromBlockchain]);
 
   const handleRefreshAllMarkets = useCallback(async () => {
     const { clearAllMarkets } = useMarketStore.getState();
@@ -152,23 +158,38 @@ export default function Index() {
     loadMarketsFromBlockchain();
   }, [account, allMarketsPage, isInitialLoad, liveMarketsPage, loadMarketsFromBlockchain, showClosedMarkets]);
 
+  useEffect(() => {
+    localStorage.setItem(SHOW_CLOSED_MARKETS_STORAGE_KEY, String(showClosedMarkets));
+  }, [showClosedMarkets]);
+
   const marketByIndexer = useMemo(() => new Map(markets.map((m) => [m.indexer, m])), [markets]);
 
-  const liveVisibleMarketIds = useMemo(() => {
-    return visibleMarketIds.filter((id) => {
+  useEffect(() => {
+    const recalculatedLiveMarketIds = allVisibleMarketIds.filter((id) => {
       const market = marketByIndexer.get(id);
       if (!market) return true;
       return !market.closed;
     });
-  }, [marketByIndexer, visibleMarketIds]);
 
-  const activeVisibleMarketIds = showClosedMarkets ? visibleMarketIds : liveVisibleMarketIds;
+    setLiveVisibleMarketIds((previousLiveMarketIds) => {
+      if (
+        previousLiveMarketIds.length === recalculatedLiveMarketIds.length &&
+        previousLiveMarketIds.every((id, index) => id === recalculatedLiveMarketIds[index])
+      ) {
+        return previousLiveMarketIds;
+      }
+
+      return recalculatedLiveMarketIds;
+    });
+  }, [allVisibleMarketIds, marketByIndexer]);
+
+  const activeVisibleMarketIds = showClosedMarkets ? allVisibleMarketIds : liveVisibleMarketIds;
   const currentPage = showClosedMarkets ? allMarketsPage : liveMarketsPage;
   const setCurrentPage = showClosedMarkets ? setAllMarketsPage : setLiveMarketsPage;
   const marketCount = activeVisibleMarketIds.length;
 
   useEffect(() => {
-    const allTotalPages = Math.max(1, Math.ceil(visibleMarketIds.length / MARKETS_PER_PAGE));
+    const allTotalPages = Math.max(1, Math.ceil(allVisibleMarketIds.length / MARKETS_PER_PAGE));
     if (allMarketsPage > allTotalPages) {
       setAllMarketsPage(allTotalPages);
     }
@@ -177,7 +198,7 @@ export default function Index() {
     if (liveMarketsPage > liveTotalPages) {
       setLiveMarketsPage(liveTotalPages);
     }
-  }, [allMarketsPage, liveMarketsPage, liveVisibleMarketIds.length, visibleMarketIds.length]);
+  }, [allMarketsPage, allVisibleMarketIds.length, liveMarketsPage, liveVisibleMarketIds.length]);
 
   const marketsForCurrentPage = useMemo(() => {
     const startIdx = (currentPage - 1) * MARKETS_PER_PAGE;
