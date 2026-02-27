@@ -58,7 +58,7 @@ export interface MarketData {
   totalSharesB: bigint;
   positionCount: bigint;
 }
-
+ 
 export interface MarketInfoFormatted {
   indexer: number;
   title: string;
