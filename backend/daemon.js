@@ -3,17 +3,9 @@ const { ethers } = require('ethers');
 const fs = require('fs');
 const path = require('path');
 
-// const nodeCron = require('node-cron');
-// const fetch = require('node-fetch');
-
-// const bodyParser = require('body-parser');
-// const JSONStream = require('jsonstream');
-// const mysql = require('mysql');
 const crypto = require('crypto');
 const OpenAI = require('openai');  
 const Anthropic = require('@anthropic-ai/sdk');
-const { GoogleGenerativeAI } = require("@google/generative-ai");
-
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -23,29 +15,24 @@ const openai = new OpenAI({
   project: process.env.OPENAI_PROJECT_ID
 });
 
-const xai = new OpenAI({
-  baseURL: 'https://api.x.ai/v1',
-  apiKey: process.env.XAI_API_KEY
-});
-
-// const gemini = new OpenAI({
-//   baseURL: "https://generativelanguage.googleapis.com/v1beta/openai/", 
-//   apiKey: process.env.GEMINI_API_KEY
+// const deepseekai = new OpenAI({
+//   baseURL: 'https://api.deepseek.com',
+//   apiKey: process.env.DEEPSEEK_API_KEY
 // });
-
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-const gemini = genAI.getGenerativeModel({
-  model: "gemini-3-flash-preview"
-});
-
-const deepseekai = new OpenAI({
-  baseURL: 'https://api.deepseek.com',
-  apiKey: process.env.DEEPSEEK_API_KEY
-});
 
 const perplexity = new OpenAI({
   baseURL: 'https://api.perplexity.ai',
   apiKey: process.env.PERPLEXITY_API_KEY
+});
+
+const gemini = new OpenAI({
+  apiKey: process.env.GEMINI_API_KEY,
+  baseURL: "https://generativelanguage.googleapis.com/v1beta/openai/"
+});
+
+const xai = new OpenAI({
+  baseURL: 'https://api.x.ai/v1',
+  apiKey: process.env.XAI_API_KEY
 });
 
 const anthropic = new Anthropic({
@@ -76,39 +63,40 @@ You are a deterministic prediction market judge.
 
 You receive an array of markets to decide as fairly and as truthfully as you can on.
 
-For each market, search the internet for information associated with the information provided in the array for context and truth.
+For each market in the array, peruse all the information provided for context in your search for truth.
 Identify disinformation and misinformation whenever possible. Each market also includes
 - startTime (UNIX timestamp when the market was created) so interpret relative time expressions such as "tomorrow", "next week", or "this month"
 relative to the market's startTime.
 
 Use startTime as the reference point for temporal context of which the user is requesting to whatever is being brought up, NOT the current date, so it is quite possible an event or core of deliberation is now in the past or still in the future or is abstract and timeless.
 
-After an expedite all round research, you are allowed the discretion to:
 
-- Choose "A" if optionA is correct or closer to what is true.
-- Choose "B" if optionB is correct or closer to what is true.
+- Choose "A" only if optionA is correct or closer to what is true over B or Choose "B" only if optionB is correct or closer to what is true over A.
 
 
-Return STRICT JSON for your decision:
+CRITICAL INSTRUCTIONS:
+- You must use your built-in web search tool to find the most recent real-world data to verify these events. 
+- After all research, output **ONLY** a valid JSON array. 
+- NOTHING else. No explanations, no citations, no "Here is the result", no markdown, no code blocks, no extra text.
+- Even for one market, return an array with one object.
+- Use the market's startTime for all temporal references ("tomorrow", "this week", etc.).
+
+Exact output format (and nothing else):
 
 [
   { "indexer": 1, "decision": "A" },
   { "indexer": 2, "decision": "B" }
 ]
-
-No explanation.
-No commentary.
-Strict JSON only.
 `;
 
 // ================= JUDGE TIERS =================
 
-const CHIEF_JUDGES = ["openai", "xai", "gemini"];
+const CHIEF_JUDGES = ["gemini","perplexity"];
 
 const JUNIOR_JUDGES = [
-  "perplexity",
-  "deepseek",
-  "anthropic"
+//   "deepseek","xai"
+  "anthropic",
+  "openai"
 ];
 
 // ================= JUDGE REGISTRY =================
@@ -129,23 +117,23 @@ const AI_JUDGES = {
     }
   },
 
-  deepseek: {
-    label: "DeepSeek(deepseek-chat)",
-    fn: async (payload) => {
-      const res = await deepseekai.chat.completions.create({
-        model: "deepseek-chat",
-        temperature: 0,
-        messages: [
-          { role: "system", content: resolutionInstruction },
-          { role: "user", content: payload }
-        ]
-      });
-      return safeParseArray(res.choices[0].message.content.trim());
-    }
-  },
+//   deepseek: {
+//     label: "DeepSeek(deepseek-chat)",
+//     fn: async (payload) => {
+//       const res = await deepseekai.chat.completions.create({
+//         model: "deepseek-chat",
+//         temperature: 0,
+//         messages: [
+//           { role: "system", content: resolutionInstruction },
+//           { role: "user", content: payload }
+//         ]
+//       });
+//       return safeParseArray(res.choices[0].message.content.trim());
+//     }
+//   },
 
   anthropic: {
-    label: "Anthropic(haiku-4-5)",
+    label: "Anthropic(claude-haiku-4-5-20251001)",
     fn: async (payload) => {
       const res = await anthropic.messages.create({
         model: "claude-haiku-4-5-20251001",
@@ -157,7 +145,7 @@ const AI_JUDGES = {
     }
   },
 
-   perplexity: {
+  perplexity: {
     label: "Perplexity(sonar-pro)",
     fn: async (payload) => {
       const res = await perplexity.chat.completions.create({
@@ -172,7 +160,7 @@ const AI_JUDGES = {
     }
    },
 
-   xai: {
+  xai: {
     label: "Grok(4.1)",
     fn: async (payload) => {
       const res = await xai.chat.completions.create({
@@ -186,28 +174,37 @@ const AI_JUDGES = {
       return safeParseArray(res.choices[0].message.content.trim());
     }
    },
-
-    gemini: {
-      label: "Gemini(3-flash)",
-      fn: async (payload) => {
-        const res = await gemini.generateContent({
-          contents: [
-            {
-              role: "user",
-              parts: [{ text: payload }]
-            }
-          ],
-          generationConfig: {
-            temperature: 0
-          },
-          systemInstruction: resolutionInstruction
-        });
-    
-        const text = res.response.text();
-        return safeParseArray(text.trim());
-      }
+  
+  gemini: {
+    label: "Gemini(3-flash)",
+    fn: async (payload) => {
+          try {
+            const res = await gemini.chat.completions.create({
+              // Use 'gemini-1.5-pro' for complex logic like market resolution
+              model: "gemini-3-flash-preview", 
+              temperature: 0,
+              messages: [
+                { 
+                  role: "system", 
+                  content: resolutionInstruction
+                },
+                { role: "user", content: JSON.stringify(payload) }
+              ],
+              // This is a Gemini-specific quirk: sometimes JSON mode is 
+              // strictly enforced if you specify the response format.
+              response_format: { type: "json_object" } 
+            });
+        
+            const content = res.choices[0].message.content.trim();
+            return JSON.parse(content);
+          } catch (error) {
+            console.error("Gemini Resolution Error:", error);
+            return [];
+          }
     }
-};
+   }
+   
+  }
 
 
 // ================= UTILS =================
@@ -453,35 +450,6 @@ async function finalArbiterResolve(market, luckyJudge) {
         ]
       });
       const parsed = safeParseArray(res.choices[0].message.content.trim());
-      if (parsed?.[0]) return { ...parsed[0], deadlockBrokenBy: luckyJudge };
-      return null;
-    }
-    
-    if (luckyJudge === "gemini") {
-    //   const res = await gemini.chat.completions.create({
-    //     model: "gemini-3-flash-preview",
-    //     temperature: 0,
-    //     messages: [
-    //       { role: "system", content: resolutionInstruction },
-    //       { role: "user", content: payload }
-    //     ]
-    //   });
-    //   const parsed = safeParseArray(res.choices[0].message.content.trim());
-        const res = await gemini.generateContent({
-          contents: [
-            {
-              role: "user",
-              parts: [{ text: payload }]
-            }
-          ],
-          generationConfig: {
-            temperature: 0
-          },
-          systemInstruction: resolutionInstruction
-        });
-    
-        const text = res.response.text();
-      const parsed = safeParseArray(text.trim());
       if (parsed?.[0]) return { ...parsed[0], deadlockBrokenBy: luckyJudge };
       return null;
     }
@@ -1010,13 +978,3 @@ run()
     logStream.end();
     process.exit(1);
   });
-  
-  
-// ===============logger =========
-// async function listModels() {
-//   const models = await anthropic.models.list();
-//   console.log(models.data.map(m => m.id));
-//   log("List of Access: ${models.data.map(m => m.id)}\n");
-// }
-
-// listModels();
