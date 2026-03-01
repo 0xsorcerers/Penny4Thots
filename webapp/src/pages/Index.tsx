@@ -7,10 +7,14 @@ import { VoteModal } from "@/components/market/VoteModal";
 import { useMarketStore } from "@/store/marketStore";
 import { useNetworkStore } from "@/store/networkStore";
 import { useActiveAccount } from "thirdweb/react";
-import { useWriteMarket, useVote, useTokenApprove, fetchMarketsFromBlockchain, fetchMarketDataFromBlockchain, readMarketCount, readPaymentToken, readTokenAllowance, readTokenBalance, readTokenDecimals, toWei, toTokenSmallestUnit, fromTokenSmallestUnit, isZeroAddress, getBlockchain, formatEther, MARKETS_PER_PAGE, filterBlacklistedMarketIds, type VoteParams } from "@/tools/utils";
+import { useWriteMarket, useVote, useTokenApprove, fetchMarketsFromBlockchain, fetchMarketDataFromBlockchain, readMarketCount, readPaymentToken, readTokenAllowance, readTokenBalance, readTokenDecimals, toWei, toTokenSmallestUnit, fromTokenSmallestUnit, isZeroAddress, getBlockchain, formatEther, MARKETS_PER_PAGE, buildVisibleMarketIdBuckets, type VoteParams } from "@/tools/utils";
 import type { CreateMarketData, Market } from "@/types/market";
 import type { Address } from "viem";
 import { toast } from "sonner";
+
+const SHOW_CLOSED_MARKETS_STORAGE_KEY = "penny4thots-show-closed-markets";
+const getShowClosedMarketsStorageKey = (chainId: number): string =>
+  `${SHOW_CLOSED_MARKETS_STORAGE_KEY}-chain-${chainId}`;
 
 export default function Index() {
   const { markets, setMarketsFromBlockchain, updateMarketData, marketInfos, isLoadingFromBlockchain, setIsLoadingFromBlockchain } = useMarketStore();
@@ -23,16 +27,26 @@ export default function Index() {
   const [lastFetchedCount, setLastFetchedCount] = useState(0);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [currentNetworkChainId, setCurrentNetworkChainId] = useState(selectedNetwork.chainId);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [marketCount, setMarketCount] = useState(0);
-  const [showClosedMarkets, setShowClosedMarkets] = useState(true);
-  const [visibleMarketIds, setVisibleMarketIds] = useState<number[]>([]);
+  const [currentPageAllMarkets, setCurrentPageAllMarkets] = useState(1);
+  const [currentPageLiveMarkets, setCurrentPageLiveMarkets] = useState(1);
+  const [showClosedMarkets, setShowClosedMarkets] = useState<boolean>(() => {
+    try {
+      const stored = localStorage.getItem(SHOW_CLOSED_MARKETS_STORAGE_KEY);
+      if (stored === null) return true;
+      return stored === "true";
+    } catch {
+      return true;
+    }
+  });
+  const [allVisibleMarketIds, setAllVisibleMarketIds] = useState<number[]>([]);
+  const [liveVisibleMarketIds, setLiveVisibleMarketIds] = useState<number[]>([]);
   const [visibleIdsSourceCount, setVisibleIdsSourceCount] = useState(0);
   const account = useActiveAccount();
   const { writeMarket, isPending, error } = useWriteMarket();
   const { vote, isPending: isVoting } = useVote();
   const { approve, isPending: isApproving } = useTokenApprove();
   const lastSearchHydrationKeyRef = useRef<string>("");
+  const hasHydratedShowClosedRef = useRef<number | null>(null);
 
   // Smart fetch: hydrate immutable market info in background, keep mutable data fresh per visible page.
   const loadMarketsFromBlockchain = useCallback(async () => {
@@ -44,32 +58,40 @@ export default function Index() {
         const { clearAllMarkets } = useMarketStore.getState();
         clearAllMarkets();
         setLastFetchedCount(0);
-        setCurrentPage(1);
-        setMarketCount(0);
-        setVisibleMarketIds([]);
+        setCurrentPageAllMarkets(1);
+        setCurrentPageLiveMarkets(1);
+        setAllVisibleMarketIds([]);
+        setLiveVisibleMarketIds([]);
         setVisibleIdsSourceCount(0);
         return;
       }
 
-      let currentVisibleMarketIds = visibleMarketIds;
-      if (currentMarketCount !== visibleIdsSourceCount || visibleMarketIds.length === 0) {
+      let currentAllVisibleMarketIds = allVisibleMarketIds;
+      let currentLiveVisibleMarketIds = liveVisibleMarketIds;
+
+      if (currentMarketCount !== visibleIdsSourceCount || allVisibleMarketIds.length === 0) {
         const allIdsDesc = Array.from({ length: currentMarketCount }, (_, idx) => currentMarketCount - idx - 1);
-        currentVisibleMarketIds = await filterBlacklistedMarketIds(allIdsDesc);
-        setVisibleMarketIds(currentVisibleMarketIds);
+        const { allVisibleIds, liveVisibleIds } = await buildVisibleMarketIdBuckets(allIdsDesc);
+        currentAllVisibleMarketIds = allVisibleIds;
+        currentLiveVisibleMarketIds = liveVisibleIds;
+        setAllVisibleMarketIds(currentAllVisibleMarketIds);
+        setLiveVisibleMarketIds(currentLiveVisibleMarketIds);
         setVisibleIdsSourceCount(currentMarketCount);
       }
 
-      setMarketCount(currentVisibleMarketIds.length);
+      const idsForActiveView = showClosedMarkets ? currentAllVisibleMarketIds : currentLiveVisibleMarketIds;
+      const activePage = showClosedMarkets ? currentPageAllMarkets : currentPageLiveMarkets;
+      const setActivePage = showClosedMarkets ? setCurrentPageAllMarkets : setCurrentPageLiveMarkets;
 
-      const totalPages = Math.max(1, Math.ceil(currentVisibleMarketIds.length / MARKETS_PER_PAGE));
-      const nextPage = Math.min(currentPage, totalPages);
-      if (nextPage !== currentPage) {
-        setCurrentPage(nextPage);
+      const totalPages = Math.max(1, Math.ceil(idsForActiveView.length / MARKETS_PER_PAGE));
+      const nextPage = Math.min(activePage, totalPages);
+      if (nextPage !== activePage) {
+        setActivePage(nextPage);
       }
 
       const startIdx = (nextPage - 1) * MARKETS_PER_PAGE;
       const endIdx = startIdx + MARKETS_PER_PAGE;
-      const pageIds = currentVisibleMarketIds.slice(startIdx, endIdx);
+      const pageIds = idsForActiveView.slice(startIdx, endIdx);
 
       // If immutable data is stale/missing, fetch and persist all of it in background-sized batches.
       if (currentMarketCount !== lastFetchedCount || marketInfos.length !== currentMarketCount) {
@@ -103,13 +125,26 @@ export default function Index() {
       toast.error("Failed to load markets from blockchain");
       setIsLoadingFromBlockchain(false);
     }
-  }, [currentPage, lastFetchedCount, marketInfos.length, setMarketsFromBlockchain, updateMarketData, setIsLoadingFromBlockchain]);
+  }, [
+    currentPageAllMarkets,
+    currentPageLiveMarkets,
+    lastFetchedCount,
+    marketInfos.length,
+    setMarketsFromBlockchain,
+    updateMarketData,
+    setIsLoadingFromBlockchain,
+    showClosedMarkets,
+    allVisibleMarketIds,
+    liveVisibleMarketIds,
+    visibleIdsSourceCount,
+  ]);
 
   const handleRefreshAllMarkets = useCallback(async () => {
     const { clearAllMarkets } = useMarketStore.getState();
     clearAllMarkets();
     setLastFetchedCount(0);
-    setCurrentPage(1);
+    setCurrentPageAllMarkets(1);
+    setCurrentPageLiveMarkets(1);
     await loadMarketsFromBlockchain();
   }, [loadMarketsFromBlockchain]);
 
@@ -139,36 +174,35 @@ export default function Index() {
   useEffect(() => {
     if (!account || isInitialLoad) return;
     loadMarketsFromBlockchain();
-  }, [account, currentPage, isInitialLoad, loadMarketsFromBlockchain]);
+  }, [account, currentPageAllMarkets, currentPageLiveMarkets, showClosedMarkets, isInitialLoad, loadMarketsFromBlockchain]);
 
   const marketByIndexer = useMemo(() => new Map(markets.map((m) => [m.indexer, m])), [markets]);
 
-  const filteredVisibleMarketIds = useMemo(() => {
-    if (showClosedMarkets) return visibleMarketIds;
+  const visibleMarketIds = useMemo(
+    () => (showClosedMarkets ? allVisibleMarketIds : liveVisibleMarketIds),
+    [showClosedMarkets, allVisibleMarketIds, liveVisibleMarketIds]
+  );
 
-    return visibleMarketIds.filter((id) => {
-      const market = marketByIndexer.get(id);
-      if (!market) return true;
-      return !market.closed;
-    });
-  }, [marketByIndexer, showClosedMarkets, visibleMarketIds]);
+  const currentPage = showClosedMarkets ? currentPageAllMarkets : currentPageLiveMarkets;
+  const setCurrentPage = showClosedMarkets ? setCurrentPageAllMarkets : setCurrentPageLiveMarkets;
+
+  const marketCount = visibleMarketIds.length;
 
   useEffect(() => {
-    const totalPages = Math.max(1, Math.ceil(filteredVisibleMarketIds.length / MARKETS_PER_PAGE));
+    const totalPages = Math.max(1, Math.ceil(visibleMarketIds.length / MARKETS_PER_PAGE));
     if (currentPage > totalPages) {
       setCurrentPage(totalPages);
     }
-    setMarketCount(filteredVisibleMarketIds.length);
-  }, [currentPage, filteredVisibleMarketIds.length]);
+  }, [currentPage, setCurrentPage, visibleMarketIds.length]);
 
   const marketsForCurrentPage = useMemo(() => {
     const startIdx = (currentPage - 1) * MARKETS_PER_PAGE;
     const endIdx = startIdx + MARKETS_PER_PAGE;
-    const pageIds = filteredVisibleMarketIds.slice(startIdx, endIdx);
+    const pageIds = visibleMarketIds.slice(startIdx, endIdx);
     return pageIds.map((id) => marketByIndexer.get(id)).filter((m): m is Market => Boolean(m));
-  }, [currentPage, filteredVisibleMarketIds, marketByIndexer]);
+  }, [currentPage, visibleMarketIds, marketByIndexer]);
 
-  const visibleMarketIdSet = useMemo(() => new Set(filteredVisibleMarketIds), [filteredVisibleMarketIds]);
+  const visibleMarketIdSet = useMemo(() => new Set(visibleMarketIds), [visibleMarketIds]);
   const visibleMarkets = useMemo(
     () => markets.filter((m) => m.indexer !== undefined && visibleMarketIdSet.has(m.indexer)),
     [markets, visibleMarketIdSet]
@@ -201,6 +235,34 @@ export default function Index() {
   const handleConnect = () => {
     setIsConnected(!isConnected);
   };
+
+  useEffect(() => {
+    try {
+      const storageKey = getShowClosedMarketsStorageKey(selectedNetwork.chainId);
+      const stored = localStorage.getItem(storageKey);
+      setShowClosedMarkets(stored === null ? true : stored === "true");
+      hasHydratedShowClosedRef.current = selectedNetwork.chainId;
+    } catch (err) {
+      console.error("Failed to hydrate closed market visibility setting:", err);
+      setShowClosedMarkets(true);
+      hasHydratedShowClosedRef.current = selectedNetwork.chainId;
+    }
+  }, [selectedNetwork.chainId]);
+
+  useEffect(() => {
+    if (hasHydratedShowClosedRef.current !== selectedNetwork.chainId) {
+      return;
+    }
+
+    try {
+      localStorage.setItem(
+        getShowClosedMarketsStorageKey(selectedNetwork.chainId),
+        String(showClosedMarkets)
+      );
+    } catch (err) {
+      console.error("Failed to persist closed market visibility setting:", err);
+    }
+  }, [showClosedMarkets, selectedNetwork.chainId]);
 
   const handleVoteClick = (marketId: number, signal: boolean) => {
     const market = markets.find(m => m.indexer === marketId);
@@ -399,7 +461,8 @@ export default function Index() {
         onNetworkChange={() => {
           // Trigger reload when network changes
           setLastFetchedCount(0);
-          setCurrentPage(1);
+          setCurrentPageAllMarkets(1);
+          setCurrentPageLiveMarkets(1);
         }}
       />
       <div className="relative z-10">

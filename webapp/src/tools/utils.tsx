@@ -627,6 +627,40 @@ export const filterBlacklistedMarketIds = async (ids: number[]): Promise<number[
   return visibleIds;
 };
 
+/**
+ * Build two filtered market ID arrays in one pass over market data:
+ * - allVisibleIds: excludes blacklisted markets
+ * - liveVisibleIds: excludes blacklisted and closed markets
+ */
+export const buildVisibleMarketIdBuckets = async (
+  ids: number[]
+): Promise<{ allVisibleIds: number[]; liveVisibleIds: number[] }> => {
+  if (ids.length === 0) {
+    return { allVisibleIds: [], liveVisibleIds: [] };
+  }
+
+  const allVisibleIds: number[] = [];
+  const liveVisibleIds: number[] = [];
+
+  for (let i = 0; i < ids.length; i += MUTABLE_MARKET_FETCH_LIMIT) {
+    const chunkIds = ids.slice(i, i + MUTABLE_MARKET_FETCH_LIMIT);
+    const chunkData = await readMarketData(chunkIds);
+
+    chunkData.forEach((marketData, idx) => {
+      if (marketData.blacklist) return;
+
+      const id = chunkIds[idx];
+      allVisibleIds.push(id);
+
+      if (!marketData.closed) {
+        liveVisibleIds.push(id);
+      }
+    });
+  }
+
+  return { allVisibleIds, liveVisibleIds };
+};
+
 
 // ============================================================================
 // Write Calls (using thirdweb)
