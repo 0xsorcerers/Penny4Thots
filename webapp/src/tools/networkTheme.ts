@@ -546,20 +546,20 @@ const CHAIN_COUNT = chains.length;
 // Put your per-network floral backgrounds here, by chain index.
 export const NETWORK_LIGHT_BACKGROUND_IMAGES: string[] = [
   lightblueFlora,
-  lightFlora,
   lightblueFlora,
   lightFlora,
-  seagreenFlora,
   lightFlora,
+  // seagreenFlora,
+  // lightFlora,
 ];
 
 export const NETWORK_DARK_BACKGROUND_IMAGES: string[] = [
   blueFlora,
-  darkFlora,
   blueFlora,
   darkFlora,
-  oceanblueFlora,
   darkFlora,
+  // oceanblueFlora,
+  // darkFlora,
 ];
 
 

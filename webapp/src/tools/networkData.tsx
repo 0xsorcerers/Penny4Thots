@@ -17,17 +17,7 @@ const sepolia: NetworkConfig = {
   blockExplorer: 'https://sepolia.etherscan.io',
   decimals: 18,
   symbol: 'sETH',
-  contract_address: '0x7DeA875A4D644aB78e0914FFF8b760bE5e8F54cb' as Address,
-};
-
-const bnb: NetworkConfig = {
-  name: 'BNB Network (Live)',
-  chainId: 56,
-  rpc: 'https://bsc-dataseed.binance.org',
-  blockExplorer: 'https://bscscan.com',
-  decimals: 18,
-  symbol: 'BNB',
-  contract_address: '0x13B9CD2340E8224D4c1CC86d3481c217d9078AAe' as Address,
+  contract_address: '0x0f7Cf85d6760b8c7821b747B4f5035fa01a4e1e3' as Address, // 0x7DeA875A4D644aB78e0914FFF8b760bE5e8F54cb
 };
 
 const base: NetworkConfig = {
@@ -37,7 +27,17 @@ const base: NetworkConfig = {
   blockExplorer: 'https://basescan.org',
   decimals: 18,
   symbol: 'ETH',
-  contract_address: '0xe8f5b91e8e4c49f499002745bA49dc9fEE7670C6' as Address,
+  contract_address: '0x499c9bF1556aBFAb44546514F8c655Fd9b99E801' as Address, // 0xe8f5b91e8e4c49f499002745bA49dc9fEE7670C6
+};
+
+const bnb: NetworkConfig = {
+  name: 'BNB Network (Live)',
+  chainId: 56,
+  rpc: 'https://bsc-dataseed.binance.org',
+  blockExplorer: 'https://bscscan.com',
+  decimals: 18,
+  symbol: 'BNB',
+  contract_address: '0x825Bb9873b9E982e3692eA69715E162206B2ecc1' as Address, // 0x13B9CD2340E8224D4c1CC86d3481c217d9078AAe
 };
 
 const scroll: NetworkConfig = {
@@ -47,7 +47,7 @@ const scroll: NetworkConfig = {
   blockExplorer: 'https://scrollscan.com/',
   decimals: 18,
   symbol: 'ETH',
-  contract_address: '0x06F94c107808bC4d9c27fA8476C3E2f5F83A9c3C' as Address,
+  contract_address: '0x554C2ca099DC9676470f92Df3083040B7f4DdeF5' as Address, // 0x06F94c107808bC4d9c27fA8476C3E2f5F83A9c3C
 };
 
 const manta: NetworkConfig = {
@@ -70,6 +70,6 @@ const opbnb: NetworkConfig = {
   contract_address: '0x8d4a1A116Fd092D21b47Aa29a1882995af234353' as Address,
 };
 
-const chains: NetworkConfig[] = [sepolia, bnb, base, scroll, manta, opbnb];
+const chains: NetworkConfig[] = [sepolia, base, bnb, scroll]; // , manta, opbnb
 
 export { chains };
