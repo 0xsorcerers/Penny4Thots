@@ -38,7 +38,7 @@ contract Penny4Thots is ReentrancyGuard {
     uint256 public lasttax = 0;
     uint256 public devtax = 0;
     uint256 public gasfee = 0;
-    uint256 public platformFee = 5;
+    uint256 public platformFee = 5; // A specialized fractional denominator fee indicator resolving to 0.2%
     uint256 public marketCount = 0;
     uint256 public constant BPS = 10000;
     uint256 public DECAY_WINDOW_BPS = 700;   // last 7%
@@ -524,6 +524,8 @@ contract Penny4Thots is ReentrancyGuard {
 
         p.claimed = true;
         _payout(_market, msg.sender, payout, _posId);
+
+        m.activity++;
     }
     
     function batchClaim(uint256 _market, uint256[] calldata _posIds) external nonReentrant {
@@ -542,17 +544,16 @@ contract Penny4Thots is ReentrancyGuard {
             if (p.claimed) continue;
             if (p.side != m.winningSide) continue;
 
-            (uint256 shares,) = _calculateShares(_market, p);
+        (uint256 shares,) = _calculateShares(_market, p);
+        uint256 totalWinningShares = m.winningSide == Side.A ? m.totalSharesA : m.totalSharesB;
+        uint256 loserPool = m.marketBalance > m.totalWinningPrincipal ? m.marketBalance - m.totalWinningPrincipal : 0;
+        uint256 profitShare = totalWinningShares > 0 ? loserPool * shares / totalWinningShares : 0;
+        uint256 payout = p.amount + profitShare;  
 
-            uint256 totalWinningShares =
-                m.winningSide == Side.A ? m.totalSharesA : m.totalSharesB;
+        p.claimed = true;
+        _payout(_market, msg.sender, payout, posId);
 
-            uint256 payout = m.marketBalance * shares / totalWinningShares;
-
-            p.claimed = true;
-            _payout(_market, msg.sender, payout, posId);
-
-            m.activity++;
+        m.activity++;
         }
     }
 
