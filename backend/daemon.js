@@ -978,3 +978,4 @@ run()
     logStream.end();
     process.exit(1);
   });
+  

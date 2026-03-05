@@ -1,0 +1,33 @@
+{
+  "accountAssociation": {
+    "header": "eyJmaWQiOjE1NDkyNTIsInR5cGUiOiJhdXRoIiwia2V5IjoiMHg4N0FGRkY1QkJEQ0FlQmMyMjgzRTE4MWY2MTkyNjhDYTcxNzc1NUZkIn0",
+    "payload": "eyJkb21haW4iOiJwZW5ueTR0aG90cy5teSJ9",
+    "signature": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAmAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAASAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABme8JBP9pwpOjFmzhT-1w00-pjvTitkTd2_GG6ODmUqxj9xiXBFFuzDcPXhfvt2LhrukNFjboP_ZEFvKss4YSNwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAl8ZgIay2xclZzG8RWZzuWvO8j9R0fus3XxDee9lRlVy8dAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD3eyJ0eXBlIjoid2ViYXV0aG4uZ2V0IiwiY2hhbGxlbmdlIjoiQmtMSEMyeEx1ZE1nWEx0OS1TMENELS1EalcxWllfa2tvaDVoalBCbVk1VSIsIm9yaWdpbiI6Imh0dHBzOi8va2V5cy5jb2luYmFzZS5jb20iLCJjcm9zc09yaWdpbiI6ZmFsc2UsIm90aGVyX2tleXNfY2FuX2JlX2FkZGVkX2hlcmUiOiJkbyBub3QgY29tcGFyZSBjbGllbnREYXRhSlNPTiBhZ2FpbnN0IGEgdGVtcGxhdGUuIFNlZSBodHRwczovL2dvby5nbC95YWJQZXgifQAAAAAAAAAAAA"
+  },
+  "baseBuilder": {
+    "ownerAddress": "0x87AFFF5BBDCAeBc2283E181f619268Ca717755Fd"
+  },
+  "miniapp": {
+    "version": "1",
+    "name": "Penny4Thots",
+    "homeUrl": "https://penny4thots.my/",
+    "iconUrl": "https://penny4thots.my/logo-black-on-white.png",
+    "splashImageUrl": "https://penny4thots.my/immortalweb3presentas.jpg",
+    "splashBackgroundColor": "#FFFFFF",
+    "webhookUrl": "https://penny4thots.my/api/webhook",
+    "subtitle": "Trade every thought.",
+    "description": "A new age prediction markets where thoughts and opinions are traded with any token onchain with cross-model AI adjudicators.",
+    "screenshotUrls": [
+      "https://penny4thots.my/screenshot-1.png",
+      "https://penny4thots.my/screenshot-2.png",
+      "https://penny4thots.my/screenshot-3.png"
+    ],
+    "primaryCategory": "productivity",
+    "tags": ["penny4thots", "prediction", "market", "thoughts", "trade"],
+    "heroImageUrl": "https://penny4thots.my/immortalweb3presentas.jpg",
+    "tagline": "Trade every thought easily!",
+    "ogTitle": "Penny4Thots",
+    "ogDescription": "Trade every thought with any token onchain and cross-model AI adjudicators.",
+    "ogImageUrl": "https://penny4thots.my/logo-black-on-white.png"
+  }
+}
