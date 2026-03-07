@@ -290,9 +290,9 @@ export function CountdownTimerLarge({ endTime, closed, sharesFinalized, classNam
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className={`rounded-xl border bg-gradient-to-r ${getGradient()} p-4 ${className}`}
+      className={`min-w-0 rounded-xl border bg-gradient-to-r ${getGradient()} p-4 ${className}`}
     >
-      <div className="flex items-center gap-2 mb-3">
+      <div className="mb-3 flex min-w-0 items-center gap-2">
         {urgencyLevel === "critical" ? (
           <motion.div animate={{ scale: [1, 1.2, 1] }} transition={{ duration: 0.5, repeat: Infinity }}>
             <Flame className={`h-5 w-5 ${getTextColor()}`} />
@@ -313,13 +313,13 @@ export function CountdownTimerLarge({ endTime, closed, sharesFinalized, classNam
           <TimeBlock value={timeRemaining.seconds} label="Secs" />
         </div>
       ) : (
-        <div className="flex items-center justify-center gap-2">
+        <div className="flex min-w-0 items-center justify-center gap-2">
           {adjudicators ? (
-            <span className="font-outfit text-lg text-slate-600 dark:text-slate-400">
+            <span className="block min-w-0 max-w-full overflow-hidden text-center font-outfit text-base leading-relaxed text-slate-600 break-words [overflow-wrap:anywhere] sm:text-lg dark:text-slate-400">
               {renderParsedAdjudicators(getStatusMessage(adjudicators))}
             </span>
           ) : (
-            <span className="font-outfit text-lg text-slate-600 dark:text-slate-400">{getStatusMessage("Loading adjudicators...")}</span>
+            <span className="block min-w-0 max-w-full text-center font-outfit text-base leading-relaxed text-slate-600 break-words [overflow-wrap:anywhere] sm:text-lg dark:text-slate-400">{getStatusMessage("Loading adjudicators...")}</span>
           )}
         </div>
       )}

@@ -431,7 +431,7 @@ const createSegment = (
   text: string,
   type: ParsedSegment['type']
 ): ParsedSegment => {
-  const base = "font-outfit text-sm";
+  const base = "font-outfit text-sm break-words [overflow-wrap:anywhere]";
 
   const styles: Record<ParsedSegment['type'], string> = {
     normal: `${base} text-slate-600 dark:text-slate-400`,
@@ -480,7 +480,7 @@ export const renderParsedAdjudicators = (input: string): JSX.Element[] => {
   const segments = parseAdjudicators(input);
 
   return segments.map((seg, i) => (
-    <span key={i} className={seg.className}>
+    <span key={i} className={`${seg.className} whitespace-pre-wrap`}>
       {seg.text}
     </span>
   ));
