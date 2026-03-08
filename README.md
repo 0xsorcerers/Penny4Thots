@@ -6,11 +6,11 @@ From those itchy sport bets with buds in front of the TV to Naruto for avid mang
 Hosted on Netlify: https://penny4thots.netlify.app
 
 # Value Proposition
-✅ Zero-sum take to Prediction Marketplaces.
+✅ Zero-sum take to an All Thoughts Prediction Marketplace.
 
 ✅ Lowers the barrier of entry into prediction marketplaces by allowing users to use native coins or any token on their network of choice.
 
-✅ Creators earn market fees for their thots.
+✅ Creators earn market fees for their 'thots'.
 
 ✅ Communities vote to stake a position.
 
