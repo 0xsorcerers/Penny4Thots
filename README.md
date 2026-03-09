@@ -43,7 +43,7 @@ Have fun engaging a prediction market that trades your very own thoughts so why 
 # Structure
 
 - `webapp/` — React frontend (Thirdweb wallet integration, Tailwind)
-- `backend/` — API and server code (if present)
+- `backend/` — API, server code, AI adjudication daemon.
 
 
 # Setup
