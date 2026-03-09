@@ -515,7 +515,7 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
                           <div className="grid grid-cols-2 gap-3">
                             <div className="space-y-2">
                               <Label htmlFor="optionA" className="text-xs font-outfit text-muted-foreground">
-                                Option A (max 20 chars)
+                                Option A (max 25 chars)
                               </Label>
                               <Input
                                 id="optionA"
@@ -523,21 +523,21 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
                                 onChange={(e) =>
                                   setFormData({
                                     ...formData,
-                                    optionA: e.target.value.slice(0, 20),
+                                    optionA: e.target.value.slice(0, 25),
                                   })
                                 }
                                 placeholder="Yes"
-                                maxLength={20}
+                                maxLength={25}
                                 className="rounded-xl border-border/50 bg-background font-outfit text-sm"
                               />
                               <p className="text-xs text-muted-foreground">
-                                {formData.optionA.length}/20
+                                {formData.optionA.length}/25
                               </p>
                             </div>
 
                             <div className="space-y-2">
                               <Label htmlFor="optionB" className="text-xs font-outfit text-muted-foreground">
-                                Option B (max 20 chars)
+                                Option B (max 25 chars)
                               </Label>
                               <Input
                                 id="optionB"
@@ -545,15 +545,15 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
                                 onChange={(e) =>
                                   setFormData({
                                     ...formData,
-                                    optionB: e.target.value.slice(0, 20),
+                                    optionB: e.target.value.slice(0, 25),
                                   })
                                 }
                                 placeholder="No"
-                                maxLength={20}
+                                maxLength={25}
                                 className="rounded-xl border-border/50 bg-background font-outfit text-sm"
                               />
                               <p className="text-xs text-muted-foreground">
-                                {formData.optionB.length}/20
+                                {formData.optionB.length}/25
                               </p>
                             </div>
                           </div>

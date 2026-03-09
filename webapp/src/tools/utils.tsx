@@ -1150,7 +1150,7 @@ export const getUserClaims = async (
       .map((claim) => ({
         marketId: Number(claim.marketId),
         token: claim.token,
-        amount: formatEther(claim.amount),
+        amount: claim.amount.toString(),
         timestamp: Number(claim.timestamp),
         positionId: Number(claim.positionId),
       }))
@@ -1503,3 +1503,4 @@ export const readMarketLock = async (marketId: number): Promise<MarketLock> => {
 
 // Re-export useful viem utilities
 export { formatEther, parseEther, ZERO_ADDRESS };
+

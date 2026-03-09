@@ -486,7 +486,7 @@ export function VoteModal({
                         <div className="pt-2">
                           {account ? (
                             <p className="text-center text-xs text-primary">
-                              {showProceedMessage ? "Connected. You can now vote." : ""}
+                              {showProceedMessage ? "Connected. You can now stake your vote." : ""}
                             </p>
                           ) : showConnectCta ? (
                             <div className="flex justify-center">
