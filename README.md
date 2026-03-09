@@ -36,7 +36,7 @@ Have fun engaging a prediction market that trades your very own thoughts so why 
 
 <p align="center">
   <a href="https://penny4thots.netlify.app">
-    <img src="webapp/public/screenshots/screenshot-3.png" alt="Penny4Thots Prediction Marketplace" width="100%">
+    <img src="webapp/public/screenshots/screenshot-3.png" alt="Penny4Thots African Cuisine Prediction" width="100%">
   </a>
 </p>
 
@@ -274,7 +274,12 @@ Both the Create Market dialog feature flexible payment method selection:
 ### Theme
 The application uses dark mode as the default theme for all new users. Users can switch between light and dark mode at any time using the theme toggle button in the header.
 
+<p align="center">
+  <a href="https://penny4thots.netlify.app">
+    <img src="https://i.imgur.com/UFM1zQc.png" alt="Penny4Thots Sports Prediction" width="100%">
+  </a>
+</p>
 
 # Notes
 
-- This repository was initialized and a first professional commit was made locally. You can push to GitHub with the instructions below.
+- This repository was initialized and a first professional commit was made locally.
