@@ -4,7 +4,7 @@ Monorepo containing the frontend webapp and backend services for Penny4Thots on 
 From those itchy sport bets with buds in front of the TV to Naruto for avid manga fans to even the cosmic predilections of the Zodiac, demo on Sepolia to understand how to create or vote on your 'thots' as well as the thoughts of others before going live on any mainnet of choice. 
 
 <p align="center">
-  <a href="[https://penny](https://penny4thots.netlify.app)">
+  <a href="https://penny4thots.netlify.app">
     <img src="webapp/public/screenshots/screenshot-2.jpg" alt="Penny4Thots Prediction Marketplace" width="100%">
   </a>
 </p>
@@ -34,6 +34,11 @@ From those itchy sport bets with buds in front of the TV to Naruto for avid mang
 
 Have fun engaging a prediction market that trades your very own thoughts so why not earn a penny for your thoughts? (pun intended) 😉.
 
+<p align="center">
+  <a href="https://penny4thots.netlify.app">
+    <img src="webapp/public/screenshots/screenshot-3.png" alt="Penny4Thots Prediction Marketplace" width="100%">
+  </a>
+</p>
 
 # Structure
 
