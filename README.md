@@ -276,7 +276,7 @@ The application uses dark mode as the default theme for all new users. Users can
 
 <p align="center">
   <a href="https://penny4thots.netlify.app">
-    <img src="https://i.imgur.com/UFM1zQc.png" alt="Penny4Thots Sports Prediction" width="100%">
+    <img src="https://i.imgur.com/gLXpxJB.png" alt="Penny4Thots Sports Prediction" width="100%">
   </a>
 </p>
 
