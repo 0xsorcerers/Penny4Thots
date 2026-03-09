@@ -24,8 +24,10 @@ import {
   truncateAddress,
   readMarketInfo,
   readPaymentToken,
+  readTokenDecimals,
   readTokenSymbol,
   isZeroAddress,
+  formatTokenAmount,
   type ClaimRecord,
   type MarketInfoFormatted,
   Side,
@@ -54,6 +56,8 @@ function getMarketColor(marketId: number) {
 interface ClaimWithMarketInfo extends ClaimRecord {
   marketInfo?: MarketInfoFormatted;
   tokenSymbol?: string;
+  tokenDecimals?: number;
+  displayAmount?: string;
 }
 
 export default function History() {
@@ -66,8 +70,8 @@ export default function History() {
   const marketDataMap = useMarketStore((state) => state.marketDataMap);
 
   // Storage keys for caching
-  const getStorageKey = (address: Address) => `claim_history_${address}`;
-  const getCountStorageKey = (address: Address) => `claim_count_${address}`;
+  const getStorageKey = (address: Address) => `claim_history_${selectedNetwork.chainId}_${address}`;
+  const getCountStorageKey = (address: Address) => `claim_count_${selectedNetwork.chainId}_${address}`;
 
   // Load cached data on mount
   useEffect(() => {
@@ -78,15 +82,22 @@ export default function History() {
 
     if (cachedClaims && cachedCount) {
       try {
-        setClaims(JSON.parse(cachedClaims));
-        setIsLoading(false);
+        const parsedClaims = JSON.parse(cachedClaims) as ClaimWithMarketInfo[];
+        const hasDisplayMetadata = parsedClaims.every(
+          (claim) => typeof claim.displayAmount === "string" && typeof claim.tokenDecimals === "number"
+        );
+
+        if (hasDisplayMetadata) {
+          setClaims(parsedClaims);
+          setIsLoading(false);
+        }
       } catch (err) {
         console.error('Failed to parse cached claims:', err);
         localStorage.removeItem(getStorageKey(account.address as Address));
         localStorage.removeItem(getCountStorageKey(account.address as Address));
       }
     }
-  }, [account?.address]);
+  }, [account?.address, selectedNetwork.chainId]);
 
   const fetchClaimHistory = useCallback(async (forceRefresh = false) => {
     if (!account?.address) {
@@ -107,9 +118,16 @@ export default function History() {
       if (!forceRefresh && cachedCount && parseInt(cachedCount) === currentTotal) {
         const cachedClaims = localStorage.getItem(storageKey);
         if (cachedClaims) {
-          setClaims(JSON.parse(cachedClaims));
-          setIsLoading(false);
-          return;
+          const parsedClaims = JSON.parse(cachedClaims) as ClaimWithMarketInfo[];
+          const hasDisplayMetadata = parsedClaims.every(
+            (claim) => typeof claim.displayAmount === "string" && typeof claim.tokenDecimals === "number"
+          );
+
+          if (hasDisplayMetadata) {
+            setClaims(parsedClaims);
+            setIsLoading(false);
+            return;
+          }
         }
       }
 
@@ -142,36 +160,37 @@ export default function History() {
       // Get unique market IDs from claims
       const uniqueMarketIds = [...new Set(history.map(c => c.marketId))];
 
-      // Fetch market info and token symbols for all unique markets
+      // Fetch market info and token metadata for all unique markets
       const marketInfoMap: Map<number, MarketInfoFormatted> = new Map();
-      const tokenSymbolMap: Map<number, string> = new Map();
+      const tokenMetadataMap: Map<number, { symbol: string; decimals: number }> = new Map();
       
       if (uniqueMarketIds.length > 0) {
         try {
-          // Fetch market info
           const marketInfos = await readMarketInfo(uniqueMarketIds);
           marketInfos.forEach(info => {
             marketInfoMap.set(info.indexer, info);
           });
 
-          // Fetch payment tokens and their symbols
           for (const marketId of uniqueMarketIds) {
             try {
               const paymentToken = await readPaymentToken(marketId);
               let tokenSymbol: string;
+              let tokenDecimals: number;
               
               if (isZeroAddress(paymentToken)) {
-                // Zero address means it's ETH, use blockchain symbol
                 tokenSymbol = selectedNetwork.symbol;
+                tokenDecimals = 18;
               } else {
-                // It's a token, fetch its symbol
-                tokenSymbol = await readTokenSymbol(paymentToken);
+                [tokenSymbol, tokenDecimals] = await Promise.all([
+                  readTokenSymbol(paymentToken),
+                  readTokenDecimals(paymentToken),
+                ]);
               }
               
-              tokenSymbolMap.set(marketId, tokenSymbol);
+              tokenMetadataMap.set(marketId, { symbol: tokenSymbol, decimals: tokenDecimals });
             } catch (err) {
-              console.error(`Failed to fetch token symbol for market ${marketId}:`, err);
-              tokenSymbolMap.set(marketId, 'UNKNOWN');
+              console.error(`Failed to fetch token metadata for market ${marketId}:`, err);
+              tokenMetadataMap.set(marketId, { symbol: 'UNKNOWN', decimals: 18 });
             }
           }
         } catch (err) {
@@ -181,11 +200,20 @@ export default function History() {
 
       // Enrich claims with market info and token symbols, then reverse for newest first
       const enrichedClaims: ClaimWithMarketInfo[] = history
-        .map(claim => ({
-          ...claim,
-          marketInfo: marketInfoMap.get(claim.marketId),
-          tokenSymbol: tokenSymbolMap.get(claim.marketId) || 'UNKNOWN',
-        }))
+        .map(claim => {
+          const tokenMetadata = tokenMetadataMap.get(claim.marketId) || {
+            symbol: 'UNKNOWN',
+            decimals: 18,
+          };
+
+          return {
+            ...claim,
+            marketInfo: marketInfoMap.get(claim.marketId),
+            tokenSymbol: tokenMetadata.symbol,
+            tokenDecimals: tokenMetadata.decimals,
+            displayAmount: formatTokenAmount(BigInt(claim.amount), tokenMetadata.decimals),
+          };
+        })
         .reverse();
 
       // Update state and cache
@@ -198,7 +226,7 @@ export default function History() {
     } finally {
       setIsLoading(false);
     }
-  }, [account?.address]);
+  }, [account?.address, selectedNetwork.chainId, selectedNetwork.symbol]);
 
   useEffect(() => {
     fetchClaimHistory();
@@ -206,7 +234,7 @@ export default function History() {
 
   // Calculate total claimed amount
   const totalClaimed = useMemo(() => {
-    return claims.reduce((sum, claim) => sum + parseFloat(claim.amount), 0);
+    return claims.reduce((sum, claim) => sum + parseFloat(claim.displayAmount || "0"), 0);
   }, [claims]);
 
   // Group claims by market for summary
@@ -215,7 +243,7 @@ export default function History() {
     claims.forEach(claim => {
       const existing = summary.get(claim.marketId) || { count: 0, total: 0, title: claim.marketInfo?.title || `Market #${claim.marketId}` };
       existing.count += 1;
-      existing.total += parseFloat(claim.amount);
+      existing.total += parseFloat(claim.displayAmount || "0");
       summary.set(claim.marketId, existing);
     });
     return summary;
@@ -474,7 +502,7 @@ export default function History() {
                             <div className="flex flex-col items-end">
                               <div className="rounded-xl bg-yes/20 px-4 py-2 backdrop-blur-sm">
                                 <p className="font-mono text-xl font-bold text-yes">
-                                  +{formatAmount(claim.amount)} {claim.tokenSymbol}
+                                  +{formatAmount(claim.displayAmount || "0")} {claim.tokenSymbol}
                                 </p>
                               </div>
                               <span className="font-outfit text-xs text-muted-foreground mt-1">
@@ -588,3 +616,9 @@ export default function History() {
     </div>
   );
 }
+
+
+
+
+
+
