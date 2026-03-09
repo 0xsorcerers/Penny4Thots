@@ -4,6 +4,16 @@ This file tracks all significant progress. Updated automatically after major cha
 
 ---
 
+## 2026-03-09
+
+### Bug Fix: History Claim Amount Decimals
+- Fixed History page claim amount rendering for ERC20 tokens that do not use 18 decimals
+- `getUserClaims()` now preserves raw on-chain claim amounts instead of formatting every value as ETH
+- History now reads each market payment token's `symbol` and `decimals` before formatting claim amounts
+- Zero-address payment tokens continue to use native ETH-style 18-decimal formatting with the selected network symbol
+- History cache keys now include the active network chain ID, and cached entries are reused only when they already contain the new decimal-aware display metadata
+
+---
 ## 2026-02-10
 
 ### Feature: Closed Market Button States
@@ -54,6 +64,16 @@ This file tracks all significant progress. Updated automatically after major cha
 
 ---
 
+## 2026-03-09
+
+### Bug Fix: History Claim Amount Decimals
+- Fixed History page claim amount rendering for ERC20 tokens that do not use 18 decimals
+- `getUserClaims()` now preserves raw on-chain claim amounts instead of formatting every value as ETH
+- History now reads each market payment token's `symbol` and `decimals` before formatting claim amounts
+- Zero-address payment tokens continue to use native ETH-style 18-decimal formatting with the selected network symbol
+- History cache keys now include the active network chain ID, and cached entries are reused only when they already contain the new decimal-aware display metadata
+
+---
 ## 2026-02-09
 
 ### Git Sync Fix
@@ -84,6 +104,16 @@ This file tracks all significant progress. Updated automatically after major cha
 
 ---
 
+## 2026-03-09
+
+### Bug Fix: History Claim Amount Decimals
+- Fixed History page claim amount rendering for ERC20 tokens that do not use 18 decimals
+- `getUserClaims()` now preserves raw on-chain claim amounts instead of formatting every value as ETH
+- History now reads each market payment token's `symbol` and `decimals` before formatting claim amounts
+- Zero-address payment tokens continue to use native ETH-style 18-decimal formatting with the selected network symbol
+- History cache keys now include the active network chain ID, and cached entries are reused only when they already contain the new decimal-aware display metadata
+
+---
 ## 2026-02-08
 
 ### Feature: User Dashboard Pages
@@ -103,6 +133,16 @@ This file tracks all significant progress. Updated automatically after major cha
 
 ---
 
+## 2026-03-09
+
+### Bug Fix: History Claim Amount Decimals
+- Fixed History page claim amount rendering for ERC20 tokens that do not use 18 decimals
+- `getUserClaims()` now preserves raw on-chain claim amounts instead of formatting every value as ETH
+- History now reads each market payment token's `symbol` and `decimals` before formatting claim amounts
+- Zero-address payment tokens continue to use native ETH-style 18-decimal formatting with the selected network symbol
+- History cache keys now include the active network chain ID, and cached entries are reused only when they already contain the new decimal-aware display metadata
+
+---
 ## 2026-02-07
 
 ### Feature: Deep-Link Authentication
@@ -116,6 +156,16 @@ This file tracks all significant progress. Updated automatically after major cha
 
 ---
 
+## 2026-03-09
+
+### Bug Fix: History Claim Amount Decimals
+- Fixed History page claim amount rendering for ERC20 tokens that do not use 18 decimals
+- `getUserClaims()` now preserves raw on-chain claim amounts instead of formatting every value as ETH
+- History now reads each market payment token's `symbol` and `decimals` before formatting claim amounts
+- Zero-address payment tokens continue to use native ETH-style 18-decimal formatting with the selected network symbol
+- History cache keys now include the active network chain ID, and cached entries are reused only when they already contain the new decimal-aware display metadata
+
+---
 ## 2026-02-06
 
 ### UI/CSS Overhaul
@@ -124,6 +174,16 @@ This file tracks all significant progress. Updated automatically after major cha
 
 ---
 
+## 2026-03-09
+
+### Bug Fix: History Claim Amount Decimals
+- Fixed History page claim amount rendering for ERC20 tokens that do not use 18 decimals
+- `getUserClaims()` now preserves raw on-chain claim amounts instead of formatting every value as ETH
+- History now reads each market payment token's `symbol` and `decimals` before formatting claim amounts
+- Zero-address payment tokens continue to use native ETH-style 18-decimal formatting with the selected network symbol
+- History cache keys now include the active network chain ID, and cached entries are reused only when they already contain the new decimal-aware display metadata
+
+---
 ## How to Save Progress
 
 Tell the AI any of these phrases:
@@ -133,3 +193,5 @@ Tell the AI any of these phrases:
 - "push changes"
 
 The AI will commit and push to BOTH GitHub and Vibecode servers automatically.
+
+
