@@ -1,9 +1,13 @@
 # Penny4Thots
 
-Monorepo containing the frontend webapp and backend services for Penny4Thots on BNB Chain, Base, Scroll, Manta, opBNB and coming host of networks.
+Monorepo containing the frontend webapp and backend services for Penny4Thots on BNB Chain, Base, Scroll and a coming host of networks.
 From those itchy sport bets with buds in front of the TV to Naruto for avid manga fans to even the cosmic predilections of the Zodiac, demo on Sepolia to understand how to create or vote on your 'thots' as well as the thoughts of others before going live on any mainnet of choice. 
 
-Hosted on Netlify: https://penny4thots.netlify.app
+<p align="center">
+  <a href="[https://penny](https://penny4thots.netlify.app)">
+    <img src="webapp/public/screenshots/screenshot-1.jpg" alt="Penny4Thots Prediction Marketplace" width="100%">
+  </a>
+</p>
 
 # Value Proposition
 ✅ Zero-sum take to an All Thoughts Prediction Marketplace.
