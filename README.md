@@ -5,7 +5,7 @@ From those itchy sport bets with buds in front of the TV to Naruto for avid mang
 
 <p align="center">
   <a href="[https://penny](https://penny4thots.netlify.app)">
-    <img src="webapp/public/screenshots/screenshot-1.jpg" alt="Penny4Thots Prediction Marketplace" width="100%">
+    <img src="webapp/public/screenshots/screenshot-2.jpg" alt="Penny4Thots Prediction Marketplace" width="100%">
   </a>
 </p>
 
