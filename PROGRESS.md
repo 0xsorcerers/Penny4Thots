@@ -4,6 +4,15 @@ This file tracks all significant progress. Updated automatically after major cha
 
 ---
 
+
+## 2026-03-13
+
+### UX Update: First-Time Visitor Home Preview
+- Updated home/app routing behavior so first-time visitors without a connected wallet can land on the home page and preview the market list immediately
+- Kept existing get-started login flow for disconnected returning users visiting `/app` directly
+- Enabled market loading on `/` even without an active wallet, while preserving connected-user behavior
+
+---
 ## 2026-03-09
 
 ### Bug Fix: History Claim Amount Decimals
