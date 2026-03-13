@@ -19,8 +19,9 @@ import {
   useTokenApprove,
   readTokenAllowance,
   readTokenBalance,
-  blockchain,
-  formatEther,
+  readTokenDecimals,
+  fromTokenSmallestUnit,
+  getBlockchain,
   type MarketInfoFormatted,
   type MarketDataFormatted,
   type VoteParams,
@@ -322,18 +323,19 @@ export default function YourThots() {
         );
 
         if (userBalance < voteParams.marketBalance) {
-          const balanceInEth = formatEther(userBalance);
-          const requiredInEth = formatEther(voteParams.marketBalance);
+          const tokenDecimals = await readTokenDecimals(voteParams.paymentToken);
+          const balanceInToken = fromTokenSmallestUnit(userBalance, tokenDecimals);
+          const requiredInToken = fromTokenSmallestUnit(voteParams.marketBalance, tokenDecimals);
           toast.error("Insufficient token balance", {
-            description: `You have ${balanceInEth} but need ${requiredInEth}`,
+            description: `You have ${balanceInToken} but need ${requiredInToken}`, 
           });
-          throw new Error(`Insufficient balance: have ${balanceInEth}, need ${requiredInEth}`);
+          throw new Error(`Insufficient balance: have ${balanceInToken}, need ${requiredInToken}`);
         }
 
         const currentAllowance = await readTokenAllowance(
           voteParams.paymentToken,
           account.address as Address,
-          blockchain.contract_address
+          getBlockchain().contract_address
         );
 
         if (currentAllowance < voteParams.marketBalance) {
@@ -563,3 +565,5 @@ export default function YourThots() {
     </div>
   );
 }
+
+

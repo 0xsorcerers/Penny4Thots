@@ -48,30 +48,33 @@ This workspace contains a mobile app and backend server.
 </environment>
 
 <git_sync_rules>
-  CRITICAL: This project has TWO git remotes that MUST stay in sync:
-  - origin: Vibecode internal server (git.vibecodeapp.com) - used for app restarts
-  - github: User's GitHub repo (github.com/0xsorcerers/Penny4Thots.git) - backup & version control
+  CRITICAL: origin is required and must always be kept up to date.
+  - origin: active primary remote used for app restarts and required persistence
+  - github: optional backup remote; only sync it when a github remote is actually configured
 
   MANDATORY ACTIONS:
   1. When user says "save progress", "stable build", "commit", "push", or "save our work":
      - Commit all changes with a descriptive message
-     - Push to BOTH remotes: `git push origin main && git push github main`
-     - Confirm both pushes succeeded
+     - Always push to origin
+     - If github remote exists, push to github too
+     - Confirm which remotes were pushed successfully
 
   2. Before ANY major feature work or at conversation start:
-     - Run `git fetch github && git fetch origin` to check sync status
-     - If repos are out of sync, merge and push to both before proceeding
+     - Always run git fetch origin to check sync status
+     - If github remote exists, run git fetch github too
+     - If configured remotes are out of sync, merge and push back to each configured remote before proceeding
 
   3. After completing significant features:
      - Auto-commit with summary of changes
-     - Push to BOTH remotes without being asked
+     - Push to origin without waiting to be asked
+     - If github remote exists, push there too
 
-  4. If a push to github fails (auth issues):
+  4. If a push to optional github fails:
      - Notify the user immediately
-     - Still push to origin so Vibecode restarts don't lose work
-     - Ask user to check GitHub connection in Vibecode settings
+     - Still push to origin so app restarts don't lose work
+     - Ask user to check GitHub connection in Vibecode settings if they expect GitHub backup sync
 
-  NEVER let the two remotes diverge. Lost work = lost money.
+  Never let configured remotes silently diverge. If github is not configured, use origin only.
 </git_sync_rules>
 
 <progress_tracking>
@@ -80,3 +83,4 @@ This workspace contains a mobile app and backend server.
   - Include date, feature name, and brief description
   - This serves as a human-readable changelog
 </progress_tracking>
+
