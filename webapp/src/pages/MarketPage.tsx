@@ -7,11 +7,11 @@ import { defineChain } from "thirdweb/chains";
 import { useMarketStore } from "@/store/marketStore";
 import { useNetworkStore } from "@/store/networkStore";
 import { useMarketDataHydration } from "@/hooks/useMarketDataHydration";
-import { useVote, useTokenApprove, readPaymentToken, readTokenAllowance, readTokenDecimals,
+import { useVote, useTokenApprove, readPaymentToken, readTokenAllowance, readTokenBalance, readTokenDecimals,
   readTokenSymbol, isZeroAddress, fetchDataConstants, calculatePlatformFeePercentage,
   fetchMarketDataFromBlockchain, getClaimablePositions, getAllUserPositions,
   useBatchClaim, useBatchKamikaze, readMarketLock, getUserPositionCount, getUserPositions,
-  getPositionDetailsBatch, formatTokenAmount, type VoteParams } from "@/tools/utils";
+  getPositionDetailsBatch, formatTokenAmount, fromTokenSmallestUnit, getBlockchain, type VoteParams } from "@/tools/utils";
 import { VoteModal } from "@/components/market/VoteModal";
 import { VoteStats } from "@/components/market/VoteStats";
 import { MarketBalance } from "@/components/market/MarketBalance";
@@ -365,12 +365,27 @@ export default function MarketPage() {
     setIsSubmitting(true);
     try {
       const isEthPayment = isZeroAddress(voteParams.paymentToken);
-      // If using a token (not ETH), check allowance and approve if needed
+      // If using a token (not ETH), check balance first, then allowance and approve if needed
       if (!isEthPayment) {
+        const userBalance = await readTokenBalance(
+          voteParams.paymentToken,
+          account.address as Address
+        );
+
+        if (userBalance < voteParams.marketBalance) {
+          const tokenDecimals = await readTokenDecimals(voteParams.paymentToken);
+          const balanceFormatted = fromTokenSmallestUnit(userBalance, tokenDecimals);
+          const requiredFormatted = fromTokenSmallestUnit(voteParams.marketBalance, tokenDecimals);
+          toast.error("Insufficient token balance", {
+            description: `You have ${balanceFormatted} but need ${requiredFormatted}`, 
+          });
+          throw new Error(`Insufficient balance: have ${balanceFormatted}, need ${requiredFormatted}`);
+        }
+
         const currentAllowance = await readTokenAllowance(
           voteParams.paymentToken,
           account.address as Address,
-          "0x826F0F01E41C1AB3dD1b52b7e3662da9702Bb9Ad" as Address
+          getBlockchain().contract_address
         );
         // If allowance is insufficient, request approval
         if (currentAllowance < voteParams.marketBalance) {
@@ -1219,3 +1234,5 @@ export default function MarketPage() {
     </div>
   );
 }
+
+
