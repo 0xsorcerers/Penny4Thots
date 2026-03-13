@@ -47,6 +47,8 @@ export default function Index() {
   const { approve, isPending: isApproving } = useTokenApprove();
   const lastSearchHydrationKeyRef = useRef<string>("");
   const hasHydratedShowClosedRef = useRef<number | null>(null);
+  const canPreviewWithoutWallet = typeof window !== "undefined" && window.location.pathname === "/";
+  const shouldLoadMarkets = Boolean(account) || canPreviewWithoutWallet;
 
   // Smart fetch: hydrate immutable market info in background, keep mutable data fresh per visible page.
   const loadMarketsFromBlockchain = useCallback(async () => {
@@ -158,23 +160,23 @@ export default function Index() {
   }, [selectedNetwork.chainId, currentNetworkChainId]);
 
   useEffect(() => {
-    if (account && isInitialLoad) {
+    if (shouldLoadMarkets && isInitialLoad) {
       setIsInitialLoad(false);
       loadMarketsFromBlockchain();
-    } else if (account && !isInitialLoad && marketInfos.length === 0) {
+    } else if (shouldLoadMarkets && !isInitialLoad && marketInfos.length === 0) {
       // If we've navigated back and lost data, reload
       loadMarketsFromBlockchain();
-    } else if (account && !isInitialLoad && currentNetworkChainId !== selectedNetwork.chainId) {
+    } else if (shouldLoadMarkets && !isInitialLoad && currentNetworkChainId !== selectedNetwork.chainId) {
       // Network has changed, reload markets for new network
       loadMarketsFromBlockchain();
     }
-  }, [account, isInitialLoad, marketInfos.length, loadMarketsFromBlockchain, currentNetworkChainId, selectedNetwork.chainId]);
+  }, [shouldLoadMarkets, isInitialLoad, marketInfos.length, loadMarketsFromBlockchain, currentNetworkChainId, selectedNetwork.chainId]);
 
 
   useEffect(() => {
-    if (!account || isInitialLoad) return;
+    if (!shouldLoadMarkets || isInitialLoad) return;
     loadMarketsFromBlockchain();
-  }, [account, currentPageAllMarkets, currentPageLiveMarkets, showClosedMarkets, isInitialLoad, loadMarketsFromBlockchain]);
+  }, [shouldLoadMarkets, currentPageAllMarkets, currentPageLiveMarkets, showClosedMarkets, isInitialLoad, loadMarketsFromBlockchain]);
 
   const marketByIndexer = useMemo(() => new Map(markets.map((m) => [m.indexer, m])), [markets]);
 
@@ -449,7 +451,7 @@ export default function Index() {
   };
 
   // Show GetStartedPage if user is not connected
-  if (!account) {
+  if (!account && !canPreviewWithoutWallet) {
     return <GetStartedPage />;
   }
 
