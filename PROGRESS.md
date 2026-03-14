@@ -4,6 +4,15 @@ This file tracks all significant progress. Updated automatically after major cha
 
 ---
 
+
+## 2026-03-13
+
+### UX Update: First-Time Visitor Home Preview
+- Updated home/app routing behavior so first-time visitors without a connected wallet can land on the home page and preview the market list immediately
+- Kept existing get-started login flow for disconnected returning users visiting `/app` directly
+- Enabled market loading on `/` even without an active wallet, while preserving connected-user behavior
+
+---
 ## 2026-03-09
 
 ### Bug Fix: ERC20 Vote Flow Consistency
@@ -244,3 +253,9 @@ The AI will commit and push to BOTH GitHub and Vibecode servers automatically.
 
 
 
+## 2026-03-14
+
+### Fix: First-Time User Homepage Preview Routing
+- Added first-visit routing logic on `/` so disconnected users with no prior local cache go directly to the market grid page first.
+- Persisted a one-time `localStorage` flag after the first visit, so later disconnected visits to `/` continue through the normal Welcome/Get Started flow.
+- Kept connected users landing on the market grid experience directly.
