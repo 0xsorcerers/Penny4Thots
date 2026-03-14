@@ -15,6 +15,14 @@ This file tracks all significant progress. Updated automatically after major cha
 ---
 ## 2026-03-09
 
+### Bug Fix: ERC20 Vote Flow Consistency
+- Audited CreateMarketModal and VoteModal payment flow handling for ERC20 markets
+- Fixed vote amount conversion to always respect the payment asset decimals instead of relying on float math
+- Fixed My Thots and Your Thots vote retries to format insufficient ERC20 balances with the token's real decimals
+- Fixed MarketPage vote flow to check ERC20 balance before allowance/approval and to use the active contract address as spender instead of a hardcoded address
+- Result: ERC20 vote flows now consistently follow balance check -> allowance check -> approve if needed -> submit vote
+
+---
 ### Bug Fix: History Claim Amount Decimals
 - Fixed History page claim amount rendering for ERC20 tokens that do not use 18 decimals
 - `getUserClaims()` now preserves raw on-chain claim amounts instead of formatting every value as ETH
@@ -75,6 +83,14 @@ This file tracks all significant progress. Updated automatically after major cha
 
 ## 2026-03-09
 
+### Bug Fix: ERC20 Vote Flow Consistency
+- Audited CreateMarketModal and VoteModal payment flow handling for ERC20 markets
+- Fixed vote amount conversion to always respect the payment asset decimals instead of relying on float math
+- Fixed My Thots and Your Thots vote retries to format insufficient ERC20 balances with the token's real decimals
+- Fixed MarketPage vote flow to check ERC20 balance before allowance/approval and to use the active contract address as spender instead of a hardcoded address
+- Result: ERC20 vote flows now consistently follow balance check -> allowance check -> approve if needed -> submit vote
+
+---
 ### Bug Fix: History Claim Amount Decimals
 - Fixed History page claim amount rendering for ERC20 tokens that do not use 18 decimals
 - `getUserClaims()` now preserves raw on-chain claim amounts instead of formatting every value as ETH
@@ -115,6 +131,14 @@ This file tracks all significant progress. Updated automatically after major cha
 
 ## 2026-03-09
 
+### Bug Fix: ERC20 Vote Flow Consistency
+- Audited CreateMarketModal and VoteModal payment flow handling for ERC20 markets
+- Fixed vote amount conversion to always respect the payment asset decimals instead of relying on float math
+- Fixed My Thots and Your Thots vote retries to format insufficient ERC20 balances with the token's real decimals
+- Fixed MarketPage vote flow to check ERC20 balance before allowance/approval and to use the active contract address as spender instead of a hardcoded address
+- Result: ERC20 vote flows now consistently follow balance check -> allowance check -> approve if needed -> submit vote
+
+---
 ### Bug Fix: History Claim Amount Decimals
 - Fixed History page claim amount rendering for ERC20 tokens that do not use 18 decimals
 - `getUserClaims()` now preserves raw on-chain claim amounts instead of formatting every value as ETH
@@ -144,6 +168,14 @@ This file tracks all significant progress. Updated automatically after major cha
 
 ## 2026-03-09
 
+### Bug Fix: ERC20 Vote Flow Consistency
+- Audited CreateMarketModal and VoteModal payment flow handling for ERC20 markets
+- Fixed vote amount conversion to always respect the payment asset decimals instead of relying on float math
+- Fixed My Thots and Your Thots vote retries to format insufficient ERC20 balances with the token's real decimals
+- Fixed MarketPage vote flow to check ERC20 balance before allowance/approval and to use the active contract address as spender instead of a hardcoded address
+- Result: ERC20 vote flows now consistently follow balance check -> allowance check -> approve if needed -> submit vote
+
+---
 ### Bug Fix: History Claim Amount Decimals
 - Fixed History page claim amount rendering for ERC20 tokens that do not use 18 decimals
 - `getUserClaims()` now preserves raw on-chain claim amounts instead of formatting every value as ETH
@@ -167,6 +199,14 @@ This file tracks all significant progress. Updated automatically after major cha
 
 ## 2026-03-09
 
+### Bug Fix: ERC20 Vote Flow Consistency
+- Audited CreateMarketModal and VoteModal payment flow handling for ERC20 markets
+- Fixed vote amount conversion to always respect the payment asset decimals instead of relying on float math
+- Fixed My Thots and Your Thots vote retries to format insufficient ERC20 balances with the token's real decimals
+- Fixed MarketPage vote flow to check ERC20 balance before allowance/approval and to use the active contract address as spender instead of a hardcoded address
+- Result: ERC20 vote flows now consistently follow balance check -> allowance check -> approve if needed -> submit vote
+
+---
 ### Bug Fix: History Claim Amount Decimals
 - Fixed History page claim amount rendering for ERC20 tokens that do not use 18 decimals
 - `getUserClaims()` now preserves raw on-chain claim amounts instead of formatting every value as ETH
@@ -185,6 +225,14 @@ This file tracks all significant progress. Updated automatically after major cha
 
 ## 2026-03-09
 
+### Bug Fix: ERC20 Vote Flow Consistency
+- Audited CreateMarketModal and VoteModal payment flow handling for ERC20 markets
+- Fixed vote amount conversion to always respect the payment asset decimals instead of relying on float math
+- Fixed My Thots and Your Thots vote retries to format insufficient ERC20 balances with the token's real decimals
+- Fixed MarketPage vote flow to check ERC20 balance before allowance/approval and to use the active contract address as spender instead of a hardcoded address
+- Result: ERC20 vote flows now consistently follow balance check -> allowance check -> approve if needed -> submit vote
+
+---
 ### Bug Fix: History Claim Amount Decimals
 - Fixed History page claim amount rendering for ERC20 tokens that do not use 18 decimals
 - `getUserClaims()` now preserves raw on-chain claim amounts instead of formatting every value as ETH
