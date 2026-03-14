@@ -204,3 +204,10 @@ Tell the AI any of these phrases:
 The AI will commit and push to BOTH GitHub and Vibecode servers automatically.
 
 
+
+## 2026-03-14
+
+### Fix: First-Time User Homepage Preview Routing
+- Added first-visit routing logic on `/` so disconnected users with no prior local cache go directly to the market grid page first.
+- Persisted a one-time `localStorage` flag after the first visit, so later disconnected visits to `/` continue through the normal Welcome/Get Started flow.
+- Kept connected users landing on the market grid experience directly.

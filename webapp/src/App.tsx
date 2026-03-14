@@ -2,9 +2,9 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { AutoConnect } from "thirdweb/react";
+import { AutoConnect, useActiveAccount } from "thirdweb/react";
 import { client, wallets } from "@/tools/utils";
 import { useNetworkStore } from "@/store/networkStore";
 import { useMarketStore } from "@/store/marketStore";
@@ -19,6 +19,7 @@ import History from "./pages/History";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
+const FIRST_TIME_PREVIEW_KEY = "penny4thots-first-time-preview-complete";
 
 function NetworkMarketCacheSync() {
   const chainId = useNetworkStore((state) => state.selectedNetwork.chainId);
@@ -42,6 +43,45 @@ function NetworkThemeSync() {
   return null;
 }
 
+function HomeRoute() {
+  const account = useActiveAccount();
+  const [showPreview, setShowPreview] = useState(false);
+  const [isResolved, setIsResolved] = useState(false);
+
+  useEffect(() => {
+    if (account) {
+      setShowPreview(true);
+      setIsResolved(true);
+      return;
+    }
+
+    try {
+      const hasCompletedFirstPreview = localStorage.getItem(FIRST_TIME_PREVIEW_KEY) === "true";
+
+      if (!hasCompletedFirstPreview) {
+        localStorage.setItem(FIRST_TIME_PREVIEW_KEY, "true");
+      }
+
+      setShowPreview(!hasCompletedFirstPreview);
+    } catch (error) {
+      console.error("Failed to resolve first-time preview state:", error);
+      setShowPreview(true);
+    } finally {
+      setIsResolved(true);
+    }
+  }, [account]);
+
+  if (!isResolved) {
+    return null;
+  }
+
+  if (showPreview) {
+    return <Index />;
+  }
+
+  return <Welcome />;
+}
+
 const App = () => (
   <>
     <AutoConnect
@@ -62,7 +102,7 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <Routes>
-            <Route path="/" element={<Welcome />} />
+            <Route path="/" element={<HomeRoute />} />
             <Route path="/app" element={<Index />} />
             <Route path="/market/:id" element={<MarketPage />} />
             <Route path="/my-thots" element={<MyThots />} />
