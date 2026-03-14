@@ -189,16 +189,12 @@ export function VoteModal({
     setError(null);
     setShowConnectCta(false);
     setShowProceedMessage(false);
-    
-    // Convert amount using proper decimal handling
-    let amountWei: bigint;
-    if (!isZeroAddress(paymentToken)) {
-      // Token payment - use token decimals
-      amountWei = toTokenSmallestUnit(amount, tokenDecimals);
-    } else {
-      // ETH payment - use 18 decimals
-      amountWei = BigInt(Math.floor(parseFloat(amount) * 1e18));
-    }
+
+    // Convert amount using the actual decimals for the payment asset
+    const amountWei = toTokenSmallestUnit(
+      amount,
+      isZeroAddress(paymentToken) ? 18 : tokenDecimals
+    );
 
     try {
       const voteParams: VoteParams = {
@@ -563,3 +559,5 @@ export function VoteModal({
     </AnimatePresence>
   );
 }
+
+
