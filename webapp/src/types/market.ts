@@ -12,6 +12,7 @@ export interface Market {
   noVotes: number;
   createdAt: string;
   marketBalance?: bigint; // Raw balance from blockchain (bigint in token's smallest unit)
+  activity?: string; // Market activity score from blockchain
   status?: boolean; // Market status from blockchain
   optionA?: string; // Custom option A label
   optionB?: string; // Custom option B label
