@@ -45,7 +45,7 @@ export default function Index() {
   const { writeMarket, isPending, error } = useWriteMarket();
   const { vote, isPending: isVoting } = useVote();
   const { approve, isPending: isApproving } = useTokenApprove();
-  const lastSearchHydrationKeyRef = useRef<string>("");
+  const lastVisibleHydrationKeyRef = useRef<string>("");
   const hasHydratedShowClosedRef = useRef<number | null>(null);
 
   // Smart fetch: hydrate immutable market info in background, keep mutable data fresh per visible page.
@@ -209,17 +209,17 @@ export default function Index() {
   );
 
 
-  const handleSearchResultsChange = useCallback(async (marketIds: number[]) => {
+  const handleVisibleMarketHydration = useCallback(async (marketIds: number[]) => {
     if (!marketIds.length) {
-      lastSearchHydrationKeyRef.current = "";
+      lastVisibleHydrationKeyRef.current = "";
       return;
     }
 
     const idsToRead = marketIds.filter((id) => visibleMarketIdSet.has(id)).slice(0, MARKETS_PER_PAGE);
     const hydrationKey = idsToRead.join(",");
-    if (hydrationKey === lastSearchHydrationKeyRef.current) return;
+    if (hydrationKey === lastVisibleHydrationKeyRef.current) return;
 
-    lastSearchHydrationKeyRef.current = hydrationKey;
+    lastVisibleHydrationKeyRef.current = hydrationKey;
 
     try {
       const pageData = await fetchMarketDataFromBlockchain(idsToRead);
@@ -228,7 +228,7 @@ export default function Index() {
       );
       updateMarketData(dataMap);
     } catch (err) {
-      console.error("Failed to hydrate search result market data:", err);
+      console.error("Failed to hydrate filtered market data:", err);
     }
   }, [updateMarketData, visibleMarketIdSet]);
 
@@ -476,10 +476,11 @@ export default function Index() {
           onCreateMarket={() => setIsCreateModalOpen(true)}
           onVoteClick={handleVoteClick}
           onRefreshMarkets={handleRefreshAllMarkets}
-          onSearchResultsChange={handleSearchResultsChange}
+          onSearchResultsChange={handleVisibleMarketHydration}
           showClosedMarkets={showClosedMarkets}
           onToggleClosedMarkets={() => setShowClosedMarkets((prev) => !prev)}
           isLoading={isLoadingFromBlockchain}
+          networkSymbol={selectedNetwork.symbol}
         />
       </div>
       <CreateMarketModal

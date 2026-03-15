@@ -251,3 +251,43 @@ The AI will commit and push to BOTH GitHub and Vibecode servers automatically.
 - Fixed the market tag filter dialog so the tag list can scroll inside the modal when there are many tags.
 - Updated the all-tags list layout from a multi-column grid to a simple wrapped flex row for easier scanning and tapping.
 - Improved modal content sizing by using a flex column layout with a dedicated scrollable content region.
+
+
+## 2026-03-15
+
+### Feature: Data-Driven Market Filters
+- Replaced tag-based filtering on the main Markets grid with new data-driven filter chips: All, Trending, and Marketcap
+- Trending now sorts only live markets by highest activity first
+- Marketcap now sorts only live markets by highest market balance first
+- Added in-filter pagination support so filtered views still paginate at the existing page size
+- Added market activity to shared market model/state mapping so the Trending sort can use blockchain market data
+
+---
+
+## 2026-03-15
+
+### Update: Symbol vs Token Filters + Filter Hydration
+- Replaced the previous `Marketcap` filter with `Symbol Markets` and `Token Markets`
+- Classified markets using immutable `feetype` metadata (`false` = native symbol market, `true` = token market)
+- Sorted Symbol/Token filter results by highest market balance first
+- Added filtered-view hydration so visible cards in non-All filters fetch fresh page market data via batched marketId reads
+
+---
+
+## 2026-03-15
+
+### Update: Added Trending + Network Symbol Filter Label
+- Added `Trending` back into the market filter chips (now: All, Trending, [Network Symbol] Markets, Token Markets)
+- Updated symbol-market chip label to use active network symbol (e.g. `ETH Markets` on Sepolia)
+- Kept filtered views paginated and hydrated with fresh market data for visible IDs
+
+---
+
+## 2026-03-15
+
+### Update: Restrict Filter Chips to Live Markets Only
+- Updated market filter chips so all filtered outputs are derived strictly from the live markets array (closed markets excluded)
+- Applied live-market source to All, Trending, network-symbol markets, and Token Markets filter logic
+- Updated filter counts and pagination to reflect only live-market totals
+
+---
