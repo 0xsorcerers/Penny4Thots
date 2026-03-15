@@ -273,3 +273,12 @@ The AI will commit and push to BOTH GitHub and Vibecode servers automatically.
 - Added filtered-view hydration so visible cards in non-All filters fetch fresh page market data via batched marketId reads
 
 ---
+
+## 2026-03-15
+
+### Update: Added Trending + Network Symbol Filter Label
+- Added `Trending` back into the market filter chips (now: All, Trending, [Network Symbol] Markets, Token Markets)
+- Updated symbol-market chip label to use active network symbol (e.g. `ETH Markets` on Sepolia)
+- Kept filtered views paginated and hydrated with fresh market data for visible IDs
+
+---
