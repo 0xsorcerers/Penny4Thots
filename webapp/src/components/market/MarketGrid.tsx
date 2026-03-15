@@ -58,13 +58,8 @@ export function MarketGrid({
     return () => window.clearTimeout(timer);
   }, [searchQuery]);
 
-  const liveMarkets = useMemo(
-    () => allMarkets.filter((market) => !market.closed),
-    [allMarkets]
-  );
-
-  const searchIndex = useMemo(() => new MarketSearchIndex(liveMarkets), [liveMarkets]);
-  const allMarketMap = useMemo(() => new Map(liveMarkets.map((m) => [m.indexer, m])), [liveMarkets]);
+  const searchIndex = useMemo(() => new MarketSearchIndex(allMarkets), [allMarkets]);
+  const allMarketMap = useMemo(() => new Map(allMarkets.map((m) => [m.indexer, m])), [allMarkets]);
 
   const isNumericSearch = debouncedQuery.length > 0 && /^\d+$/.test(debouncedQuery);
 
@@ -79,53 +74,64 @@ export function MarketGrid({
   const filteredMarkets = useMemo(() => {
     const sourceMarkets = debouncedQuery
       ? searchedMarketIds.map((id) => allMarketMap.get(id)).filter((m): m is Market => Boolean(m))
-      : liveMarkets;
+            : allMarkets;
+
+    let filterMappedMarkets = sourceMarkets;
+
 
     if (selectedFilter === "trending") {
-      return [...sourceMarkets].sort(
-        (a, b) => Number(b.activity ?? 0) - Number(a.activity ?? 0)
-      );
+      return [...sourceMarkets]
+        .filter((market) => !market.closed)
+        .sort((a, b) => Number(b.activity ?? 0) - Number(a.activity ?? 0));
     }
 
     if (selectedFilter === "symbol") {
-      return [...sourceMarkets]
-        .filter((market) => market.feetype === false)
-        .sort((a, b) => Number(b.marketBalance ?? 0) - Number(a.marketBalance ?? 0));
+      filterMappedMarkets = sourceMarkets.filter((market) => market.feetype === false);
     }
 
     if (selectedFilter === "token") {
-      return [...sourceMarkets]
-        .filter((market) => market.feetype === true)
-        .sort((a, b) => Number(b.marketBalance ?? 0) - Number(a.marketBalance ?? 0));
+      filterMappedMarkets = sourceMarkets.filter((market) => market.feetype === true);
     }
 
-    return [...sourceMarkets].sort(
-      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    if (selectedFilter === "all") {
+      return [...filterMappedMarkets].sort(
+        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
+    }
+
+    return [...filterMappedMarkets].sort(
+      (a, b) => Number(b.marketBalance ?? 0) - Number(a.marketBalance ?? 0)
     );
-  }, [liveMarkets, selectedFilter, debouncedQuery, searchedMarketIds, allMarketMap]);
+  }, [allMarkets, selectedFilter, debouncedQuery, searchedMarketIds, allMarketMap]);
+
 
   const trendingFilterCount = useMemo(
-    () => liveMarkets.length,
-    [liveMarkets]
+    () => allMarkets.filter((market) => !market.closed).length,
+    [allMarkets]
   );
 
   const symbolFilterCount = useMemo(
-    () => liveMarkets.filter((market) => market.feetype === false).length,
-    [liveMarkets]
+    () => allMarkets.filter((market) => market.feetype === false).length,
+    [allMarkets]
   );
 
   const tokenFilterCount = useMemo(
-    () => liveMarkets.filter((market) => market.feetype === true).length,
-    [liveMarkets]
+    () => allMarkets.filter((market) => market.feetype === true).length,
+    [allMarkets]
   );
 
-  const effectiveMarketCount = filteredMarkets.length;
+  const isUsingDerivedPagination = debouncedQuery.length > 0 || selectedFilter !== "all";
+  const effectiveMarketCount = isUsingDerivedPagination ? filteredMarkets.length : marketCount;
   const totalPages = Math.max(1, Math.ceil(effectiveMarketCount / pageSize));
 
   const visibleMarkets = useMemo(() => {
+    if (!isUsingDerivedPagination) {
+      return filteredMarkets;
+    }
+
     const startIdx = (currentPage - 1) * pageSize;
     return filteredMarkets.slice(startIdx, startIdx + pageSize);
-  }, [currentPage, filteredMarkets, pageSize]);
+  }, [currentPage, filteredMarkets, isUsingDerivedPagination, pageSize]);
 
   useEffect(() => {
     if (currentPage > totalPages) {
@@ -323,7 +329,7 @@ export function MarketGrid({
                   : "bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground"
               }`}
             >
-              All ({trendingFilterCount})
+              All ({marketCount})
             </button>
             <button
               onClick={() => setSelectedFilter("trending")}
