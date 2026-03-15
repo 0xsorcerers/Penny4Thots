@@ -10,7 +10,7 @@ import { MarketSearchIndex } from "@/lib/marketSearchIndex";
 
 const SEARCH_DEBOUNCE_MS = 3000;
 
-type MarketFilter = "all" | "symbol" | "token";
+type MarketFilter = "all" | "trending" | "symbol" | "token";
 
 interface MarketGridProps {
   markets: Market[];
@@ -26,6 +26,7 @@ interface MarketGridProps {
   showClosedMarkets?: boolean;
   onToggleClosedMarkets?: () => void;
   isLoading?: boolean;
+  networkSymbol?: string;
 }
 
 export function MarketGrid({
@@ -42,6 +43,7 @@ export function MarketGrid({
   showClosedMarkets = true,
   onToggleClosedMarkets,
   isLoading = false,
+  networkSymbol = "Native",
 }: MarketGridProps) {
   const [selectedFilter, setSelectedFilter] = useState<MarketFilter>("all");
   const [searchQuery, setSearchQuery] = useState("");
@@ -72,9 +74,16 @@ export function MarketGrid({
   const filteredMarkets = useMemo(() => {
     const sourceMarkets = debouncedQuery
       ? searchedMarketIds.map((id) => allMarketMap.get(id)).filter((m): m is Market => Boolean(m))
-      : markets;
+            : allMarkets;
 
     let filterMappedMarkets = sourceMarkets;
+
+
+    if (selectedFilter === "trending") {
+      return [...sourceMarkets]
+        .filter((market) => !market.closed)
+        .sort((a, b) => Number(b.activity ?? 0) - Number(a.activity ?? 0));
+    }
 
     if (selectedFilter === "symbol") {
       filterMappedMarkets = sourceMarkets.filter((market) => market.feetype === false);
@@ -93,16 +102,22 @@ export function MarketGrid({
     return [...filterMappedMarkets].sort(
       (a, b) => Number(b.marketBalance ?? 0) - Number(a.marketBalance ?? 0)
     );
-  }, [markets, selectedFilter, debouncedQuery, searchedMarketIds, allMarketMap]);
+  }, [allMarkets, selectedFilter, debouncedQuery, searchedMarketIds, allMarketMap]);
+
+
+  const trendingFilterCount = useMemo(
+    () => allMarkets.filter((market) => !market.closed).length,
+    [allMarkets]
+  );
 
   const symbolFilterCount = useMemo(
-    () => markets.filter((market) => market.feetype === false).length,
-    [markets]
+    () => allMarkets.filter((market) => market.feetype === false).length,
+    [allMarkets]
   );
 
   const tokenFilterCount = useMemo(
-    () => markets.filter((market) => market.feetype === true).length,
-    [markets]
+    () => allMarkets.filter((market) => market.feetype === true).length,
+    [allMarkets]
   );
 
   const isUsingDerivedPagination = debouncedQuery.length > 0 || selectedFilter !== "all";
@@ -317,6 +332,16 @@ export function MarketGrid({
               All ({marketCount})
             </button>
             <button
+              onClick={() => setSelectedFilter("trending")}
+              className={`rounded-full px-3 py-1.5 font-mono text-xs transition-all ${
+                selectedFilter === "trending"
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground"
+              }`}
+            >
+              Trending ({trendingFilterCount})
+            </button>
+            <button
               onClick={() => setSelectedFilter("symbol")}
               className={`rounded-full px-3 py-1.5 font-mono text-xs transition-all ${
                 selectedFilter === "symbol"
@@ -324,7 +349,7 @@ export function MarketGrid({
                   : "bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground"
               }`}
             >
-              Symbol Markets ({symbolFilterCount})
+              {networkSymbol} Markets ({symbolFilterCount})
             </button>
             <button
               onClick={() => setSelectedFilter("token")}
