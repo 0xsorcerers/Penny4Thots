@@ -5,7 +5,6 @@ import type { Market } from "@/types/market";
 import { MarketCard } from "./MarketCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ProfileDropdown } from "@/components/profile/ProfileDropdown";
 import { MarketSearchIndex } from "@/lib/marketSearchIndex";
 
@@ -44,19 +43,10 @@ export function MarketGrid({
   onToggleClosedMarkets,
   isLoading = false,
 }: MarketGridProps) {
-  const [selectedTag, setSelectedTag] = useState<string | null>(null);
+  const [selectedFilter, setSelectedFilter] = useState<"all" | "trending" | "marketcap">("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
-  const [showAllTags, setShowAllTags] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
-
-  const totalPages = Math.max(1, Math.ceil(marketCount / pageSize));
-
-  useEffect(() => {
-    if (currentPage > totalPages) {
-      onPageChange(totalPages);
-    }
-  }, [currentPage, totalPages, onPageChange]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -65,15 +55,6 @@ export function MarketGrid({
 
     return () => window.clearTimeout(timer);
   }, [searchQuery]);
-
-  // Extract all unique tags in stable order (from all network markets)
-  const allTags = useMemo(() => {
-    const tagSet = new Set<string>();
-    allMarkets.forEach((market) => {
-      market.tags.forEach((tag) => tagSet.add(tag));
-    });
-    return Array.from(tagSet).sort();
-  }, [allMarkets]);
 
   const searchIndex = useMemo(() => new MarketSearchIndex(allMarkets), [allMarkets]);
   const allMarketMap = useMemo(() => new Map(allMarkets.map((m) => [m.indexer, m])), [allMarkets]);
@@ -88,22 +69,57 @@ export function MarketGrid({
     return searchIndex.search(debouncedQuery);
   }, [debouncedQuery, isNumericSearch, searchIndex]);
 
-  // Filter and sort markets
+  const liveMarkets = useMemo(
+    () => allMarkets.filter((market) => !market.closed),
+    [allMarkets]
+  );
+
   const filteredMarkets = useMemo(() => {
     const sourceMarkets = debouncedQuery
       ? searchedMarketIds.map((id) => allMarketMap.get(id)).filter((m): m is Market => Boolean(m))
-      : markets;
+      : selectedFilter === "all"
+      ? markets
+      : liveMarkets;
 
-    let filtered = sourceMarkets;
-
-    if (selectedTag) {
-      filtered = filtered.filter((m) => m.tags.includes(selectedTag));
+    if (selectedFilter === "trending") {
+      return [...sourceMarkets].sort(
+        (a, b) => Number(b.activity ?? 0) - Number(a.activity ?? 0)
+      );
     }
 
-    return [...filtered].sort(
+    if (selectedFilter === "marketcap") {
+      return [...sourceMarkets].sort(
+        (a, b) => Number(b.marketBalance ?? 0) - Number(a.marketBalance ?? 0)
+      );
+    }
+
+    return [...sourceMarkets].sort(
       (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     );
-  }, [markets, selectedTag, debouncedQuery, searchedMarketIds, allMarketMap]);
+  }, [markets, selectedFilter, debouncedQuery, searchedMarketIds, allMarketMap, liveMarkets]);
+
+  const isUsingDerivedPagination = debouncedQuery.length > 0 || selectedFilter !== "all";
+  const effectiveMarketCount = isUsingDerivedPagination ? filteredMarkets.length : marketCount;
+  const totalPages = Math.max(1, Math.ceil(effectiveMarketCount / pageSize));
+
+  const visibleMarkets = useMemo(() => {
+    if (!isUsingDerivedPagination) {
+      return filteredMarkets;
+    }
+
+    const startIdx = (currentPage - 1) * pageSize;
+    return filteredMarkets.slice(startIdx, startIdx + pageSize);
+  }, [currentPage, filteredMarkets, isUsingDerivedPagination, pageSize]);
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      onPageChange(totalPages);
+    }
+  }, [currentPage, totalPages, onPageChange]);
+
+  useEffect(() => {
+    onPageChange(1);
+  }, [selectedFilter, debouncedQuery, onPageChange]);
 
   const lastHydratedSearchIdsRef = useRef<string>("");
 
@@ -113,7 +129,7 @@ export function MarketGrid({
       return;
     }
 
-    const idsToHydrate = filteredMarkets
+    const idsToHydrate = visibleMarkets
       .map((m) => m.indexer)
       .filter((id): id is number => typeof id === "number")
       .slice(0, pageSize);
@@ -123,10 +139,10 @@ export function MarketGrid({
 
     lastHydratedSearchIdsRef.current = hydrationKey;
     onSearchResultsChange(idsToHydrate);
-  }, [filteredMarkets, onSearchResultsChange, pageSize, debouncedQuery]);
+  }, [visibleMarkets, onSearchResultsChange, pageSize, debouncedQuery]);
 
-  const visibleStart = marketCount === 0 ? 0 : Math.max(0, marketCount - ((currentPage - 1) * pageSize) - 1);
-  const visibleEnd = marketCount === 0 ? 0 : Math.max(0, visibleStart - pageSize + 1);
+  const visibleStart = effectiveMarketCount === 0 ? 0 : Math.max(0, effectiveMarketCount - ((currentPage - 1) * pageSize) - 1);
+  const visibleEnd = effectiveMarketCount === 0 ? 0 : Math.max(0, visibleStart - pageSize + 1);
 
   const getPagePickerItems = () => {
     if (totalPages <= 7) {
@@ -148,7 +164,7 @@ export function MarketGrid({
     <div className={`grid grid-cols-[1fr_auto_1fr] items-center gap-2 rounded-xl border border-border/40 bg-card/35 px-3 py-2 backdrop-blur-sm ${className}`}>
       <div />
       <div className="flex flex-wrap items-center justify-center gap-2">
-        <Button variant="outline" className="bg-background/35 border-border/45" size="icon" onClick={() => onPageChange(Math.max(1, currentPage - 1))} disabled={currentPage === 1 || isLoading || !!debouncedQuery}>
+        <Button variant="outline" className="bg-background/35 border-border/45" size="icon" onClick={() => onPageChange(Math.max(1, currentPage - 1))} disabled={currentPage === 1 || isLoading}>
           <ChevronLeft className="h-4 w-4" />
         </Button>
         {getPagePickerItems().map((item, idx) => {
@@ -161,14 +177,14 @@ export function MarketGrid({
               variant={currentPage === item ? "default" : "outline"}
               size="sm"
               onClick={() => onPageChange(item)}
-              disabled={isLoading || !!debouncedQuery}
+              disabled={isLoading}
               className={currentPage === item ? "bg-primary/85" : "bg-background/35 border-border/45"}
             >
               {item}
             </Button>
           );
         })}
-        <Button variant="outline" className="bg-background/35 border-border/45" size="icon" onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))} disabled={currentPage === totalPages || isLoading || !!debouncedQuery}>
+        <Button variant="outline" className="bg-background/35 border-border/45" size="icon" onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))} disabled={currentPage === totalPages || isLoading}>
           <ChevronRight className="h-4 w-4" />
         </Button>
       </div>
@@ -210,7 +226,7 @@ export function MarketGrid({
           <div>
             <h1 className="font-syne text-3xl font-bold theme-option-a-gradient-text animate-shimmer-sweep">Markets</h1>
             <p className="mt-1 font-outfit theme-text-accent">
-              {marketCount} prediction {marketCount === 1 ? "market" : "markets"} available
+              {effectiveMarketCount} prediction {effectiveMarketCount === 1 ? "market" : "markets"} available
             </p>
             <p className="mt-1 font-outfit text-sm theme-text-support">
               {debouncedQuery
@@ -275,86 +291,41 @@ export function MarketGrid({
             )}
           </div>
 
-          {allTags.length > 0 && (
-            <div className="flex flex-wrap gap-2">
-              <button
-                onClick={() => setSelectedTag(null)}
-                className={`rounded-full px-3 py-1.5 font-mono text-xs transition-all ${
-                  selectedTag === null
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground"
-                }`}
-              >
-                All
-              </button>
-              {allTags.slice(0, 20).map((tag) => (
-                <button
-                  key={tag}
-                  onClick={() => setSelectedTag(selectedTag === tag ? null : tag)}
-                  className={`rounded-full px-3 py-1.5 font-mono text-xs transition-all ${
-                    selectedTag === tag
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground"
-                  }`}
-                >
-                  {tag}
-                </button>
-              ))}
-              {allTags.length > 20 && (
-                <button
-                  onClick={() => setShowAllTags(true)}
-                  className="rounded-full px-3 py-1.5 font-mono text-xs bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground transition-all flex-shrink-0"
-                >
-                  +{allTags.length - 20} more
-                </button>
-              )}
-            </div>
-          )}
-
-          <Dialog open={showAllTags} onOpenChange={setShowAllTags}>
-            <DialogContent className="max-w-2xl bg-card/95 backdrop-blur-sm border-border/50 max-h-[80vh] overflow-hidden flex flex-col">
-              <DialogHeader>
-                <DialogTitle className="text-xl font-bold">Filter by Tag</DialogTitle>
-              </DialogHeader>
-              <div className="mt-2 space-y-4 flex-1 min-h-0 overflow-y-auto pr-1">
-                <p className="text-sm text-muted-foreground">Select a tag to filter markets</p>
-                <div className="flex flex-wrap gap-2">
-                  <button
-                    onClick={() => {
-                      setSelectedTag(null);
-                      setShowAllTags(false);
-                    }}
-                    className={`rounded-full px-3 py-1.5 font-mono text-xs transition-all ${
-                      selectedTag === null
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground"
-                    }`}
-                  >
-                    All
-                  </button>
-                  {allTags.map((tag) => (
-                    <button
-                      key={tag}
-                      onClick={() => {
-                        setSelectedTag(selectedTag === tag ? null : tag);
-                        setShowAllTags(false);
-                      }}
-                      className={`rounded-full px-3 py-1.5 font-mono text-xs transition-all ${
-                        selectedTag === tag
-                          ? "bg-primary text-primary-foreground"
-                          : "bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground"
-                      }`}
-                    >
-                      {tag}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </DialogContent>
-          </Dialog>
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={() => setSelectedFilter("all")}
+              className={`rounded-full px-3 py-1.5 font-mono text-xs transition-all ${
+                selectedFilter === "all"
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground"
+              }`}
+            >
+              All ({marketCount})
+            </button>
+            <button
+              onClick={() => setSelectedFilter("trending")}
+              className={`rounded-full px-3 py-1.5 font-mono text-xs transition-all ${
+                selectedFilter === "trending"
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground"
+              }`}
+            >
+              Trending ({liveMarkets.length})
+            </button>
+            <button
+              onClick={() => setSelectedFilter("marketcap")}
+              className={`rounded-full px-3 py-1.5 font-mono text-xs transition-all ${
+                selectedFilter === "marketcap"
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground"
+              }`}
+            >
+              Marketcap ({liveMarkets.length})
+            </button>
+          </div>
         </motion.div>
 
-        {!debouncedQuery && marketCount > 0 && renderPagePicker("mb-6") }
+        {effectiveMarketCount > 0 && renderPagePicker("mb-6") }
 
         <AnimatePresence mode="wait">
           {isLoading ? (
@@ -368,7 +339,7 @@ export function MarketGrid({
               <Loader2 className="h-10 w-10 animate-spin text-primary mb-4" />
               <p className="font-outfit theme-text-support">Loading markets from blockchain...</p>
             </motion.div>
-          ) : filteredMarkets.length > 0 ? (
+          ) : visibleMarkets.length > 0 ? (
             <motion.div
               key="grid"
               initial={{ opacity: 0 }}
@@ -376,7 +347,7 @@ export function MarketGrid({
               exit={{ opacity: 0 }}
               className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
             >
-              {filteredMarkets.map((market, index) => (
+              {visibleMarkets.map((market, index) => (
                 <motion.div
                   key={market.id}
                   initial={{ opacity: 0, y: 20 }}
@@ -399,14 +370,14 @@ export function MarketGrid({
                 <Sparkles className="h-8 w-8 theme-text-accent" />
               </div>
               <h3 className="mb-2 font-syne text-xl font-bold text-foreground">
-                {searchQuery || selectedTag ? "No markets found" : "No markets yet"}
+                {searchQuery || selectedFilter !== "all" ? "No markets found" : "No markets yet"}
               </h3>
               <p className="mb-6 max-w-sm text-center font-outfit theme-text-support">
-                {searchQuery || selectedTag
+                {searchQuery || selectedFilter !== "all"
                   ? "Try adjusting your search or filter criteria."
                   : "Be the first to create a prediction market and share your insights with the world."}
               </p>
-              {!searchQuery && !selectedTag && (
+              {!searchQuery && selectedFilter === "all" && (
                 <Button
                   onClick={onCreateMarket}
                   className="rounded-xl bg-primary font-outfit font-semibold"
@@ -419,9 +390,8 @@ export function MarketGrid({
           )}
         </AnimatePresence>
 
-        {!debouncedQuery && marketCount > 0 && renderPagePicker("mt-6")}
+        {effectiveMarketCount > 0 && renderPagePicker("mt-6")}
       </div>
     </div>
   );
 }
-
