@@ -312,13 +312,13 @@ export function MarketGrid({
           )}
 
           <Dialog open={showAllTags} onOpenChange={setShowAllTags}>
-            <DialogContent className="max-w-2xl bg-card/95 backdrop-blur-sm border-border/50 max-h-[80vh] overflow-hidden">
+            <DialogContent className="max-w-2xl bg-card/95 backdrop-blur-sm border-border/50 max-h-[80vh] overflow-hidden flex flex-col">
               <DialogHeader>
                 <DialogTitle className="text-xl font-bold">Filter by Tag</DialogTitle>
               </DialogHeader>
-              <div className="space-y-4 overflow-y-auto pr-1">
+              <div className="mt-2 space-y-4 flex-1 min-h-0 overflow-y-auto pr-1">
                 <p className="text-sm text-muted-foreground">Select a tag to filter markets</p>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                <div className="flex flex-wrap gap-2">
                   <button
                     onClick={() => {
                       setSelectedTag(null);
@@ -424,5 +424,4 @@ export function MarketGrid({
     </div>
   );
 }
-
 

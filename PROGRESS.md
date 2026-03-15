@@ -244,3 +244,10 @@ The AI will commit and push to BOTH GitHub and Vibecode servers automatically.
 
 
 
+
+## 2026-03-14
+
+### Bug Fix: Tag Filter Dialog Scrolling + Layout
+- Fixed the market tag filter dialog so the tag list can scroll inside the modal when there are many tags.
+- Updated the all-tags list layout from a multi-column grid to a simple wrapped flex row for easier scanning and tapping.
+- Improved modal content sizing by using a flex column layout with a dedicated scrollable content region.
