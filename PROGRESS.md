@@ -251,3 +251,15 @@ The AI will commit and push to BOTH GitHub and Vibecode servers automatically.
 - Fixed the market tag filter dialog so the tag list can scroll inside the modal when there are many tags.
 - Updated the all-tags list layout from a multi-column grid to a simple wrapped flex row for easier scanning and tapping.
 - Improved modal content sizing by using a flex column layout with a dedicated scrollable content region.
+
+
+## 2026-03-15
+
+### Feature: Data-Driven Market Filters
+- Replaced tag-based filtering on the main Markets grid with new data-driven filter chips: All, Trending, and Marketcap
+- Trending now sorts only live markets by highest activity first
+- Marketcap now sorts only live markets by highest market balance first
+- Added in-filter pagination support so filtered views still paginate at the existing page size
+- Added market activity to shared market model/state mapping so the Trending sort can use blockchain market data
+
+---
