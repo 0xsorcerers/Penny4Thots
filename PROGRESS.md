@@ -282,12 +282,3 @@ The AI will commit and push to BOTH GitHub and Vibecode servers automatically.
 - Kept filtered views paginated and hydrated with fresh market data for visible IDs
 
 ---
-
-## 2026-03-15
-
-### Update: Restrict Filter Chips to Live Markets Only
-- Updated market filter chips so all filtered outputs are derived strictly from the live markets array (closed markets excluded)
-- Applied live-market source to All, Trending, network-symbol markets, and Token Markets filter logic
-- Updated filter counts and pagination to reflect only live-market totals
-
----
