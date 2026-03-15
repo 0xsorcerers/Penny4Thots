@@ -53,6 +53,7 @@ const buildMarkets = (
       createdAt: data?.startTime ? new Date(data.startTime * 1000).toISOString() : new Date().toISOString(),
       marketBalance: data?.marketBalance?.toString() || "0",
       activity: data?.activity || "0",
+      feetype: info.feetype,
       status: data?.status || false,
       optionA: info.optionA || "Yes",
       optionB: info.optionB || "No",

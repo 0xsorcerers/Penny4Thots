@@ -263,3 +263,13 @@ The AI will commit and push to BOTH GitHub and Vibecode servers automatically.
 - Added market activity to shared market model/state mapping so the Trending sort can use blockchain market data
 
 ---
+
+## 2026-03-15
+
+### Update: Symbol vs Token Filters + Filter Hydration
+- Replaced the previous `Marketcap` filter with `Symbol Markets` and `Token Markets`
+- Classified markets using immutable `feetype` metadata (`false` = native symbol market, `true` = token market)
+- Sorted Symbol/Token filter results by highest market balance first
+- Added filtered-view hydration so visible cards in non-All filters fetch fresh page market data via batched marketId reads
+
+---

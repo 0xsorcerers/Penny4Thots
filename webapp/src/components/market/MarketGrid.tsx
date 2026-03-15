@@ -10,7 +10,7 @@ import { MarketSearchIndex } from "@/lib/marketSearchIndex";
 
 const SEARCH_DEBOUNCE_MS = 3000;
 
-
+type MarketFilter = "all" | "symbol" | "token";
 
 interface MarketGridProps {
   markets: Market[];
@@ -43,7 +43,7 @@ export function MarketGrid({
   onToggleClosedMarkets,
   isLoading = false,
 }: MarketGridProps) {
-  const [selectedFilter, setSelectedFilter] = useState<"all" | "trending" | "marketcap">("all");
+  const [selectedFilter, setSelectedFilter] = useState<MarketFilter>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -69,34 +69,41 @@ export function MarketGrid({
     return searchIndex.search(debouncedQuery);
   }, [debouncedQuery, isNumericSearch, searchIndex]);
 
-  const liveMarkets = useMemo(
-    () => allMarkets.filter((market) => !market.closed),
-    [allMarkets]
-  );
-
   const filteredMarkets = useMemo(() => {
     const sourceMarkets = debouncedQuery
       ? searchedMarketIds.map((id) => allMarketMap.get(id)).filter((m): m is Market => Boolean(m))
-      : selectedFilter === "all"
-      ? markets
-      : liveMarkets;
+      : markets;
 
-    if (selectedFilter === "trending") {
-      return [...sourceMarkets].sort(
-        (a, b) => Number(b.activity ?? 0) - Number(a.activity ?? 0)
+    let filterMappedMarkets = sourceMarkets;
+
+    if (selectedFilter === "symbol") {
+      filterMappedMarkets = sourceMarkets.filter((market) => market.feetype === false);
+    }
+
+    if (selectedFilter === "token") {
+      filterMappedMarkets = sourceMarkets.filter((market) => market.feetype === true);
+    }
+
+    if (selectedFilter === "all") {
+      return [...filterMappedMarkets].sort(
+        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
       );
     }
 
-    if (selectedFilter === "marketcap") {
-      return [...sourceMarkets].sort(
-        (a, b) => Number(b.marketBalance ?? 0) - Number(a.marketBalance ?? 0)
-      );
-    }
-
-    return [...sourceMarkets].sort(
-      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    return [...filterMappedMarkets].sort(
+      (a, b) => Number(b.marketBalance ?? 0) - Number(a.marketBalance ?? 0)
     );
-  }, [markets, selectedFilter, debouncedQuery, searchedMarketIds, allMarketMap, liveMarkets]);
+  }, [markets, selectedFilter, debouncedQuery, searchedMarketIds, allMarketMap]);
+
+  const symbolFilterCount = useMemo(
+    () => markets.filter((market) => market.feetype === false).length,
+    [markets]
+  );
+
+  const tokenFilterCount = useMemo(
+    () => markets.filter((market) => market.feetype === true).length,
+    [markets]
+  );
 
   const isUsingDerivedPagination = debouncedQuery.length > 0 || selectedFilter !== "all";
   const effectiveMarketCount = isUsingDerivedPagination ? filteredMarkets.length : marketCount;
@@ -124,7 +131,13 @@ export function MarketGrid({
   const lastHydratedSearchIdsRef = useRef<string>("");
 
   useEffect(() => {
-    if (!debouncedQuery || !onSearchResultsChange) {
+    if (!onSearchResultsChange) {
+      lastHydratedSearchIdsRef.current = "";
+      return;
+    }
+
+    const shouldHydrateVisibleFilters = debouncedQuery.length > 0 || selectedFilter !== "all";
+    if (!shouldHydrateVisibleFilters) {
       lastHydratedSearchIdsRef.current = "";
       return;
     }
@@ -139,7 +152,7 @@ export function MarketGrid({
 
     lastHydratedSearchIdsRef.current = hydrationKey;
     onSearchResultsChange(idsToHydrate);
-  }, [visibleMarkets, onSearchResultsChange, pageSize, debouncedQuery]);
+  }, [visibleMarkets, onSearchResultsChange, pageSize, debouncedQuery, selectedFilter]);
 
   const visibleStart = effectiveMarketCount === 0 ? 0 : Math.max(0, effectiveMarketCount - ((currentPage - 1) * pageSize) - 1);
   const visibleEnd = effectiveMarketCount === 0 ? 0 : Math.max(0, visibleStart - pageSize + 1);
@@ -205,6 +218,7 @@ export function MarketGrid({
       </div>
     </div>
   );
+
   const handleRefreshMarkets = async () => {
     if (isRefreshing || !onRefreshMarkets) return;
     setIsRefreshing(true);
@@ -303,24 +317,24 @@ export function MarketGrid({
               All ({marketCount})
             </button>
             <button
-              onClick={() => setSelectedFilter("trending")}
+              onClick={() => setSelectedFilter("symbol")}
               className={`rounded-full px-3 py-1.5 font-mono text-xs transition-all ${
-                selectedFilter === "trending"
+                selectedFilter === "symbol"
                   ? "bg-primary text-primary-foreground"
                   : "bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground"
               }`}
             >
-              Trending ({liveMarkets.length})
+              Symbol Markets ({symbolFilterCount})
             </button>
             <button
-              onClick={() => setSelectedFilter("marketcap")}
+              onClick={() => setSelectedFilter("token")}
               className={`rounded-full px-3 py-1.5 font-mono text-xs transition-all ${
-                selectedFilter === "marketcap"
+                selectedFilter === "token"
                   ? "bg-primary text-primary-foreground"
                   : "bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground"
               }`}
             >
-              Marketcap ({liveMarkets.length})
+              Token Markets ({tokenFilterCount})
             </button>
           </div>
         </motion.div>
