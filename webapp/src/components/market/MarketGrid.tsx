@@ -126,12 +126,15 @@ export function MarketGrid({
 
   const visibleMarkets = useMemo(() => {
     if (!isUsingDerivedPagination) {
-      return filteredMarkets;
+      // Base pagination is precomputed by the parent page and passed through `markets`.
+      // Using all filtered markets here causes cards outside the hydrated page to render
+      // with placeholder/zero mutable data immediately after refresh.
+      return markets;
     }
 
     const startIdx = (currentPage - 1) * pageSize;
     return filteredMarkets.slice(startIdx, startIdx + pageSize);
-  }, [currentPage, filteredMarkets, isUsingDerivedPagination, pageSize]);
+  }, [currentPage, filteredMarkets, isUsingDerivedPagination, markets, pageSize]);
 
   useEffect(() => {
     if (currentPage > totalPages) {
