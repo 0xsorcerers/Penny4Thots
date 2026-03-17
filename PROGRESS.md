@@ -6,6 +6,11 @@ This file tracks all significant progress. Updated automatically after major cha
 
 ## 2026-03-17
 
+### Bug Fix: Initial All-Filter Zeroed Cards on Refresh
+- Fixed default All-filter pagination path so the grid renders the parent-provided paginated market slice instead of the full filtered list.
+- Added stale-request guards in main page market loading to prevent older async responses from overwriting newer hydrated market data.
+- Result: cards no longer intermittently show 0 votes, 0 marketBalance, and 0 countdown values right after first load or refresh.
+
 ### Bug Fix: Closed-Market Toggle Data Hydration
 - Fixed market data hydration so `fetchMarketDataFromBlockchain()` now batches reads across all requested IDs instead of silently truncating to the mutable read limit.
 - Updated filtered/grid hydration flow to request mutable data for every market card currently being displayed when filters/search/toggle state changes.

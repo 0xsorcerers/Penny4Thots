@@ -46,11 +46,16 @@ export default function Index() {
   const { approve, isPending: isApproving } = useTokenApprove();
   const lastVisibleHydrationKeyRef = useRef<string>("");
   const hasHydratedShowClosedRef = useRef<number | null>(null);
+  const marketLoadRequestIdRef = useRef(0);
 
   // Smart fetch: hydrate immutable market info in background, keep mutable data fresh per visible page.
   const loadMarketsFromBlockchain = useCallback(async () => {
+    const requestId = ++marketLoadRequestIdRef.current;
+    const isStaleRequest = () => requestId !== marketLoadRequestIdRef.current;
+
     try {
       const currentMarketCount = await readMarketCount();
+      if (isStaleRequest()) return;
 
       // If no markets exist, clear and return early
       if (currentMarketCount === 0) {
@@ -67,6 +72,7 @@ export default function Index() {
       // Always rebuild visibility buckets from mutable market data so closed/blacklist state stays current.
       const allIdsDesc = Array.from({ length: currentMarketCount }, (_, idx) => currentMarketCount - idx - 1);
       const { allVisibleIds, liveVisibleIds } = await buildVisibleMarketIdBuckets(allIdsDesc);
+      if (isStaleRequest()) return;
       const currentAllVisibleMarketIds = allVisibleIds;
       const currentLiveVisibleMarketIds = liveVisibleIds;
 
@@ -93,6 +99,7 @@ export default function Index() {
         try {
           const blockchainInfos = await fetchMarketsFromBlockchain();
           const pageData = await fetchMarketDataFromBlockchain(pageIds);
+          if (isStaleRequest()) return;
           const pageDataMap = new Map(
             pageData.map((data, idx) => [pageIds[idx], { ...data, indexer: pageIds[idx] }])
           );
@@ -107,6 +114,7 @@ export default function Index() {
       // Immutable data already cached: fetch mutable data only for the current page.
       try {
         const pageData = await fetchMarketDataFromBlockchain(pageIds);
+        if (isStaleRequest()) return;
         const dataMap = new Map(
           pageData.map((data, idx) => [pageIds[idx], { ...data, indexer: pageIds[idx] }])
         );
@@ -115,6 +123,7 @@ export default function Index() {
         console.error("Failed to refresh page market data:", err);
       }
     } catch (err) {
+      if (isStaleRequest()) return;
       console.error("Failed to load markets from blockchain:", err);
       toast.error("Failed to load markets from blockchain");
       setIsLoadingFromBlockchain(false);
