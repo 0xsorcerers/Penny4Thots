@@ -70,7 +70,7 @@ export function Header({ onConnect, isConnected = false, onNetworkChange }: Head
               className="group flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-light italic transition-all duration-200 hover:bg-muted/50"
             >
               <Globe className="h-3.5 w-3.5 text-muted-foreground" />
-              <span className="text-muted-foreground group-hover:text-foreground transition-colors">
+              <span className="inline-block theme-option-a-gradient-text animate-shimmer-sweep">
                 {selectedNetwork.name}
               </span>
               <ChevronDown
@@ -101,7 +101,9 @@ export function Header({ onConnect, isConnected = false, onNetworkChange }: Head
                             : "text-muted-foreground hover:text-foreground"
                         }`}
                       >
-                        {chain.name}
+                        <span className="inline-block theme-option-a-gradient-text animate-shimmer-sweep">
+                          {chain.name}
+                        </span>
                       </motion.button>
                     ))}
                   </div>
