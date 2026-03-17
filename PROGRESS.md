@@ -4,6 +4,17 @@ This file tracks all significant progress. Updated automatically after major cha
 
 ---
 
+## 2026-03-17
+
+### Bug Fix: Closed-Market Toggle Data Hydration
+- Fixed market data hydration so `fetchMarketDataFromBlockchain()` now batches reads across all requested IDs instead of silently truncating to the mutable read limit.
+- Updated filtered/grid hydration flow to request mutable data for every market card currently being displayed when filters/search/toggle state changes.
+- Result: switching Show/Hide Closed Markets across All, Trending, symbol, and token filters now keeps displayed cards hydrated with current market balance and status data.
+- Updated market visibility buckets to always rebuild from mutable chain data during refresh so markets that close are immediately classified as closed/live correctly.
+- Result: closed markets now consistently receive grayscale closed-card styling once fetched and no longer appear as active cards after toggle/filter refreshes.
+
+---
+
 ## 2026-03-09
 
 ### Bug Fix: ERC20 Vote Flow Consistency
