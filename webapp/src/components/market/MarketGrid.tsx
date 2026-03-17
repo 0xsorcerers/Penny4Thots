@@ -159,8 +159,7 @@ export function MarketGrid({
 
     const idsToHydrate = visibleMarkets
       .map((m) => m.indexer)
-      .filter((id): id is number => typeof id === "number")
-      .slice(0, pageSize);
+      .filter((id): id is number => typeof id === "number");
 
     const hydrationKey = idsToHydrate.join(",");
     if (hydrationKey === lastHydratedSearchIdsRef.current) return;

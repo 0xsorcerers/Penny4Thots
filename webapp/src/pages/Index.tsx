@@ -40,7 +40,6 @@ export default function Index() {
   });
   const [allVisibleMarketIds, setAllVisibleMarketIds] = useState<number[]>([]);
   const [liveVisibleMarketIds, setLiveVisibleMarketIds] = useState<number[]>([]);
-  const [visibleIdsSourceCount, setVisibleIdsSourceCount] = useState(0);
   const account = useActiveAccount();
   const { writeMarket, isPending, error } = useWriteMarket();
   const { vote, isPending: isVoting } = useVote();
@@ -62,22 +61,17 @@ export default function Index() {
         setCurrentPageLiveMarkets(1);
         setAllVisibleMarketIds([]);
         setLiveVisibleMarketIds([]);
-        setVisibleIdsSourceCount(0);
         return;
       }
 
-      let currentAllVisibleMarketIds = allVisibleMarketIds;
-      let currentLiveVisibleMarketIds = liveVisibleMarketIds;
+      // Always rebuild visibility buckets from mutable market data so closed/blacklist state stays current.
+      const allIdsDesc = Array.from({ length: currentMarketCount }, (_, idx) => currentMarketCount - idx - 1);
+      const { allVisibleIds, liveVisibleIds } = await buildVisibleMarketIdBuckets(allIdsDesc);
+      const currentAllVisibleMarketIds = allVisibleIds;
+      const currentLiveVisibleMarketIds = liveVisibleIds;
 
-      if (currentMarketCount !== visibleIdsSourceCount || allVisibleMarketIds.length === 0) {
-        const allIdsDesc = Array.from({ length: currentMarketCount }, (_, idx) => currentMarketCount - idx - 1);
-        const { allVisibleIds, liveVisibleIds } = await buildVisibleMarketIdBuckets(allIdsDesc);
-        currentAllVisibleMarketIds = allVisibleIds;
-        currentLiveVisibleMarketIds = liveVisibleIds;
-        setAllVisibleMarketIds(currentAllVisibleMarketIds);
-        setLiveVisibleMarketIds(currentLiveVisibleMarketIds);
-        setVisibleIdsSourceCount(currentMarketCount);
-      }
+      setAllVisibleMarketIds(currentAllVisibleMarketIds);
+      setLiveVisibleMarketIds(currentLiveVisibleMarketIds);
 
       const idsForActiveView = showClosedMarkets ? currentAllVisibleMarketIds : currentLiveVisibleMarketIds;
       const activePage = showClosedMarkets ? currentPageAllMarkets : currentPageLiveMarkets;
@@ -134,9 +128,6 @@ export default function Index() {
     updateMarketData,
     setIsLoadingFromBlockchain,
     showClosedMarkets,
-    allVisibleMarketIds,
-    liveVisibleMarketIds,
-    visibleIdsSourceCount,
   ]);
 
   const handleRefreshAllMarkets = useCallback(async () => {
@@ -215,7 +206,12 @@ export default function Index() {
       return;
     }
 
-    const idsToRead = marketIds.filter((id) => visibleMarketIdSet.has(id)).slice(0, MARKETS_PER_PAGE);
+    const idsToRead = Array.from(new Set(marketIds.filter((id) => visibleMarketIdSet.has(id))));
+    if (!idsToRead.length) {
+      lastVisibleHydrationKeyRef.current = "";
+      return;
+    }
+
     const hydrationKey = idsToRead.join(",");
     if (hydrationKey === lastVisibleHydrationKeyRef.current) return;
 

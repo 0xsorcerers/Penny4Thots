@@ -603,8 +603,16 @@ export const fetchMarketsFromBlockchain = async (additionalMarketIds?: number[])
  */
 export const fetchMarketDataFromBlockchain = async (ids: number[]): Promise<MarketDataFormatted[]> => {
   if (ids.length === 0) return [];
-  const marketData = await readMarketData(ids);
-  return marketData;
+
+  const allMarketData: MarketDataFormatted[] = [];
+
+  for (let i = 0; i < ids.length; i += MUTABLE_MARKET_FETCH_LIMIT) {
+    const chunkIds = ids.slice(i, i + MUTABLE_MARKET_FETCH_LIMIT);
+    const chunkData = await readMarketData(chunkIds);
+    allMarketData.push(...chunkData);
+  }
+
+  return allMarketData;
 };
 
 /**
@@ -1503,4 +1511,3 @@ export const readMarketLock = async (marketId: number): Promise<MarketLock> => {
 
 // Re-export useful viem utilities
 export { formatEther, parseEther, ZERO_ADDRESS };
-
