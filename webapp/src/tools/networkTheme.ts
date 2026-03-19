@@ -5,6 +5,8 @@ import seagreenFlora from "../assets/images/seagreen-flora.webp";
 import blueFlora from "../assets/images/blue-flora.webp";
 import darkFlora from "../assets/images/dark-flora.webp";
 import oceanblueFlora from "../assets/images/oceanblue-flora.webp";
+import lavenderFlora from "../assets/images/lavender-flora.webp";
+import darklavenderFlora from "../assets/images/darklavender-flora.webp";
 
 type ThemeMode = "light" | "dark";
 
@@ -628,7 +630,7 @@ export const NETWORK_LIGHT_BACKGROUND_IMAGES: string[] = [
   lightblueFlora,
   lightFlora,
   lightFlora,
-  seagreenFlora,
+  lavenderFlora,
   // seagreenFlora,
   // lightFlora,
 ];
@@ -638,7 +640,7 @@ export const NETWORK_DARK_BACKGROUND_IMAGES: string[] = [
   blueFlora,
   darkFlora,
   darkFlora,
-  oceanblueFlora,
+  darklavenderFlora,
   // oceanblueFlora,
   // darkFlora,
 ];
