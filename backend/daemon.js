@@ -22,7 +22,7 @@ const openai = new OpenAI({
 
 const perplexity = new OpenAI({
   baseURL: 'https://api.perplexity.ai',
-  apiKey: process.env.PERPLEXITY_API_KEY
+  apiKey: process.env.PERPLEXITY_API_KEYnet
 });
 
 const gemini = new OpenAI({
@@ -59,7 +59,7 @@ const blacklistInstructionManual = `You are a content moderation engine.
   - No commentary.`;
 
 const resolutionInstruction = `
-You are a deterministic prediction market judge.
+You are impartial judge.
 
 You receive an array of markets to decide as fairly and as truthfully as you can on.
 
@@ -68,16 +68,15 @@ Identify disinformation and misinformation whenever possible. Each market also i
 - startTime (UNIX timestamp when the market was created) so interpret relative time expressions such as "tomorrow", "next week", or "this month"
 relative to the market's startTime.
 
-Use startTime as the reference point for temporal context of which the user is requesting to whatever is being brought up, NOT the current date, so it is quite possible an event or core of deliberation is now in the past or still in the future or is abstract and timeless.
+Use startTime as the reference point for temporal context of which the user is requesting to whatever is being brought up, NOT the current date, so it is quite possible an event or core of deliberation is now in the past, or still in the future, or is abstract and timeless.
 
 
-- Choose "A" only if optionA is correct or closer to what is true over B or Choose "B" only if optionB is correct or closer to what is true over A.
+- Choose "A" only if optionA is correct or closer to what is true over B, else Choose "B" if optionB is correct or closer to what is true over A.
 
 
-CRITICAL INSTRUCTIONS:
-- You must use your built-in web search tool to find the most recent real-world data to verify these events. 
-- After all research, output **ONLY** a valid JSON array. 
-- NOTHING else. No explanations, no citations, no "Here is the result", no markdown, no code blocks, no extra text.
+CRITICAL INSTRUCTIONS FOR EACH MARKET:
+- Use your built-in online search tool in a brief internet search to find the real-world data to verify real-world events. 
+- Based on your findings, output **ONLY** a valid JSON array as your decision, NOTHING ELSE. No explanations, no citations, no "Here is the result", no markdown, no code blocks, no extra text.
 - Even for one market, return an array with one object.
 - Use the market's startTime for all temporal references ("tomorrow", "this week", etc.).
 
@@ -94,9 +93,10 @@ Exact output format (and nothing else):
 const CHIEF_JUDGES = ["gemini","perplexity"];
 
 const JUNIOR_JUDGES = [
-//   "deepseek","xai"
-  "anthropic",
-  "openai"
+//   "deepseek",
+    "xai",
+//   "anthropic",
+//   "openai"
 ];
 
 // ================= JUDGE REGISTRY =================
@@ -146,10 +146,10 @@ const AI_JUDGES = {
   },
 
   perplexity: {
-    label: "Perplexity(sonar-pro)",
+    label: "Perplexity(sonar)",
     fn: async (payload) => {
       const res = await perplexity.chat.completions.create({
-        model: "sonar-pro",
+        model: "sonar", //sonar-pro
         temperature: 0,
         messages: [
           { role: "system", content: resolutionInstruction },
@@ -428,7 +428,7 @@ async function finalArbiterResolve(market, luckyJudge) {
     
     if (luckyJudge === "perplexity") {
       const res = await perplexity.chat.completions.create({
-        model: "sonar-pro",
+        model: "sonar",//sonar-pro
         temperature: 0,
         messages: [
           { role: "system", content: resolutionInstruction },
@@ -487,33 +487,39 @@ const networks = [
   {
     name: 'sepolia',
     rpc: 'https://ethereum-sepolia-rpc.publicnode.com',
-    contract: '0x7DeA875A4D644aB78e0914FFF8b760bE5e8F54cb'
+    contract: '0x0f7Cf85d6760b8c7821b747B4f5035fa01a4e1e3' // 0x7DeA875A4D644aB78e0914FFF8b760bE5e8F54cb // 0x0f7Cf85d6760b8c7821b747B4f5035fa01a4e1e3
+  },
+  {
+    name: 'base',
+    rpc: 'https://mainnet.base.org',
+    contract: '0x499c9bF1556aBFAb44546514F8c655Fd9b99E801' // 0xe8f5b91e8e4c49f499002745bA49dc9fEE7670C6 // 0x499c9bF1556aBFAb44546514F8c655Fd9b99E801
   },
   {
     name: 'bnb',
     rpc: 'https://bsc-dataseed.binance.org',
-    contract: '0x13B9CD2340E8224D4c1CC86d3481c217d9078AAe'
-  },
-  {
-    name: 'base',
-    rpc: 'https://gateway.tenderly.co/public/base',
-    contract: '0xe8f5b91e8e4c49f499002745bA49dc9fEE7670C6'
+    contract: '0x825Bb9873b9E982e3692eA69715E162206B2ecc1' // 0x13B9CD2340E8224D4c1CC86d3481c217d9078AAe // 0x825Bb9873b9E982e3692eA69715E162206B2ecc1
   },
   {
     name: 'scroll',
     rpc: 'https://rpc.scroll.io',
-    contract: '0x06F94c107808bC4d9c27fA8476C3E2f5F83A9c3C'
+    contract: '0x554C2ca099DC9676470f92Df3083040B7f4DdeF5' // 0x06F94c107808bC4d9c27fA8476C3E2f5F83A9c3C // 0x554C2ca099DC9676470f92Df3083040B7f4DdeF5
   },
   {
-    name: 'manta',
-    rpc: 'https://pacific-rpc.manta.network/http',
-    contract: '0x83D8EeeB23539CEB139DDbD00dc26eE57Bb3F2Bd'
-  },
-  {
-    name: 'opbnb',
-    rpc: 'https://opbnb-mainnet-rpc.bnbchain.org',
-    contract: '0x8d4a1A116Fd092D21b47Aa29a1882995af234353'
+    name: 'hashkey',
+    rpc: 'https://mainnet.hsk.xyz',
+    contract: '0x24C89D67d1C8B569fFe564b8493C0fbD1f55d7F7' // 
   }
+//   ,
+//   {
+//     name: 'manta',
+//     rpc: 'https://pacific-rpc.manta.network/http',
+//     contract: '0x83D8EeeB23539CEB139DDbD00dc26eE57Bb3F2Bd'
+//   },
+//   {
+//     name: 'opbnb',
+//     rpc: 'https://opbnb-mainnet-rpc.bnbchain.org',
+//     contract: '0x8d4a1A116Fd092D21b47Aa29a1882995af234353'
+//   }
 ];
 
 // ================= LOG STREAM =================
@@ -618,25 +624,40 @@ async function monitorNetwork(networkConfig) {
 
   // ================= MARKET CLOSURE =================
 
-  const now = Math.floor(Date.now() / 1000);
-  const expiredIds = [];
-
-  const entries = Object.entries(state.markets);
-    const BATCH_SIZE = 100;
+    const now = Math.floor(Date.now() / 1000);
     
-    for (let i = 0; i < entries.length; i++) {
+    const candidates = Object.entries(state.markets).filter(
+      ([_, market]) =>
+        !market.closed &&
+        !market.blacklist &&
+        market.endTime <= now
+    );
     
-      const [marketId, market] = entries[i];
-      const lock = await readContract.allMarketLocks(marketId);
+    const expiredIds = [];
+    const BATCH_SIZE = 50;
     
-      if (!market.closed && !market.blacklist && market.endTime <= now && !lock.sharesFinalized) {
-        expiredIds.push(Number(marketId));
+    for (let i = 0; i < candidates.length; i += BATCH_SIZE) {
+    
+      const batch = candidates.slice(i, i + BATCH_SIZE);
+    
+      const locks = await Promise.all(
+        batch.map(([marketId]) =>
+          readContract.allMarketLocks(marketId)
+        )
+      );
+    
+      for (let j = 0; j < batch.length; j++) {
+    
+        const [marketId] = batch[j];
+        const lock = locks[j];
+    
+        if (!lock.sharesFinalized) {
+          expiredIds.push(Number(marketId));
+        }
+    
       }
     
-      // Pause every 100 reads
-      if ((i + 1) % BATCH_SIZE === 0) {
-        await sleep(2000); // 2 sec cooldown
-      }
+      await sleep(500);
   }
 
   if (expiredIds.length === 0) {
@@ -907,16 +928,17 @@ async function AntiAbuseBlacklister(marketInfoArray, writeContract) {
   const instruction = blacklistInstructionManual;
 
   try {
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4o",
-      temperature: 0,
-      messages: [
-        { role: "system", content: instruction },
-        { role: "user", content: JSON.stringify(payload) }
-      ]
-    });
+    const completion = await xai.chat.completions.create({
+        model: "grok-4-1-fast-reasoning",
+        temperature: 0,
+        messages: [
+          { role: "system", content: instruction },
+          { role: "user", content: JSON.stringify(payload) }
+        ]
+      });
 
     const raw = completion.choices[0].message.content.trim();
+    
     let parsed;
 
     try {
@@ -979,3 +1001,5 @@ run()
     process.exit(1);
   });
   
+  
+// ===============logger =========
