@@ -341,7 +341,11 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
               transition={{ type: "spring", damping: 25, stiffness: 300 }}
               className="w-full max-w-lg"
             >
-              <div className="relative overflow-hidden rounded-2xl border border-border/50 bg-card shadow-2xl">
+              <div
+                className={`relative overflow-hidden rounded-2xl border border-border/50 shadow-2xl ${
+                  theme === "light" ? "bg-[#f5f5f5]" : "bg-card"
+                }`}
+              >
                 {/* Header */}
                 <div className="flex items-center justify-between border-b border-border/50 p-6">
                   <div className="flex items-center gap-3">

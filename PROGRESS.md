@@ -10,6 +10,7 @@ This file tracks all significant progress. Updated automatically after major cha
 - Added HashKey Chain to supported networks with chain ID `177`, RPC `https://mainnet.hsk.xyz`, explorer `https://hashkey.blockscout.com`, token symbol `HSK`, 18 decimals, and contract `0x24C89D67d1C8B569fFe564b8493C0fbD1f55d7F7`.
 - Added a dedicated light/dark HashKey visual theme tuned to the provided brand palette (lavender, violet, and deep ink tones) for a cleaner contemporary network identity.
 - Updated per-network background image arrays so HashKey receives distinct light/dark art assets in the themed experience.
+- Updated `CreateMarketModal` to use a whitesmoke modal shell background in light mode across networks (while keeping dark mode on themed `bg-card`) for stronger contrast against themed input fields.
 
 ## 2026-03-17
 
