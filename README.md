@@ -9,7 +9,7 @@ From those itchy sport bets with buds in front of the TV to Naruto for avid mang
   </a>
 </p>
 
-# Value Proposition
+# Unique Value Proposition
 ✅ Zero-sum take to an All Thoughts Prediction Marketplace.
 
 ✅ Lowers the barrier of entry into prediction marketplaces by allowing users to use native coins or any token on their network of choice.
