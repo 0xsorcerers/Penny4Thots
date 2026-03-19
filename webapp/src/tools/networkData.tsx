@@ -70,6 +70,16 @@ const opbnb: NetworkConfig = {
   contract_address: '0x8d4a1A116Fd092D21b47Aa29a1882995af234353' as Address,
 };
 
-const chains: NetworkConfig[] = [sepolia, base, bnb, scroll]; // , manta, opbnb
+const hashkey: NetworkConfig = {
+  name: 'HashKey Chain (Live)',
+  chainId: 177,
+  rpc: 'https://mainnet.hsk.xyz',
+  blockExplorer: 'https://hashkey.blockscout.com',
+  decimals: 18,
+  symbol: 'HSK',
+  contract_address: '0x24C89D67d1C8B569fFe564b8493C0fbD1f55d7F7' as Address,
+};
+
+const chains: NetworkConfig[] = [sepolia, base, bnb, scroll, hashkey]; // , manta, opbnb
 
 export { chains };
