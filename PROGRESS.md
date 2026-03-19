@@ -4,6 +4,15 @@ This file tracks all significant progress. Updated automatically after major cha
 
 ---
 
+## 2026-03-19
+
+### Feature: HashKey Chain Integration + Network Theming
+- Added HashKey Chain to supported networks with chain ID `177`, RPC `https://mainnet.hsk.xyz`, explorer `https://hashkey.blockscout.com`, token symbol `HSK`, 18 decimals, and contract `0x24C89D67d1C8B569fFe564b8493C0fbD1f55d7F7`.
+- Added a dedicated light/dark HashKey visual theme tuned to the provided brand palette (lavender, violet, and deep ink tones) for a cleaner contemporary network identity.
+- Updated per-network background image arrays so HashKey receives distinct light/dark art assets in the themed experience.
+- Updated `CreateMarketModal` to use a whitesmoke modal shell background in light mode across networks (while keeping dark mode on themed `bg-card`) for stronger contrast against themed input fields.
+- Set dark mode as the app default theme and kept persistent user theme preference caching via `localStorage` so manual theme switches are remembered.
+
 ## 2026-03-17
 
 ### Bug Fix: Initial All-Filter Zeroed Cards on Refresh
