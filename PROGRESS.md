@@ -11,6 +11,7 @@ This file tracks all significant progress. Updated automatically after major cha
 - Added a dedicated light/dark HashKey visual theme tuned to the provided brand palette (lavender, violet, and deep ink tones) for a cleaner contemporary network identity.
 - Updated per-network background image arrays so HashKey receives distinct light/dark art assets in the themed experience.
 - Updated `CreateMarketModal` to use a whitesmoke modal shell background in light mode across networks (while keeping dark mode on themed `bg-card`) for stronger contrast against themed input fields.
+- Set dark mode as the app default theme and kept persistent user theme preference caching via `localStorage` so manual theme switches are remembered.
 
 ## 2026-03-17
 
