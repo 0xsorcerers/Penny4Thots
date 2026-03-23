@@ -125,15 +125,15 @@ export const wallets = [
       options: [
         "google",
         "x",
+        "tiktok",
         "telegram",
         "facebook",
-        "discord",
         "apple",
-        "farcaster",
         "phone",
         "email",
+        "discord",
       ],
-      mode: "popup",
+      // mode: "popup",
     },
   }),
 ];
