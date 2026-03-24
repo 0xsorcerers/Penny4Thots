@@ -43,20 +43,25 @@ const AI_LOCK = process.env.DECENTRALIZED_AI_LOCK;
 
 const blacklistInstructionManual = `You are a content moderation engine.
 
-  You receive an array of market objects in JSON.
+You receive an array of market objects in JSON.
 
-  Return a JSON array containing ONLY the indexer values that are spam,
-  random characters, gibberish, or not written in a known human language.
+Return STRICT JSON in this format:
 
-  Valid languages include natural human languages (English, Spanish, Chinese, Russian, etc.).
+{
+  "blacklist": [indexer, indexer, ...],
+  "languages": [
+    { "indexer": "language" }
+  ]
+}
 
-  If all markets are valid, return:
-  []
-
-  Rules:
-  - Output STRICT JSON.
-  - No explanation.
-  - No commentary.`;
+Rules:
+- "blacklist": contains indexer values that are gibberish or not a known human language.
+- "languages": contains valid markets and their detected human language (lowercase).
+- Do not include blacklisted markets in "languages".
+- Do not use language codes for languages.
+- Output STRICT JSON only.
+- No explanation.
+- No commentary.`;
 
 const resolutionInstruction = `
 You are impartial judge.
@@ -219,6 +224,14 @@ function safeParseArray(raw) {
   } catch {
     return null;
   }
+}
+
+function chunkArray(array, size) {
+  const chunks = [];
+  for (let i = 0; i < array.length; i += size) {
+    chunks.push(array.slice(i, i + size));
+  }
+  return chunks;
 }
 
 // ================= DETERMINISTIC SHUFFLE =================
@@ -483,42 +496,70 @@ const maxRetryAttempts = 3;
 const ABI_PATH = path.join(__dirname, 'penny4thot_abi.json');
 const contractAbi = require(ABI_PATH);
 
+function getLangFile(chainId) {
+  return path.join(__dirname, `allLanguageTags_${chainId}.json`);
+}
+
+function loadLanguageFile(chainId) {
+  const file = getLangFile(chainId);
+
+  if (!fs.existsSync(file)) return {};
+
+  try {
+    return JSON.parse(fs.readFileSync(file, "utf8"));
+  } catch {
+    return {};
+  }
+}
+
+function saveLanguageFile(chainId, data) {
+  const file = getLangFile(chainId);
+  fs.writeFileSync(file, JSON.stringify(data, null, 2));
+}
+
 const networks = [
   {
     name: 'sepolia',
     rpc: 'https://ethereum-sepolia-rpc.publicnode.com',
-    contract: '0x0f7Cf85d6760b8c7821b747B4f5035fa01a4e1e3' // 0x7DeA875A4D644aB78e0914FFF8b760bE5e8F54cb // 0x0f7Cf85d6760b8c7821b747B4f5035fa01a4e1e3
+    contract: '0x0f7Cf85d6760b8c7821b747B4f5035fa01a4e1e3', // 0x7DeA875A4D644aB78e0914FFF8b760bE5e8F54cb // 0x0f7Cf85d6760b8c7821b747B4f5035fa01a4e1e3
+    chainId: 11155111
   },
   {
     name: 'base',
     rpc: 'https://mainnet.base.org',
-    contract: '0x499c9bF1556aBFAb44546514F8c655Fd9b99E801' // 0xe8f5b91e8e4c49f499002745bA49dc9fEE7670C6 // 0x499c9bF1556aBFAb44546514F8c655Fd9b99E801
+    contract: '0x499c9bF1556aBFAb44546514F8c655Fd9b99E801', // 0xe8f5b91e8e4c49f499002745bA49dc9fEE7670C6 // 0x499c9bF1556aBFAb44546514F8c655Fd9b99E801
+    chainId: 8453
   },
   {
     name: 'bnb',
     rpc: 'https://bsc-dataseed.binance.org',
-    contract: '0x825Bb9873b9E982e3692eA69715E162206B2ecc1' // 0x13B9CD2340E8224D4c1CC86d3481c217d9078AAe // 0x825Bb9873b9E982e3692eA69715E162206B2ecc1
+    contract: '0x825Bb9873b9E982e3692eA69715E162206B2ecc1', // 0x13B9CD2340E8224D4c1CC86d3481c217d9078AAe // 0x825Bb9873b9E982e3692eA69715E162206B2ecc1
+    chainId: 56
   },
   {
     name: 'scroll',
     rpc: 'https://rpc.scroll.io',
-    contract: '0x554C2ca099DC9676470f92Df3083040B7f4DdeF5' // 0x06F94c107808bC4d9c27fA8476C3E2f5F83A9c3C // 0x554C2ca099DC9676470f92Df3083040B7f4DdeF5
+    contract: '0x554C2ca099DC9676470f92Df3083040B7f4DdeF5', // 0x06F94c107808bC4d9c27fA8476C3E2f5F83A9c3C // 0x554C2ca099DC9676470f92Df3083040B7f4DdeF5
+    chainId: 534352
   },
   {
     name: 'hashkey',
     rpc: 'https://mainnet.hsk.xyz',
-    contract: '0x24C89D67d1C8B569fFe564b8493C0fbD1f55d7F7' // 
+    contract: '0x24C89D67d1C8B569fFe564b8493C0fbD1f55d7F7', // 
+    chainId: 177
   }
 //   ,
 //   {
 //     name: 'manta',
 //     rpc: 'https://pacific-rpc.manta.network/http',
-//     contract: '0x83D8EeeB23539CEB139DDbD00dc26eE57Bb3F2Bd'
+//     contract: '0x83D8EeeB23539CEB139DDbD00dc26eE57Bb3F2Bd',
+//     chainId: 169
 //   },
 //   {
 //     name: 'opbnb',
 //     rpc: 'https://opbnb-mainnet-rpc.bnbchain.org',
-//     contract: '0x8d4a1A116Fd092D21b47Aa29a1882995af234353'
+//     contract: '0x8d4a1A116Fd092D21b47Aa29a1882995af234353',
+//     chainId: 204
 //   }
 ];
 
@@ -555,7 +596,7 @@ function saveState(networkName, state) {
 // ================= CORE MONITOR =================
 
 async function monitorNetwork(networkConfig) {
-  const { name, rpc, contract } = networkConfig;
+  const { name, rpc, contract, chainId } = networkConfig;
 
   log(`\n========= Starting ${name.toUpperCase()} =========`);
 
@@ -585,7 +626,21 @@ async function monitorNetwork(networkConfig) {
       log(`All new markets data read.`);
       const marketInfoArray = await readContract.readMarket(batch);
       log(`All new markets read.`);
-      await AntiAbuseBlacklister(marketInfoArray, writeContract);
+      
+      // call anti-abuse 
+      const ABUSE_BATCH_SIZE = 200;
+      const abuseChunks = chunkArray(marketInfoArray, ABUSE_BATCH_SIZE);
+        
+       for (let k = 0; k < abuseChunks.length; k++) {
+          const chunk = abuseChunks[k];
+        
+          log(`[${name}] Anti-abuse batch ${k + 1}/${abuseChunks.length} (${chunk.length} markets)`);
+        
+          await AntiAbuseBlacklister(chunk, writeContract, chainId);
+        
+          // small delay to avoid rate limits (important for xAI + RPC)
+          await sleep(300);
+       }
 
       for (let j = 0; j < batch.length; j++) {
           const id = batch[j];
@@ -919,28 +974,27 @@ async function finalizeMarket(networkName, marketId, readContract, writeContract
 }
 
 // ================= AI BLACKLISTER =================
-async function AntiAbuseBlacklister(marketInfoArray, writeContract) {
+
+async function AntiAbuseBlacklister(marketInfoArray, writeContract, chainId) {
   log(`Running anti-abuse for new markets.`);
 
   if (!marketInfoArray || marketInfoArray.length === 0) return;
 
   const payload = prepareMarketPayload(marketInfoArray);
-  const instruction = blacklistInstructionManual;
 
   try {
     const completion = await xai.chat.completions.create({
-        model: "grok-4-1-fast-reasoning",
-        temperature: 0,
-        messages: [
-          { role: "system", content: instruction },
-          { role: "user", content: JSON.stringify(payload) }
-        ]
-      });
+      model: "grok-4-1-fast-reasoning",
+      temperature: 0,
+      messages: [
+        { role: "system", content: blacklistInstructionManual },
+        { role: "user", content: JSON.stringify(payload) }
+      ]
+    });
 
     const raw = completion.choices[0].message.content.trim();
-    
-    let parsed;
 
+    let parsed;
     try {
       parsed = JSON.parse(raw);
     } catch {
@@ -948,35 +1002,56 @@ async function AntiAbuseBlacklister(marketInfoArray, writeContract) {
       return;
     }
 
-    if (!Array.isArray(parsed)) {
-      log(`AI output was not an array: ${parsed}`);
-      return;
-    }
+    const { blacklist = [], languages = [] } = parsed;
 
-    if (parsed.length === 0) {
-      log(`Batch clean. No abusive markets detected.`);
-      return;
-    }
-
-    // Filter valid IDs only
-    const validIds = parsed.filter(id =>
+    // -----------------------------
+    // ✅ HANDLE BLACKLIST (same logic)
+    // -----------------------------
+    const validIds = blacklist.filter(id =>
       Number.isInteger(id) &&
       payload.some(m => m.indexer === id)
     );
 
-    if (validIds.length === 0) {
-      log(`AI returned invalid marketIds.`);
-      return;
+    if (validIds.length > 0) {
+      log(`Blacklisting markets: ${validIds}`);
+
+      const tx = await writeContract.addToBlacklist(validIds, { gasLimit: 500000 });
+      await tx.wait();
+
+      log(`Blacklist confirmed.`);
+    } else {
+      log(`No abusive markets detected.`);
     }
 
-    log(`Blacklisting markets: ${validIds}`);
+    // -----------------------------
+    // ✅ HANDLE LANGUAGE COLLECTION
+    // -----------------------------
+    if (languages.length > 0) {
+        const langStore = loadLanguageFile(chainId);
+        
+        for (const entry of languages) {
+          if (
+            entry &&
+            typeof entry.indexer === "number" &&
+            typeof entry.language === "string"
+          ) {
+            const marketId = entry.indexer;
+            const lang = entry.language.toLowerCase();
+        
+            // Optional integrity check (recommended)
+            if (!payload.some(m => m.indexer === marketId)) continue;
+        
+            langStore[marketId] = lang;
+          }
+        }
+        
+        saveLanguageFile(chainId, langStore);
+        
+        log(`Updated language mappings for chain ${chainId}`);
+    }
 
-    const tx = await writeContract.addToBlacklist(validIds, { gasLimit: 500000 });
-    await tx.wait();
-
-    log(`Blacklist confirmed.`);
   } catch (error) {
-    log(`OpenAI API Error: ${error.message}`);
+    log(`AI API Error: ${error.message}`);
   }
 }
 
