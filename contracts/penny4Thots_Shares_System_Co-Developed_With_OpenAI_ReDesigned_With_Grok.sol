@@ -506,27 +506,44 @@ contract Penny4Thots is ReentrancyGuard {
 
         return claimable;
     }
-
-    // claim & batchClaim now return PRINCIPAL + profit-from-losing-side only
-    function claim(uint256 _market, uint256 _posId) public nonReentrant {
+    
+    function addLangToMarket(uint256 _market, string memory _language) external onlydAI {
         MarketData storage m = allMarketData[_market];
-        MarketLock storage k = allMarketLocks[_market];
-        require(m.closed && k.sharesFinalized && !m.blacklist, "Not ready");
+        require(!m.closed, "Already closed");
 
-        Position storage p = positions[_market][_posId];
-        require(p.user == msg.sender && !p.claimed && p.side == m.winningSide, "Invalid claim");
-
-        (uint256 shares,) = _calculateShares(_market, p);
-        uint256 totalWinningShares = m.winningSide == Side.A ? m.totalSharesA : m.totalSharesB;
-        uint256 loserPool = m.marketBalance > m.totalWinningPrincipal ? m.marketBalance - m.totalWinningPrincipal : 0;
-        uint256 profitShare = totalWinningShares > 0 ? loserPool * shares / totalWinningShares : 0;
-        uint256 payout = p.amount + profitShare;  // Principal flies back + profit share ✨
-
-        p.claimed = true;
-        _payout(_market, msg.sender, payout, _posId);
-
-        m.activity++;
+        if (bytes(allMarkets[_market].tags).length == 0) {
+            allMarkets[_market].tags = _language;
+        } else {
+            allMarkets[_market].tags = string(
+                abi.encodePacked(
+                    allMarkets[_market].tags,
+                    ",",
+                    _language
+                )
+            );
+        }
     }
+
+    // // claim & batchClaim now return PRINCIPAL + profit-from-losing-side only
+    // function claim(uint256 _market, uint256 _posId) public nonReentrant {
+    //     MarketData storage m = allMarketData[_market];
+    //     MarketLock storage k = allMarketLocks[_market];
+    //     require(m.closed && k.sharesFinalized && !m.blacklist, "Not ready");
+
+    //     Position storage p = positions[_market][_posId];
+    //     require(p.user == msg.sender && !p.claimed && p.side == m.winningSide, "Invalid claim");
+
+    //     (uint256 shares,) = _calculateShares(_market, p);
+    //     uint256 totalWinningShares = m.winningSide == Side.A ? m.totalSharesA : m.totalSharesB;
+    //     uint256 loserPool = m.marketBalance > m.totalWinningPrincipal ? m.marketBalance - m.totalWinningPrincipal : 0;
+    //     uint256 profitShare = totalWinningShares > 0 ? loserPool * shares / totalWinningShares : 0;
+    //     uint256 payout = p.amount + profitShare;  // Principal flies back + profit share ✨
+
+    //     p.claimed = true;
+    //     _payout(_market, msg.sender, payout, _posId);
+
+    //     m.activity++;
+    // }
     
     function batchClaim(uint256 _market, uint256[] calldata _posIds) external nonReentrant {
         MarketData storage m = allMarketData[_market];
