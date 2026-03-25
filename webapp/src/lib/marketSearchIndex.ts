@@ -44,17 +44,32 @@ export class MarketSearchIndex {
     if (!tokens.length) return [];
 
     const ranked = new Map<number, number>();
+    const matchedIdsPerToken: Array<Set<number>> = [];
 
     tokens.forEach((token) => {
+      const matchedIds = new Set<number>();
       this.invertedIndex.forEach((ids, indexedToken) => {
         if (!indexedToken.includes(token)) return;
-        ids.forEach((id) => ranked.set(id, (ranked.get(id) || 0) + 1));
+        ids.forEach((id) => {
+          matchedIds.add(id);
+          ranked.set(id, (ranked.get(id) || 0) + 1);
+        });
       });
+      matchedIdsPerToken.push(matchedIds);
     });
 
+    if (!matchedIdsPerToken.length) return [];
+
+    const intersection = matchedIdsPerToken.reduce((acc, current) => {
+      if (!acc) return new Set(current);
+      return new Set(Array.from(acc).filter((id) => current.has(id)));
+    }, null as Set<number> | null);
+
+    if (!intersection || intersection.size === 0) return [];
+
     return Array.from(ranked.entries())
+      .filter(([id]) => intersection.has(id))
       .sort((a, b) => b[1] - a[1] || b[0] - a[0])
       .map(([id]) => id);
   }
 }
-
