@@ -2,20 +2,31 @@ import { create } from "zustand";
 import type { Market, CreateMarketData } from "@/types/market";
 import type { MarketInfoFormatted, MarketDataFormatted } from "@/tools/utils";
 import { getCurrentNetwork } from "./networkStore";
+import { fetchLanguageTagsForChain } from "@/lib/languageTags";
 
 interface PersistedMarketSnapshot {
   marketInfos: MarketInfoFormatted[];
+  languageTagsByMarketId?: Record<number, string>;
+  languageTagCount?: number;
+}
+
+interface SnapshotLanguageData {
+  languageTagsByMarketId: Record<number, string>;
+  languageTagCount: number;
 }
 
 interface MarketStore {
   markets: Market[];
   marketInfos: MarketInfoFormatted[];
   marketDataMap: Map<number, MarketDataFormatted>;
+  languageTagsByMarketId: Record<number, string>;
+  languageTagCount: number;
   hasStarted: boolean;
   isLoadingFromBlockchain: boolean;
   setHasStarted: (value: boolean) => void;
   setMarketsFromBlockchain: (blockchainInfos: MarketInfoFormatted[], blockchainDataMap: Map<number, MarketDataFormatted>) => void;
   updateMarketData: (dataMap: Map<number, MarketDataFormatted>) => void;
+  refreshLanguageTags: (chainId: number) => Promise<void>;
   setIsLoadingFromBlockchain: (value: boolean) => void;
   addMarket: (data: CreateMarketData) => Market;
   getMarket: (id: string) => Market | undefined;
@@ -33,10 +44,13 @@ const getNetworkStorageKey = (chainId: number): string => `${STORAGE_PREFIX}-cha
 
 const buildMarkets = (
   marketInfos: MarketInfoFormatted[],
-  marketDataMap: Map<number, MarketDataFormatted>
+  marketDataMap: Map<number, MarketDataFormatted>,
+  languageTagsByMarketId: Record<number, string>
 ): Market[] => {
   return marketInfos.map((info) => {
     const data = marketDataMap.get(info.indexer);
+    const languageTag = languageTagsByMarketId[info.indexer];
+    const tags = languageTag && !info.tags.includes(languageTag) ? [...info.tags, languageTag] : info.tags;
 
     return {
       id: `penny4thot-${info.indexer}`,
@@ -46,7 +60,7 @@ const buildMarkets = (
       subtitle: info.subtitle,
       description: info.description,
       posterImage: info.image,
-      tags: info.tags,
+      tags,
       tradeOptions: data?.status || false,
       yesVotes: data?.aVotes || 0,
       noVotes: data?.bVotes || 0,
@@ -79,7 +93,11 @@ const loadSnapshotForChain = (chainId: number): PersistedMarketSnapshot | null =
       return null;
     }
 
-    return parsed;
+    return {
+      marketInfos: parsed.marketInfos,
+      languageTagsByMarketId: parsed.languageTagsByMarketId ?? {},
+      languageTagCount: parsed.languageTagCount ?? Object.keys(parsed.languageTagsByMarketId ?? {}).length,
+    };
   } catch (error) {
     console.error(`Failed to load market snapshot for chain ${chainId}:`, error);
     return null;
@@ -88,11 +106,13 @@ const loadSnapshotForChain = (chainId: number): PersistedMarketSnapshot | null =
 
 const saveSnapshotForChain = (
   chainId: number,
-  state: Pick<MarketStore, "marketInfos">
+  state: Pick<MarketStore, "marketInfos" | "languageTagsByMarketId" | "languageTagCount">
 ): void => {
   try {
     const snapshot: PersistedMarketSnapshot = {
       marketInfos: state.marketInfos,
+      languageTagsByMarketId: state.languageTagsByMarketId,
+      languageTagCount: state.languageTagCount,
     };
 
     localStorage.setItem(getNetworkStorageKey(chainId), JSON.stringify(snapshot));
@@ -103,17 +123,21 @@ const saveSnapshotForChain = (
 
 const getCurrentChainId = (): number => getCurrentNetwork().chainId;
 
-const getInitialState = (): Pick<MarketStore, "markets" | "marketInfos" | "marketDataMap"> => {
+const getInitialState = (): Pick<MarketStore, "markets" | "marketInfos" | "marketDataMap" | "languageTagsByMarketId" | "languageTagCount"> => {
   const chainId = getCurrentChainId();
   const snapshot = loadSnapshotForChain(chainId);
 
   const marketInfos = snapshot?.marketInfos ?? [];
+  const languageTagsByMarketId = snapshot?.languageTagsByMarketId ?? {};
+  const languageTagCount = snapshot?.languageTagCount ?? Object.keys(languageTagsByMarketId).length;
   const marketDataMap = new Map<number, MarketDataFormatted>();
 
   return {
     marketInfos,
+    languageTagsByMarketId,
+    languageTagCount,
     marketDataMap,
-    markets: buildMarkets(marketInfos, marketDataMap),
+    markets: buildMarkets(marketInfos, marketDataMap, languageTagsByMarketId),
   };
 };
 
@@ -125,6 +149,8 @@ export const useMarketStore = create<MarketStore>()((set, get) => {
     const state = get();
     saveSnapshotForChain(chainId, {
       marketInfos: state.marketInfos,
+      languageTagsByMarketId: state.languageTagsByMarketId,
+      languageTagCount: state.languageTagCount,
     });
   };
 
@@ -138,7 +164,8 @@ export const useMarketStore = create<MarketStore>()((set, get) => {
     setIsLoadingFromBlockchain: (value) => set({ isLoadingFromBlockchain: value }),
 
     setMarketsFromBlockchain: (blockchainInfos, blockchainDataMap) => {
-      const markets = buildMarkets(blockchainInfos, blockchainDataMap);
+      const { languageTagsByMarketId } = get();
+      const markets = buildMarkets(blockchainInfos, blockchainDataMap, languageTagsByMarketId);
       set({
         markets,
         marketInfos: blockchainInfos,
@@ -148,13 +175,44 @@ export const useMarketStore = create<MarketStore>()((set, get) => {
     },
 
     updateMarketData: (dataMap) => {
-      const { marketInfos, marketDataMap } = get();
+      const { marketInfos, marketDataMap, languageTagsByMarketId } = get();
       const mergedDataMap = new Map(marketDataMap);
       dataMap.forEach((value, key) => {
         mergedDataMap.set(key, value);
       });
-      const markets = buildMarkets(marketInfos, mergedDataMap);
+      const markets = buildMarkets(marketInfos, mergedDataMap, languageTagsByMarketId);
       set({ markets, marketDataMap: mergedDataMap });
+    },
+
+    refreshLanguageTags: async (chainId) => {
+      const state = get();
+      const snapshot: SnapshotLanguageData = {
+        languageTagsByMarketId: state.languageTagsByMarketId,
+        languageTagCount: state.languageTagCount,
+      };
+
+      try {
+        const remote = await fetchLanguageTagsForChain(chainId);
+        const hasNoCachedTags = snapshot.languageTagCount === 0;
+        const shouldUpdate = hasNoCachedTags || remote.count > snapshot.languageTagCount;
+
+        if (!shouldUpdate) return;
+
+        const mergedLanguageTags = {
+          ...snapshot.languageTagsByMarketId,
+          ...remote.tagsByMarketId,
+        };
+
+        const { marketInfos, marketDataMap } = get();
+        set({
+          languageTagsByMarketId: mergedLanguageTags,
+          languageTagCount: remote.count,
+          markets: buildMarkets(marketInfos, marketDataMap, mergedLanguageTags),
+        });
+        persistCurrentChain();
+      } catch (error) {
+        console.error(`Failed to refresh language tags for chain ${chainId}:`, error);
+      }
     },
 
     addMarket: (data) => {
@@ -203,17 +261,20 @@ export const useMarketStore = create<MarketStore>()((set, get) => {
         return {
           marketInfos,
           marketDataMap,
-          markets: buildMarkets(marketInfos, marketDataMap),
+          markets: buildMarkets(marketInfos, marketDataMap, state.languageTagsByMarketId),
         };
       });
       persistCurrentChain();
     },
 
     clearAllMarkets: () => {
+      const { languageTagsByMarketId, languageTagCount } = get();
       set({
         markets: [],
         marketInfos: [],
         marketDataMap: new Map(),
+        languageTagsByMarketId,
+        languageTagCount,
       });
       persistCurrentChain();
     },
@@ -221,12 +282,16 @@ export const useMarketStore = create<MarketStore>()((set, get) => {
     switchToNetworkCache: (chainId) => {
       const snapshot = loadSnapshotForChain(chainId);
       const marketInfos = snapshot?.marketInfos ?? [];
+      const languageTagsByMarketId = snapshot?.languageTagsByMarketId ?? {};
+      const languageTagCount = snapshot?.languageTagCount ?? Object.keys(languageTagsByMarketId).length;
       const marketDataMap = new Map<number, MarketDataFormatted>();
 
       set({
         marketInfos,
+        languageTagsByMarketId,
+        languageTagCount,
         marketDataMap,
-        markets: buildMarkets(marketInfos, marketDataMap),
+        markets: buildMarkets(marketInfos, marketDataMap, languageTagsByMarketId),
       });
     },
   };

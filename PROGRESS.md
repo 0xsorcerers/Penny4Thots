@@ -4,6 +4,16 @@ This file tracks all significant progress. Updated automatically after major cha
 
 ---
 
+## 2026-03-25
+
+### Feature: Language Tag Sync + Multi-Word Market Search
+- Added per-network language-tag ingestion from `https://sonicsweethearts.art/allLanguageTags_${chainId}.json` with GET + `no-store` caching so the app can detect fresh updates.
+- Added immutable language-tag persistence in local storage per chain and wired automatic refresh logic that only updates local cache when remote language-tag entry count increases.
+- Merged each market’s language into its searchable tags so market search can now match by language in addition to existing marketInfo tags/title/subtitle/description.
+- Updated search behavior to narrow results for multiple words (space-separated terms now require all words to match), improving precision for users.
+
+---
+
 ## 2026-03-19
 
 ### Feature: HashKey Chain Integration + Network Theming
