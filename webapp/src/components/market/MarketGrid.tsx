@@ -307,7 +307,7 @@ export function MarketGrid({
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               type="text"
-              placeholder="Search markets by id, title, subtitle, description, or tags..."
+              placeholder="Search by id, text, tags, language (supports multiple words)..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="h-11 rounded-xl pl-10 font-outfit placeholder:text-muted-foreground focus:border-primary/50 focus:ring-primary/20"
