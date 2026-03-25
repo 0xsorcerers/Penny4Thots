@@ -17,7 +17,7 @@ const getShowClosedMarketsStorageKey = (chainId: number): string =>
   `${SHOW_CLOSED_MARKETS_STORAGE_KEY}-chain-${chainId}`;
 
 export default function Index() {
-  const { markets, setMarketsFromBlockchain, updateMarketData, marketInfos, isLoadingFromBlockchain, setIsLoadingFromBlockchain } = useMarketStore();
+  const { markets, setMarketsFromBlockchain, updateMarketData, marketInfos, isLoadingFromBlockchain, setIsLoadingFromBlockchain, refreshLanguageTags } = useMarketStore();
   const { selectedNetwork } = useNetworkStore();
   const [isConnected, setIsConnected] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -55,6 +55,9 @@ export default function Index() {
 
     try {
       const currentMarketCount = await readMarketCount();
+      if (isStaleRequest()) return;
+
+      await refreshLanguageTags(selectedNetwork.chainId);
       if (isStaleRequest()) return;
 
       // If no markets exist, clear and return early
@@ -137,6 +140,8 @@ export default function Index() {
     updateMarketData,
     setIsLoadingFromBlockchain,
     showClosedMarkets,
+    refreshLanguageTags,
+    selectedNetwork.chainId,
   ]);
 
   const handleRefreshAllMarkets = useCallback(async () => {
