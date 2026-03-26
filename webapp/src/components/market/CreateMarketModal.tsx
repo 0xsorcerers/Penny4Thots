@@ -566,7 +566,7 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
                         {/* Market End Time */}
                         <div className="space-y-3">
                           <Label className="font-outfit text-foreground flex items-center gap-2">
-                            <Calendar className="h-4 w-4 text-primary" />
+                            <Calendar className="h-4 w-4" />
                             Market End Time *
                           </Label>
                           <p className="text-xs text-muted-foreground -mt-1">
@@ -643,7 +643,7 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
                                 initial={{ opacity: 0, y: -5 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 exit={{ opacity: 0, y: -5 }}
-                                className="flex items-center gap-2 text-xs text-primary"
+                                className="flex items-center gap-2 text-xs text-foreground"
                               >
                                 <Clock className="h-3.5 w-3.5" />
                                 {isForgoingTime ? "Will auto-set to 1.5h from submission" : `Market will end: ${new Date(`${endDate}T${endTimeInput}`).toLocaleString()}`}
