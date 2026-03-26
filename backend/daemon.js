@@ -50,7 +50,7 @@ Return STRICT JSON in this format:
 {
   "blacklist": [indexer, indexer, ...],
   "languages": [
-    { "indexer": "language" }
+     { "indexer": 1, "language": "english" }
   ]
 }
 

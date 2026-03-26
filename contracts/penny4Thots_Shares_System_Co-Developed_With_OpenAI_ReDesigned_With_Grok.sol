@@ -507,22 +507,22 @@ contract Penny4Thots is ReentrancyGuard {
         return claimable;
     }
     
-    function addLangToMarket(uint256 _market, string memory _language) external onlydAI {
-        MarketData storage m = allMarketData[_market];
-        require(!m.closed, "Already closed");
+    // function addLangToMarket(uint256 _market, string memory _language) external onlydAI {
+    //     MarketData storage m = allMarketData[_market];
+    //     require(!m.closed, "Already closed");
 
-        if (bytes(allMarkets[_market].tags).length == 0) {
-            allMarkets[_market].tags = _language;
-        } else {
-            allMarkets[_market].tags = string(
-                abi.encodePacked(
-                    allMarkets[_market].tags,
-                    ",",
-                    _language
-                )
-            );
-        }
-    }
+    //     if (bytes(allMarkets[_market].tags).length == 0) {
+    //         allMarkets[_market].tags = _language;
+    //     } else {
+    //         allMarkets[_market].tags = string(
+    //             abi.encodePacked(
+    //                 allMarkets[_market].tags,
+    //                 ",",
+    //                 _language
+    //             )
+    //         );
+    //     }
+    // }
 
     // // claim & batchClaim now return PRINCIPAL + profit-from-losing-side only
     // function claim(uint256 _market, uint256 _posId) public nonReentrant {
