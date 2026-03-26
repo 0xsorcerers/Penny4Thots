@@ -390,7 +390,7 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
                             id="title"
                             value={formData.title}
                             onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                            placeholder="Will Bitcoin reach $100k?"
+                            placeholder="Will Bitcoin reach $100k? (Be specific and avoid ambiguity)"
                             className="rounded-xl border-border/50 bg-background font-outfit"
                             required
                           />
@@ -405,7 +405,7 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
                             id="subtitle"
                             value={formData.subtitle}
                             onChange={(e) => setFormData({ ...formData, subtitle: e.target.value })}
-                            placeholder="Crypto price prediction for 2025"
+                            placeholder="Example: Crypto price prediction for 2025"
                             className="rounded-xl border-border/50 bg-background font-outfit"
                             required
                           />
@@ -420,7 +420,7 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
                             id="description"
                             value={formData.description}
                             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                            placeholder="Provide more context about this prediction market..."
+                            placeholder="Provide more info or helpful context about this prediction market to users and our AI adjudicators..."
                             rows={3}
                             className="resize-none rounded-xl border-border/50 bg-background font-outfit"
                             required
