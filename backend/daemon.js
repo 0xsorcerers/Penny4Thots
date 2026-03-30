@@ -22,7 +22,7 @@ const openai = new OpenAI({
 
 const perplexity = new OpenAI({
   baseURL: 'https://api.perplexity.ai',
-  apiKey: process.env.PERPLEXITY_API_KEYnet
+  apiKey: process.env.PERPLEXITY_API_KEY
 });
 
 const gemini = new OpenAI({
