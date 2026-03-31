@@ -7,10 +7,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ProfileDropdown } from "@/components/profile/ProfileDropdown";
 import { MarketSearchIndex } from "@/lib/marketSearchIndex";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { useMarketStore } from "@/store/marketStore";
 
 const SEARCH_DEBOUNCE_MS = 3000;
 
-type MarketFilter = "all" | "trending" | "symbol" | "token";
+type MarketFilter = "all" | "trending" | "symbol" | "token" | "tags";
 
 interface MarketGridProps {
   markets: Market[];
@@ -49,6 +52,9 @@ export function MarketGrid({
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isTagsModalOpen, setIsTagsModalOpen] = useState(false);
+  const [selectedTagFilter, setSelectedTagFilter] = useState<string | null>(null);
+  const languageTagsByMarketId = useMarketStore((state) => state.languageTagsByMarketId);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -119,6 +125,24 @@ export function MarketGrid({
     () => allMarkets.filter((market) => market.feetype === true).length,
     [allMarkets]
   );
+
+  const uniqueTags = useMemo(() => {
+    return Array.from(
+      new Set(
+        allMarkets.flatMap((market) => market.tags.map((tag) => tag.trim()).filter(Boolean))
+      )
+    ).sort((a, b) => a.localeCompare(b));
+  }, [allMarkets]);
+
+  const availableLanguages = useMemo(() => {
+    return Array.from(
+      new Set(
+        Object.values(languageTagsByMarketId)
+          .map((tag) => tag.trim())
+          .filter(Boolean)
+      )
+    ).sort((a, b) => a.localeCompare(b));
+  }, [languageTagsByMarketId]);
 
   const isUsingDerivedPagination = debouncedQuery.length > 0 || selectedFilter !== "all";
   const effectiveMarketCount = isUsingDerivedPagination ? filteredMarkets.length : marketCount;
@@ -246,6 +270,31 @@ export function MarketGrid({
     }
   };
 
+  const handleBaseFilterSelect = (filter: Exclude<MarketFilter, "tags">) => {
+    setSelectedFilter(filter);
+    setSelectedTagFilter(null);
+    setSearchQuery("");
+    setDebouncedQuery("");
+  };
+
+  const handleSearchChange = (value: string) => {
+    if (selectedTagFilter && value.trim().toLowerCase() !== selectedTagFilter.toLowerCase()) {
+      setSelectedTagFilter(null);
+      if (selectedFilter === "tags") {
+        setSelectedFilter("all");
+      }
+    }
+    setSearchQuery(value);
+  };
+
+  const handleTagSelection = (tag: string) => {
+    setSelectedTagFilter(tag);
+    setSelectedFilter("tags");
+    setSearchQuery(tag);
+    setDebouncedQuery(tag);
+    setIsTagsModalOpen(false);
+  };
+
   return (
     <div className="min-h-screen pt-20 pb-12">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -309,12 +358,12 @@ export function MarketGrid({
               type="text"
               placeholder="Search by id, text, tags, language (supports multiple words)..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => handleSearchChange(e.target.value)}
               className="h-11 rounded-xl pl-10 font-outfit placeholder:text-muted-foreground focus:border-primary/50 focus:ring-primary/20"
             />
             {searchQuery && (
               <button
-                onClick={() => setSearchQuery("")}
+                onClick={() => handleSearchChange("")}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
               >
                 <X className="h-4 w-4" />
@@ -324,7 +373,7 @@ export function MarketGrid({
 
           <div className="flex flex-wrap gap-2">
             <button
-              onClick={() => setSelectedFilter("all")}
+              onClick={() => handleBaseFilterSelect("all")}
               className={`rounded-full px-3 py-1.5 font-mono text-xs transition-all ${
                 selectedFilter === "all"
                   ? "bg-primary text-primary-foreground"
@@ -334,7 +383,7 @@ export function MarketGrid({
               All ({marketCount})
             </button>
             <button
-              onClick={() => setSelectedFilter("trending")}
+              onClick={() => handleBaseFilterSelect("trending")}
               className={`rounded-full px-3 py-1.5 font-mono text-xs transition-all ${
                 selectedFilter === "trending"
                   ? "bg-primary text-primary-foreground"
@@ -344,7 +393,7 @@ export function MarketGrid({
               Trending ({trendingFilterCount})
             </button>
             <button
-              onClick={() => setSelectedFilter("symbol")}
+              onClick={() => handleBaseFilterSelect("symbol")}
               className={`rounded-full px-3 py-1.5 font-mono text-xs transition-all ${
                 selectedFilter === "symbol"
                   ? "bg-primary text-primary-foreground"
@@ -354,7 +403,7 @@ export function MarketGrid({
               {networkSymbol} Markets ({symbolFilterCount})
             </button>
             <button
-              onClick={() => setSelectedFilter("token")}
+              onClick={() => handleBaseFilterSelect("token")}
               className={`rounded-full px-3 py-1.5 font-mono text-xs transition-all ${
                 selectedFilter === "token"
                   ? "bg-primary text-primary-foreground"
@@ -362,6 +411,16 @@ export function MarketGrid({
               }`}
             >
               Token Markets ({tokenFilterCount})
+            </button>
+            <button
+              onClick={() => setIsTagsModalOpen(true)}
+              className={`rounded-full px-3 py-1.5 font-mono text-xs transition-all ${
+                selectedFilter === "tags"
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground"
+              }`}
+            >
+              {selectedTagFilter ?? "Tags"}
             </button>
           </div>
         </motion.div>
@@ -433,6 +492,52 @@ export function MarketGrid({
 
         {effectiveMarketCount > 0 && renderPagePicker("mt-6")}
       </div>
+
+      <Dialog open={isTagsModalOpen} onOpenChange={setIsTagsModalOpen}>
+        <DialogContent className="max-w-xl border-border/50 bg-background/95 p-0 sm:max-h-[80vh]">
+          <DialogHeader className="border-b border-border/40 px-6 py-4">
+            <DialogTitle className="font-syne text-xl">Select a Tag or Language</DialogTitle>
+          </DialogHeader>
+
+          <ScrollArea className="max-h-[60vh] px-6 py-4">
+            <div className="space-y-5">
+              <div>
+                <p className="mb-2 text-sm font-semibold text-foreground">Languages</p>
+                <div className="flex flex-wrap gap-2">
+                  {availableLanguages.length > 0 ? availableLanguages.map((language) => (
+                    <button
+                      key={`language-${language}`}
+                      onClick={() => handleTagSelection(language)}
+                      className="rounded-full border border-border/50 bg-background px-3 py-1.5 text-xs font-mono text-foreground transition-colors hover:bg-primary/15"
+                    >
+                      {language}
+                    </button>
+                  )) : (
+                    <p className="text-xs text-muted-foreground">No persisted languages yet.</p>
+                  )}
+                </div>
+              </div>
+
+              <div>
+                <p className="mb-2 text-sm font-semibold text-foreground">Tags</p>
+                <div className="flex flex-wrap gap-2">
+                  {uniqueTags.length > 0 ? uniqueTags.map((tag) => (
+                    <button
+                      key={`tag-${tag}`}
+                      onClick={() => handleTagSelection(tag)}
+                      className="rounded-full border border-border/50 bg-muted px-3 py-1.5 text-xs font-mono text-foreground transition-colors hover:bg-primary/15"
+                    >
+                      {tag}
+                    </button>
+                  )) : (
+                    <p className="text-xs text-muted-foreground">No tags available yet.</p>
+                  )}
+                </div>
+              </div>
+            </div>
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
