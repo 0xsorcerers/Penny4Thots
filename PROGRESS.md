@@ -12,6 +12,14 @@ This file tracks all significant progress. Updated automatically after major cha
 - Merged each market’s language into its searchable tags so market search can now match by language in addition to existing marketInfo tags/title/subtitle/description.
 - Updated search behavior to narrow results for multiple words (space-separated terms now require all words to match), improving precision for users.
 
+## 2026-03-31
+
+### Feature: Tags Filter Modal + Tag-Aware Active Filter Label
+- Added a new `Tags` filter chip in the Markets filter row that opens a modal instead of directly switching list views.
+- Built a scrollable tags modal that lists all unique persisted market tags and a dedicated languages section sourced from persisted language tags.
+- Added one-click tag/language selection from the modal to drive the existing search bar and preserve paginated result browsing.
+- Updated filter-chip behavior so the Tags chip label becomes the selected tag/language while active, then resets back to `Tags` when users type a different search term or choose another filter.
+
 ---
 
 ## 2026-03-19
