@@ -500,23 +500,6 @@ export function MarketGrid({
           <ScrollArea className="max-h-[60vh] px-6 py-4">
             <div className="space-y-5">
               <div>
-                <p className="mb-2 text-sm font-semibold text-foreground">Tags</p>
-                <div className="flex flex-wrap gap-2">
-                  {uniqueTags.length > 0 ? uniqueTags.map((tag) => (
-                    <button
-                      key={`tag-${tag}`}
-                      onClick={() => handleTagSelection(tag)}
-                      className="rounded-full border border-border/50 bg-muted px-3 py-1.5 text-xs font-mono text-foreground transition-colors hover:bg-primary/15"
-                    >
-                      {tag}
-                    </button>
-                  )) : (
-                    <p className="text-xs text-muted-foreground">No tags available yet.</p>
-                  )}
-                </div>
-              </div>
-
-              <div>
                 <p className="mb-2 text-sm font-semibold text-foreground">Languages</p>
                 <div className="flex flex-wrap gap-2">
                   {availableLanguages.length > 0 ? availableLanguages.map((language) => (
@@ -529,6 +512,23 @@ export function MarketGrid({
                     </button>
                   )) : (
                     <p className="text-xs text-muted-foreground">No persisted languages yet.</p>
+                  )}
+                </div>
+              </div>
+
+              <div>
+                <p className="mb-2 text-sm font-semibold text-foreground">Tags</p>
+                <div className="flex flex-wrap gap-2">
+                  {uniqueTags.length > 0 ? uniqueTags.map((tag) => (
+                    <button
+                      key={`tag-${tag}`}
+                      onClick={() => handleTagSelection(tag)}
+                      className="rounded-full border border-border/50 bg-muted px-3 py-1.5 text-xs font-mono text-foreground transition-colors hover:bg-primary/15"
+                    >
+                      {tag}
+                    </button>
+                  )) : (
+                    <p className="text-xs text-muted-foreground">No tags available yet.</p>
                   )}
                 </div>
               </div>
