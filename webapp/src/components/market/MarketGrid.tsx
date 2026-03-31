@@ -273,6 +273,8 @@ export function MarketGrid({
   const handleBaseFilterSelect = (filter: Exclude<MarketFilter, "tags">) => {
     setSelectedFilter(filter);
     setSelectedTagFilter(null);
+    setSearchQuery("");
+    setDebouncedQuery("");
   };
 
   const handleSearchChange = (value: string) => {
