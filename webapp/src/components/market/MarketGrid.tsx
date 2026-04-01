@@ -135,14 +135,21 @@ export function MarketGrid({
   }, [allMarkets]);
 
   const availableLanguages = useMemo(() => {
+    const currentMarketIds = new Set(
+      allMarkets
+        .map((market) => market.indexer)
+        .filter((id): id is number => typeof id === "number")
+    );
+
     return Array.from(
       new Set(
-        Object.values(languageTagsByMarketId)
-          .map((tag) => tag.trim())
+        Object.entries(languageTagsByMarketId)
+          .filter(([marketId]) => currentMarketIds.has(Number(marketId)))
+          .map(([, tag]) => tag.trim())
           .filter(Boolean)
       )
     ).sort((a, b) => a.localeCompare(b));
-  }, [languageTagsByMarketId]);
+  }, [allMarkets, languageTagsByMarketId]);
 
   const isUsingDerivedPagination = debouncedQuery.length > 0 || selectedFilter !== "all";
   const effectiveMarketCount = isUsingDerivedPagination ? filteredMarkets.length : marketCount;
