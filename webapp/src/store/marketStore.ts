@@ -10,11 +10,6 @@ interface PersistedMarketSnapshot {
   languageTagCount?: number;
 }
 
-interface SnapshotLanguageData {
-  languageTagsByMarketId: Record<number, string>;
-  languageTagCount: number;
-}
-
 interface MarketStore {
   markets: Market[];
   marketInfos: MarketInfoFormatted[];
@@ -185,23 +180,33 @@ export const useMarketStore = create<MarketStore>()((set, get) => {
     },
 
     refreshLanguageTags: async (chainId) => {
-      const state = get();
-      const snapshot: SnapshotLanguageData = {
-        languageTagsByMarketId: state.languageTagsByMarketId,
-        languageTagCount: state.languageTagCount,
-      };
+      const chainSnapshot = loadSnapshotForChain(chainId);
+      const cachedLanguageTagsByMarketId = chainSnapshot?.languageTagsByMarketId ?? {};
+      const cachedLanguageTagCount =
+        chainSnapshot?.languageTagCount ?? Object.keys(cachedLanguageTagsByMarketId).length;
+
+      if (getCurrentChainId() === chainId) {
+        const { marketInfos, marketDataMap } = get();
+        set({
+          languageTagsByMarketId: cachedLanguageTagsByMarketId,
+          languageTagCount: cachedLanguageTagCount,
+          markets: buildMarkets(marketInfos, marketDataMap, cachedLanguageTagsByMarketId),
+        });
+      }
 
       try {
         const remote = await fetchLanguageTagsForChain(chainId);
-        const hasNoCachedTags = snapshot.languageTagCount === 0;
-        const shouldUpdate = hasNoCachedTags || remote.count > snapshot.languageTagCount;
+        const hasNoCachedTags = cachedLanguageTagCount === 0;
+        const shouldUpdate = hasNoCachedTags || remote.count > cachedLanguageTagCount;
 
         if (!shouldUpdate) return;
 
         const mergedLanguageTags = {
-          ...snapshot.languageTagsByMarketId,
+          ...cachedLanguageTagsByMarketId,
           ...remote.tagsByMarketId,
         };
+
+        if (getCurrentChainId() !== chainId) return;
 
         const { marketInfos, marketDataMap } = get();
         set({
