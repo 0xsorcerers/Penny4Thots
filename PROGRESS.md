@@ -4,6 +4,14 @@ This file tracks all significant progress. Updated automatically after major cha
 
 ---
 
+## 2026-04-01
+
+### Bug Fix: Cross-Network Language Tag Leakage
+- Fixed `refreshLanguageTags(chainId)` to load and apply cached language tags from the target chain snapshot first, instead of using in-memory tags that may belong to a previously selected chain.
+- Updated refresh behavior to treat remote `allLanguageTags_${chainId}.json` as authoritative for that chain, replacing in-memory tags on successful fetch to clear any previously polluted values.
+- Added an active-chain guard so stale async responses from a previous network switch cannot overwrite the current network’s language tags in memory.
+- Result: Base (`8453`) now only shows its own language list (e.g., English-only when applicable), and Sepolia (`11155111`) language entries no longer leak across network switches.
+
 ## 2026-03-25
 
 ### Feature: Language Tag Sync + Multi-Word Market Search
