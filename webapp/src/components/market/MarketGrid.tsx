@@ -509,7 +509,7 @@ export function MarketGrid({
           <ScrollArea className="max-h-[60vh] px-6 py-4">
             <div className="space-y-5">
               <div>
-                <p className="mb-2 text-sm font-semibold text-foreground">Languages</p>
+                <p className="mb-2 text-sm font-semibold text-foreground">Languages available</p>
                 <div className="flex flex-wrap gap-2">
                   {availableLanguages.length > 0 ? availableLanguages.map((language) => (
                     <button
@@ -520,13 +520,13 @@ export function MarketGrid({
                       {language}
                     </button>
                   )) : (
-                    <p className="text-xs text-muted-foreground">No persisted languages yet.</p>
+                    <p className="text-xs text-muted-foreground">No languages present.</p>
                   )}
                 </div>
               </div>
 
               <div>
-                <p className="mb-2 text-sm font-semibold text-foreground">Tags</p>
+                <p className="mb-2 text-sm font-semibold text-foreground">Tags available</p>
                 <div className="flex flex-wrap gap-2">
                   {uniqueTags.length > 0 ? uniqueTags.map((tag) => (
                     <button
@@ -537,7 +537,7 @@ export function MarketGrid({
                       {tag}
                     </button>
                   )) : (
-                    <p className="text-xs text-muted-foreground">No tags available yet.</p>
+                    <p className="text-xs text-muted-foreground">No tags available.</p>
                   )}
                 </div>
               </div>
