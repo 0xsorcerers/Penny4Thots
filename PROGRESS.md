@@ -4,6 +4,14 @@ This file tracks all significant progress. Updated automatically after major cha
 
 ---
 
+## 2026-04-01
+
+### Bug Fix: Cross-Network Language Tag Leakage
+- Fixed `refreshLanguageTags(chainId)` to load and apply cached language tags from the target chain snapshot first, instead of using in-memory tags that may belong to a previously selected chain.
+- Updated refresh behavior to treat remote `allLanguageTags_${chainId}.json` as authoritative for that chain, replacing in-memory tags on successful fetch to clear any previously polluted values.
+- Added an active-chain guard so stale async responses from a previous network switch cannot overwrite the current network’s language tags in memory.
+- Result: Base (`8453`) now only shows its own language list (e.g., English-only when applicable), and Sepolia (`11155111`) language entries no longer leak across network switches.
+
 ## 2026-03-25
 
 ### Feature: Language Tag Sync + Multi-Word Market Search
@@ -11,6 +19,14 @@ This file tracks all significant progress. Updated automatically after major cha
 - Added immutable language-tag persistence in local storage per chain and wired automatic refresh logic that only updates local cache when remote language-tag entry count increases.
 - Merged each market’s language into its searchable tags so market search can now match by language in addition to existing marketInfo tags/title/subtitle/description.
 - Updated search behavior to narrow results for multiple words (space-separated terms now require all words to match), improving precision for users.
+
+## 2026-03-31
+
+### Feature: Tags Filter Modal + Tag-Aware Active Filter Label
+- Added a new `Tags` filter chip in the Markets filter row that opens a modal instead of directly switching list views.
+- Built a scrollable tags modal that lists all unique persisted market tags and a dedicated languages section sourced from persisted language tags.
+- Added one-click tag/language selection from the modal to drive the existing search bar and preserve paginated result browsing.
+- Updated filter-chip behavior so the Tags chip label becomes the selected tag/language while active, then resets back to `Tags` when users type a different search term or choose another filter.
 
 ---
 
