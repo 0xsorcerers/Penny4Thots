@@ -22,3 +22,23 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Bubblewrap / Google Play Store - SENSITIVE - Never commit
+android.keystore
+*.jks
+*.keystore
+twa-manifest.json
+manifest-checksum.txt
+app-release-*.apk
+app-release-*.aab
+*.apk.idsig
+.gradle/
+build/
+gradle
+app
+gradlew
+gradlew.bat
+build.gradle
+settings.gradle
+gradle.properties
+
