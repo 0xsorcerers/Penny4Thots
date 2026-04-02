@@ -2,8 +2,9 @@ import type { Market } from "@/types/market";
 
 const tokenize = (input: string): string[] =>
   input
-    .toLowerCase()
-    .split(/[^a-z0-9]+/)
+    .normalize("NFKC")
+    .toLocaleLowerCase()
+    .split(/[^\p{L}\p{N}]+/u)
     .map((token) => token.trim())
     .filter(Boolean);
 
