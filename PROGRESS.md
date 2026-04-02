@@ -4,6 +4,14 @@ This file tracks all significant progress. Updated automatically after major cha
 
 ---
 
+## 2026-04-02
+
+### Bug Fix: Unicode Search Tokenization
+- Updated market search tokenization to normalize user input and split on Unicode-aware letter/number boundaries instead of ASCII-only regex matching.
+- Result: search now matches non-English characters (e.g., accented Latin, CJK, Arabic, Cyrillic) so multilingual market queries return expected results.
+
+---
+
 ## 2026-04-01
 
 ### Bug Fix: Cross-Network Language Tag Leakage
