@@ -318,7 +318,7 @@ export function MarketGrid({
             <p className="mt-1 font-outfit text-sm theme-text-support">
               {debouncedQuery
                 ? `Search results: ${filteredMarkets.length}`
-                : `Page ${currentPage} of ${totalPages} • Range ${visibleStart} - ${visibleEnd}`}
+                : `Page ${currentPage} of ${totalPages} • Displaying Markets ${visibleEnd} - ${visibleStart}`}
             </p>
           </div>
 
