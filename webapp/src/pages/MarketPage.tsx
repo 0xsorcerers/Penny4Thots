@@ -6,6 +6,7 @@ import { useActiveAccount, useActiveWallet, useActiveWalletChain, useDisconnect,
 import { defineChain } from "thirdweb/chains";
 import { useMarketStore } from "@/store/marketStore";
 import { useNetworkStore } from "@/store/networkStore";
+import { useLanguageStore } from "@/store/languageStore";
 import { useMarketDataHydration } from "@/hooks/useMarketDataHydration";
 import { useVote, useTokenApprove, readPaymentToken, readTokenAllowance, readTokenBalance, readTokenDecimals,
   readTokenSymbol, isZeroAddress, fetchDataConstants, calculatePlatformFeePercentage,
@@ -22,11 +23,13 @@ import { cn } from "@/lib/utils";
 import { CHAIN_ID_QUERY_PARAM } from "@/lib/marketRoutes";
 import type { Address } from "viem";
 import { toast } from "sonner";
+import { t } from "@/tools/languages";
 export default function MarketPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { selectedNetwork, setSelectedNetwork, getNetworkByChainId } = useNetworkStore();
+  const selectedLanguage = useLanguageStore((state) => state.selectedLanguage);
   const account = useActiveAccount();
   const activeWallet = useActiveWallet();
   const activeWalletChain = useActiveWalletChain();
@@ -100,14 +103,14 @@ export default function MarketPage() {
   const handleCopyShareLink = async () => {
     try {
       await navigator.clipboard.writeText(shareUrl);
-      toast.success("Share link copied", {
-        description: "Market link includes the intended network.",
+      toast.success(t(selectedLanguage, "market.shareLinkCopied"), {
+        description: t(selectedLanguage, "market.shareLinkCopiedDesc"),
       });
       setIsShareMenuOpen(false);
     } catch (error) {
       console.error("Failed to copy share link:", error);
-      toast.error("Could not copy link", {
-        description: "Please copy the URL manually.",
+      toast.error(t(selectedLanguage, "market.copyLinkFailed"), {
+        description: t(selectedLanguage, "market.copyLinkFailedDesc"),
       });
     }
   };
@@ -128,8 +131,8 @@ export default function MarketPage() {
     } catch (error) {
       if (error instanceof Error && error.name === "AbortError") return;
       console.error("Native share failed:", error);
-      toast.error("Share failed", {
-        description: "Try copying the link instead.",
+      toast.error(t(selectedLanguage, "market.shareFailed"), {
+        description: t(selectedLanguage, "market.shareFailedDesc"),
       });
     }
   };
@@ -154,8 +157,8 @@ export default function MarketPage() {
       }
 
       if (!targetNetwork) {
-        toast.error("Invalid market network in URL", {
-          description: `Unsupported chainId=${targetChainId}.`,
+        toast.error(t(selectedLanguage, "market.invalidNetwork"), {
+          description: t(selectedLanguage, "market.invalidNetworkDesc", { chainId: targetChainId ?? "" }),
         });
         if (!cancelled) setIsEnsuringNetwork(false);
         return;
@@ -173,8 +176,8 @@ export default function MarketPage() {
           if (activeWallet) {
             await disconnect(activeWallet);
           }
-          toast.error("Wallet network mismatch", {
-            description: "Please reconnect and approve the requested network.",
+          toast.error(t(selectedLanguage, "market.walletNetworkMismatch"), {
+            description: t(selectedLanguage, "market.walletNetworkMismatchDesc"),
           });
         }
       }
@@ -286,7 +289,7 @@ export default function MarketPage() {
       <div className="flex min-h-screen items-center justify-center bg-background">
         <div className="text-center">
           <Loader2 className="mx-auto mb-4 h-8 w-8 animate-spin text-primary" />
-          <p className="font-outfit text-muted-foreground">Loading market data...</p>
+          <p className="font-outfit text-muted-foreground">{t(selectedLanguage, "market.loadingMarket")}</p>
         </div>
       </div>
     );
@@ -295,10 +298,10 @@ export default function MarketPage() {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <div className="text-center">
-          <h1 className="mb-4 font-syne text-2xl font-bold text-foreground">Market not found</h1>
+          <h1 className="mb-4 font-syne text-2xl font-bold text-foreground">{t(selectedLanguage, "market.marketNotFoundTitle")}</h1>
           <Button onClick={() => navigate("/")} variant="outline" className="rounded-xl">
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Markets
+            {t(selectedLanguage, "market.marketNotFoundButton")}
           </Button>
         </div>
       </div>
@@ -311,8 +314,8 @@ export default function MarketPage() {
   const handleVoteClick = (signal: boolean) => {
     console.log("handleVoteClick called with signal:", signal, "market:", market?.title, "indexer:", market?.indexer);
     if (isRestoringWallet) {
-      toast.info("Restoring wallet...", {
-        description: "You can continue, but you may need to wait a moment before submitting.",
+      toast.info(t(selectedLanguage, "market.restoringWallet"), {
+        description: t(selectedLanguage, "market.restoringWalletDesc"),
       });
     }
     if (!market || market.indexer === undefined) {
@@ -325,7 +328,7 @@ export default function MarketPage() {
   };
   const handleClaim = async () => {
     if (!account?.address) {
-      toast.error("Please connect your wallet first");
+      toast.error(t(selectedLanguage, "voteModal.walletNotConnected"));
       return;
     }
     if (!market || market.indexer === undefined) {
@@ -333,25 +336,25 @@ export default function MarketPage() {
       return;
     }
     if (userPositions.length === 0) {
-      toast.error("No positions to claim");
+      toast.error(t(selectedLanguage, "market.noPositionsToClaim"));
       return;
     }
     try {
-      toast.info("Processing claim...", {
+      toast.info(t(selectedLanguage, "marketCard.claiming"), {
         description: `Claiming ${userPositions.length} position${userPositions.length > 1 ? 's' : ''}`,
       });
       await batchClaim({
         marketId: market.indexer,
         positionIds: userPositions,
       });
-      toast.success("Claim successful!", {
+      toast.success(t(selectedLanguage, "market.claimSuccessful"), {
         description: `You have successfully claimed your rewards from ${userPositions.length} position${userPositions.length > 1 ? 's' : ''}`,
       });
       // Clear positions after successful claim
       setUserPositions([]);
     } catch (err) {
       console.error("Claim failed:", err);
-      toast.error("Claim failed", {
+      toast.error(t(selectedLanguage, "market.claimFailed"), {
         description: err instanceof Error ? err.message : "Please try again",
       });
       // Don't clear positions on failure so user can retry
@@ -359,7 +362,7 @@ export default function MarketPage() {
   };
   const handleSubmitVote = async (voteParams: VoteParams) => {
     if (!account?.address) {
-      toast.error("Please connect your wallet first");
+      toast.error(t(selectedLanguage, "voteModal.walletNotConnected"));
       throw new Error("Wallet not connected");
     }
     setIsSubmitting(true);
@@ -376,7 +379,7 @@ export default function MarketPage() {
           const tokenDecimals = await readTokenDecimals(voteParams.paymentToken);
           const balanceFormatted = fromTokenSmallestUnit(userBalance, tokenDecimals);
           const requiredFormatted = fromTokenSmallestUnit(voteParams.marketBalance, tokenDecimals);
-          toast.error("Insufficient token balance", {
+          toast.error(t(selectedLanguage, "voteModal.insufficientBalance"), {
             description: `You have ${balanceFormatted} but need ${requiredFormatted}`, 
           });
           throw new Error(`Insufficient balance: have ${balanceFormatted}, need ${requiredFormatted}`);
@@ -389,11 +392,11 @@ export default function MarketPage() {
         );
         // If allowance is insufficient, request approval
         if (currentAllowance < voteParams.marketBalance) {
-          toast.info("Approval required", {
-            description: "Approving token spending in your wallet",
+          toast.info(t(selectedLanguage, "voteModal.approvalRequired"), {
+            description: t(selectedLanguage, "voteModal.approvalDesc"),
           });
           await approve(voteParams.paymentToken, voteParams.marketBalance);
-          toast.success("Token approved!");
+          toast.success(t(selectedLanguage, "voteModal.tokenApproved"));
         }
       }
       // Now submit the vote
@@ -1234,5 +1237,4 @@ export default function MarketPage() {
     </div>
   );
 }
-
 

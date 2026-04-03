@@ -88,7 +88,7 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
     nowPlusOneHour.setHours(nowPlusOneHour.getHours() + 1);
 
     if (selectedDateTime < nowPlusOneHour) {
-      setEndTimeError("End time must be at least 1 hour from now");
+      setEndTimeError(t(selectedLanguage, "createMarket.endTimeError"));
       return 0;
     }
 
@@ -129,7 +129,7 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
   // Validate image URL
   const validateImageUrl = useCallback((url: string) => {
     if (!url.trim()) {
-      setPosterImageError("Poster image URL is required");
+      setPosterImageError(t(selectedLanguage, "createMarket.imageRequired"));
       return;
     }
 
@@ -138,12 +138,12 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
       const isValidImageExtension = /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(urlObj.pathname);
 
       if (!isValidImageExtension) {
-        setPosterImageError("URL must end with a valid image extension (.jpg, .png, .gif, .webp, .svg)");
+        setPosterImageError(t(selectedLanguage, "createMarket.invalidImageUrl"));
       } else {
         setPosterImageError(null);
       }
     } catch {
-      setPosterImageError("Please enter a valid image URL");
+      setPosterImageError(t(selectedLanguage, "createMarket.invalidImageUrl"));
     }
   }, []);
 
@@ -355,18 +355,20 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
                     <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 p-1">
                       <img
                         src={theme === "dark" ? "/logo-white-no-bkg.webp" : blackLogo}
-                        alt="Create Market"
+                        alt={t(selectedLanguage, "createMarket.createMarketButton")}
                         className="h-full w-full object-contain"
                       />
                     </div>
                     <div>
                       <h2 className="font-syne text-xl font-bold text-foreground">
-                        {step === "details" ? "Create Market" : "Confirm & Fund"}
+                        {step === "details"
+                          ? t(selectedLanguage, "createMarket.createMarketButton")
+                          : t(selectedLanguage, "createMarket.confirmStep")}
                       </h2>
                       <p className="font-outfit text-sm text-muted-foreground">
                         {step === "details"
-                          ? "Start a new prediction"
-                          : "Set your initial position and vote"}
+                          ? t(selectedLanguage, "createMarket.detailsStep")
+                          : t(selectedLanguage, "createMarket.initialVote")}
                       </p>
                     </div>
                   </div>
@@ -435,7 +437,7 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
                           <Label htmlFor="posterImage" className="font-outfit text-foreground">
                             <span className="flex items-center gap-2">
                               <ImageIcon className="h-4 w-4" />
-                              Poster Image URL *
+                              {t(selectedLanguage, "createMarket.posterImage")} *
                             </span>
                           </Label>
                           <Input
@@ -455,7 +457,7 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
                             <p className="text-xs text-destructive font-semibold">{posterImageError}</p>
                           )}
                           {formData.posterImage && !posterImageError && (
-                            <p className="text-xs text-success font-semibold">Valid image URL ✓</p>
+                            <p className="text-xs text-success font-semibold">{t(selectedLanguage, "common.confirm")} ✓</p>
                           )}
                           <p className="text-xs text-muted-foreground">
                             Try Pinterest for lots of free images. (HINT: copy image address, not page URL 😉)
@@ -465,14 +467,14 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
                         {/* Tags */}
                         <div className="space-y-2">
                           <Label className="font-outfit text-foreground">
-                            Tags ({formData.tags.length}/7) *
+                            {t(selectedLanguage, "createMarket.tags")} ({formData.tags.length}/7) *
                           </Label>
                           <div className="flex gap-2">
                             <Input
                               value={formData.tagInput}
                               onChange={(e) => setFormData({ ...formData, tagInput: e.target.value })}
                               onKeyDown={handleKeyDown}
-                              placeholder="Add a tag..."
+                              placeholder={t(selectedLanguage, "createMarket.tags")}
                               disabled={formData.tags.length >= 7}
                               className="rounded-xl border-border/50 bg-background font-outfit theme-text-positive placeholder:text-muted-foreground"
                             />
@@ -488,7 +490,7 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
                           </div>
 
                           {formData.tags.length === 0 && (
-                            <p className="text-xs text-destructive font-semibold">At least one tag is required</p>
+                            <p className="text-xs text-destructive font-semibold">{t(selectedLanguage, "createMarket.tags")} *</p>
                           )}
 
                           {/* Tag list */}
@@ -518,11 +520,11 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
 
                         {/* Voting Options */}
                         <div className="space-y-3">
-                          <Label className="font-outfit text-foreground">Voting Options</Label>
+                          <Label className="font-outfit text-foreground">{t(selectedLanguage, "voteModal.selectOption")}</Label>
                           <div className="grid grid-cols-2 gap-3">
                             <div className="space-y-2">
                               <Label htmlFor="optionA" className="text-xs font-outfit text-muted-foreground">
-                                Option A (max 25 chars)
+                                {t(selectedLanguage, "createMarket.optionAYes")} (max 25)
                               </Label>
                               <Input
                                 id="optionA"
@@ -533,7 +535,7 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
                                     optionA: e.target.value.slice(0, 25),
                                   })
                                 }
-                                placeholder="Yes"
+                                placeholder={t(selectedLanguage, "common.yes")}
                                 maxLength={25}
                                 className="rounded-xl border-border/50 bg-background font-outfit text-sm"
                               />
@@ -544,7 +546,7 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
 
                             <div className="space-y-2">
                               <Label htmlFor="optionB" className="text-xs font-outfit text-muted-foreground">
-                                Option B (max 25 chars)
+                                {t(selectedLanguage, "createMarket.optionBNo")} (max 25)
                               </Label>
                               <Input
                                 id="optionB"
@@ -555,7 +557,7 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
                                     optionB: e.target.value.slice(0, 25),
                                   })
                                 }
-                                placeholder="No"
+                                placeholder={t(selectedLanguage, "common.no")}
                                 maxLength={25}
                                 className="rounded-xl border-border/50 bg-background font-outfit text-sm"
                               />
@@ -570,10 +572,10 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
                         <div className="space-y-3">
                           <Label className="font-outfit text-foreground flex items-center gap-2">
                             <Calendar className="h-4 w-4" />
-                            Market End Time *
+                            {t(selectedLanguage, "createMarket.endTime")} *
                           </Label>
                           <p className="text-xs text-muted-foreground -mt-1">
-                            When should voting close? (Minimum 1 hour from now)
+                            {t(selectedLanguage, "createMarket.endTimeError")}
                           </p>
                           <div className="grid grid-cols-2 gap-3">
                             <div className="space-y-2">
@@ -625,7 +627,7 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
                             onClick={handleForgoTime}
                             className="w-full rounded-xl border-border/50 font-outfit text-sm"
                           >
-                            Forgo & Auto-Set to 1.5 Hours From Submission
+                            {t(selectedLanguage, "createMarket.forgoTimeButton")}
                           </Button>
 
                           {/* Error/Info Display */}
@@ -649,7 +651,9 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
                                 className="flex items-center gap-2 text-xs text-foreground"
                               >
                                 <Clock className="h-3.5 w-3.5" />
-                                {isForgoingTime ? "Will auto-set to 1.5h from submission" : `Market will end: ${new Date(`${endDate}T${endTimeInput}`).toLocaleString()}`}
+                                {isForgoingTime
+                                  ? t(selectedLanguage, "createMarket.forgoTimeButton")
+                                  : `${t(selectedLanguage, "createMarket.endTime")}: ${new Date(`${endDate}T${endTimeInput}`).toLocaleString()}`}
                               </motion.div>
                             )}
                             {!endDate && (
@@ -660,7 +664,7 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
                                 className="flex items-center gap-2 text-xs text-destructive"
                               >
                                 <AlertCircle className="h-3.5 w-3.5" />
-                                Please set a market end date and time
+                                {t(selectedLanguage, "createMarket.endTime")} *
                               </motion.div>
                             )}
                           </AnimatePresence>
@@ -674,16 +678,16 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
                         {/* Market Summary */}
                         <div className="rounded-xl bg-muted/50 p-4 space-y-3">
                           <div>
-                            <p className="text-xs text-muted-foreground">Title</p>
+                            <p className="text-xs text-muted-foreground">{t(selectedLanguage, "createMarket.marketTitle")}</p>
                             <p className="font-outfit font-semibold text-foreground">{formData.title}</p>
                           </div>
                           <div>
-                            <p className="text-xs text-muted-foreground">Subtitle</p>
+                            <p className="text-xs text-muted-foreground">{t(selectedLanguage, "createMarket.marketSubtitle")}</p>
                             <p className="font-outfit text-sm text-foreground">{formData.subtitle}</p>
                           </div>
                           {formData.tags.length > 0 && (
                             <div>
-                              <p className="text-xs text-muted-foreground mb-2">Tags</p>
+                              <p className="text-xs text-muted-foreground mb-2">{t(selectedLanguage, "createMarket.tags")}</p>
                               <div className="flex flex-wrap gap-1">
                                 {formData.tags.map((tag) => (
                                   <span
@@ -697,14 +701,14 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
                             </div>
                           )}
                           <div className="pt-2 border-t border-border/30">
-                            <p className="text-xs text-muted-foreground mb-2">Voting Options</p>
+                            <p className="text-xs text-muted-foreground mb-2">{t(selectedLanguage, "voteModal.selectOption")}</p>
                             <div className="grid grid-cols-2 gap-2 text-xs">
                               <div className="rounded bg-primary/5 px-2 py-1.5">
-                                <p className="text-muted-foreground">Option A</p>
+                                <p className="text-muted-foreground">{t(selectedLanguage, "createMarket.optionAYes")}</p>
                                 <p className="font-semibold text-foreground">{formData.optionA}</p>
                               </div>
                               <div className="rounded bg-destructive/5 px-2 py-1.5">
-                                <p className="text-muted-foreground">Option B</p>
+                                <p className="text-muted-foreground">{t(selectedLanguage, "createMarket.optionBNo")}</p>
                                 <p className="font-semibold text-foreground">{formData.optionB}</p>
                               </div>
                             </div>
@@ -715,7 +719,7 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
                         <div className="space-y-3">
                           {/* Payment Toggle Switch */}
                           <div className="flex items-center justify-between gap-3">
-                            <Label className="font-outfit text-foreground text-sm">Payment</Label>
+                            <Label className="font-outfit text-foreground text-sm">{t(selectedLanguage, "createMarket.marketBalance")}</Label>
                             <motion.button
                               type="button"
                               onClick={handleTogglePayment}
@@ -775,7 +779,7 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
                                 }}
                               >
                                 <p className="font-syne text-sm font-bold">
-                                  Pay with{" "}
+                                  {t(selectedLanguage, "createMarket.useToken")}{" "}
                                   <span className="theme-option-a-gradient-text animate-shimmer-sweep">
                                     {useToken && tokenSymbol ? tokenSymbol : useToken ? "Token" : selectedNetwork.symbol}
                                   </span>
@@ -794,7 +798,7 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
                                 className="space-y-2"
                               >
                                 <Label htmlFor="token-address" className="font-outfit text-foreground">
-                                  Token Address
+                                  {t(selectedLanguage, "createMarket.tokenAddress")}
                                 </Label>
                                 <Input
                                   id="token-address"
@@ -807,7 +811,7 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
                                   }`}
                                 />
                                 {tokenInputError && tokenAddress.length > 0 && (
-                                  <p className="text-xs text-destructive font-semibold">Invalid token address</p>
+                                  <p className="text-xs text-destructive font-semibold">{t(selectedLanguage, "createMarket.tokenError")}</p>
                                 )}
                                 {tokenSymbol && (
                                   <p className="text-xs text-success font-semibold">
@@ -815,7 +819,7 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
                                   </p>
                                 )}
                                 <p className="text-xs text-muted-foreground">
-                                  Enter a valid ERC20 token contract address
+                                  {t(selectedLanguage, "createMarket.tokenAddress")}
                                 </p>
                               </motion.div>
                             )}
@@ -824,7 +828,7 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
                           {/* Spending Amount */}
                           <div className="space-y-2">
                             <Label htmlFor="balance" className="font-outfit text-foreground">
-                              Spending Amount{" "}
+                              {t(selectedLanguage, "createMarket.marketBalance")}{" "}
                               <span className="theme-option-a-gradient-text animate-shimmer-sweep">
                                 ({useToken && tokenSymbol ? tokenSymbol : useToken ? "Token" : selectedNetwork.symbol})
                               </span>{" "}
@@ -842,12 +846,12 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
                               required
                             />
                             <p className="text-xs text-muted-foreground">
-                              Amount to fund this market with
+                              {t(selectedLanguage, "createMarket.marketBalance")}
                             </p>
                             {/* Platform Fee Display */}
                             {platformFeePercentage !== null && (
                               <p className="text-xs mt-2">
-                                <span className="text-muted-foreground">Platform fee: </span>
+                                <span className="text-muted-foreground">{t(selectedLanguage, "createMarket.platformFee")}: </span>
                                 <span
                                   style={{
                                     color: useToken ? "hsl(var(--accent))" : "hsl(var(--primary))",
@@ -864,7 +868,7 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
                         {/* Initial Vote */}
                         <div className="space-y-2">
                           <Label className="font-outfit text-foreground">
-                            Your Initial Vote *
+                            {t(selectedLanguage, "createMarket.initialVote")} *
                           </Label>
                           <div className="grid grid-cols-2 gap-3">
                             <motion.button
@@ -929,7 +933,7 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
                       disabled={isLoading}
                       className="rounded-xl font-outfit"
                     >
-                      {step === "confirm" ? "Back" : "Cancel"}
+                      {step === "confirm" ? t(selectedLanguage, "nav.back") : t(selectedLanguage, "common.cancel")}
                     </Button>
                     <Button
                       type="submit"
@@ -943,11 +947,11 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
                     >
                       {isLoading
                         ? step === "confirm"
-                          ? "Creating..."
-                          : "Next"
+                          ? `${t(selectedLanguage, "createMarket.createMarketButton")}...`
+                          : t(selectedLanguage, "nav.next")
                         : step === "details"
-                        ? "Next"
-                        : "Create Market"}
+                        ? t(selectedLanguage, "nav.next")
+                        : t(selectedLanguage, "createMarket.createMarketButton")}
                     </Button>
                   </div>
                 </form>

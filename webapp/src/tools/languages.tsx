@@ -217,6 +217,11 @@ export interface Translations {
     voting: string;
     sendVote: string;
   };
+  // Profile Menu
+  profileMenu: {
+    profile: string;
+    notConnected: string;
+  };
   // Common
   common: {
     yes: string;
@@ -457,6 +462,10 @@ export const translations: Record<LanguageCode, Translations> = {
       voting: "Voting...",
       sendVote: "Send Vote",
     },
+    profileMenu: {
+      profile: "Your Profile",
+      notConnected: "Not connected",
+    },
     common: {
       yes: "Yes",
       no: "No",
@@ -681,6 +690,10 @@ export const translations: Record<LanguageCode, Translations> = {
       voting: "Votando...",
       sendVote: "Enviar voto",
     },
+    profileMenu: {
+      profile: "Tu perfil",
+      notConnected: "No conectado",
+    },
     common: {
       yes: "Sí",
       no: "No",
@@ -903,6 +916,10 @@ export const translations: Record<LanguageCode, Translations> = {
       nonZeroRequired: "Vous devez envoyer un montant non nul pour voter",
       voting: "Vote en cours...",
       sendVote: "Envoyer le vote",
+    },
+    profileMenu: {
+      profile: "Votre profil",
+      notConnected: "Non connecté",
     },
     common: {
       yes: "Oui",
@@ -1127,6 +1144,10 @@ export const translations: Record<LanguageCode, Translations> = {
       voting: "Abstimmung läuft...",
       sendVote: "Stimme senden",
     },
+    profileMenu: {
+      profile: "Dein Profil",
+      notConnected: "Nicht verbunden",
+    },
     common: {
       yes: "Ja",
       no: "Nein",
@@ -1350,6 +1371,10 @@ export const translations: Record<LanguageCode, Translations> = {
       voting: "Votando...",
       sendVote: "Enviar voto",
     },
+    profileMenu: {
+      profile: "Seu perfil",
+      notConnected: "Não conectado",
+    },
     common: {
       yes: "Sim",
       no: "Não",
@@ -1572,6 +1597,10 @@ export const translations: Record<LanguageCode, Translations> = {
       nonZeroRequired: "你必须发送非零金额才能投票",
       voting: "投票中...",
       sendVote: "发送投票",
+    },
+    profileMenu: {
+      profile: "你的资料",
+      notConnected: "未连接",
     },
     common: {
       yes: "是",
