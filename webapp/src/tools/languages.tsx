@@ -222,6 +222,7 @@ export interface Translations {
     aboutMarket: string;
     castVote: string;
     trade: string;
+    tradeHaircutNotice: string;
     createdOn: string;
     voteSingular: string;
     votePlural: string;
@@ -507,6 +508,8 @@ export const translations: Record<LanguageCode, Translations> = {
       aboutMarket: "About this market",
       castVote: "Cast your vote",
       trade: "Trade",
+      tradeHaircutNotice:
+        "Trades have a 50% haircut for anyone desiring to alternate a vote position",
       createdOn: "Created {date}",
       voteSingular: "vote",
       votePlural: "votes",
@@ -774,6 +777,8 @@ export const translations: Record<LanguageCode, Translations> = {
       aboutMarket: "Acerca de este mercado",
       castVote: "Emite tu voto",
       trade: "Trade",
+      tradeHaircutNotice:
+        "Las operaciones tienen un recorte del 50% para quienes deseen alternar una posición de voto",
       createdOn: "Creado {date}",
       voteSingular: "voto",
       votePlural: "votos",
@@ -1040,6 +1045,8 @@ export const translations: Record<LanguageCode, Translations> = {
       aboutMarket: "À propos de ce marché",
       castVote: "Votez",
       trade: "Trade",
+      tradeHaircutNotice:
+        "Les transactions subissent une décote de 50% pour ceux qui souhaitent alterner une position de vote",
       createdOn: "Créé {date}",
       voteSingular: "vote",
       votePlural: "votes",
@@ -1306,6 +1313,8 @@ export const translations: Record<LanguageCode, Translations> = {
       aboutMarket: "Über diesen Markt",
       castVote: "Stimme ab",
       trade: "Trade",
+      tradeHaircutNotice:
+        "Trades haben einen Abschlag von 50% für alle, die eine Stimmposition wechseln möchten",
       createdOn: "Erstellt {date}",
       voteSingular: "Stimme",
       votePlural: "Stimmen",
@@ -1572,6 +1581,8 @@ export const translations: Record<LanguageCode, Translations> = {
       aboutMarket: "Sobre este mercado",
       castVote: "Faça seu voto",
       trade: "Trade",
+      tradeHaircutNotice:
+        "As negociações têm um corte de 50% para quem desejar alternar uma posição de voto",
       createdOn: "Criado {date}",
       voteSingular: "voto",
       votePlural: "votos",
@@ -1838,6 +1849,7 @@ export const translations: Record<LanguageCode, Translations> = {
       aboutMarket: "关于此市场",
       castVote: "进行投票",
       trade: "交易",
+      tradeHaircutNotice: "若要切换投票仓位，交易将有 50% 的折扣扣减",
       createdOn: "创建于 {date}",
       voteSingular: "票",
       votePlural: "票",
