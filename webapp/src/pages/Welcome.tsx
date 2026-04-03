@@ -1,6 +1,8 @@
 import { motion, useMotionValue, useTransform } from "framer-motion";
 import { Sparkles, TrendingUp, Zap, Brain, Coins, Users } from "lucide-react";
 import { Connector } from "@/tools/utils";
+import { t } from "@/tools/languages";
+import { useLanguageStore } from "@/store/languageStore";
 import { useActiveAccount } from "thirdweb/react";
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
@@ -10,6 +12,7 @@ export default function Welcome() {
   const account = useActiveAccount();
   const navigate = useNavigate();
   const { theme } = useTheme();
+  const { selectedLanguage } = useLanguageStore();
   const logoSrc = theme === "dark" ? "/logo-white-no-bkg.webp" : "/logo-black-no-bkg.webp";
 
   // Redirect to main app when connected
@@ -240,7 +243,7 @@ export default function Welcome() {
         >
           <div className="theme-option-a-chip inline-flex items-center gap-2 rounded-full border px-4 py-2 backdrop-blur-sm">
             <Sparkles className="h-4 w-4 theme-text-positive" />
-            <span className="inline-block font-mono text-sm theme-option-a-gradient-text">Next Gen Prediction Market</span>
+            <span className="inline-block font-mono text-sm theme-option-a-gradient-text">{t(selectedLanguage, "welcome.badge")}</span>
           </div>
         </motion.div>
 
@@ -273,10 +276,10 @@ export default function Welcome() {
           transition={{ duration: 0.6, delay: 0.7 }}
           className="mb-8 max-w-md text-center font-outfit text-lg text-muted-foreground sm:max-w-xl sm:text-xl"
         >
-          <span className="italic text-foreground/80">"If you can think it, it's important."</span>
+          <span className="italic text-foreground/80">{t(selectedLanguage, "welcome.taglineQuote")}</span>
           <br />
           <span className="mt-2 block text-base text-muted-foreground">
-            Trade predictions on any topic. Powered by blockchain.
+            {t(selectedLanguage, "welcome.taglineSub")}
           </span>
         </motion.p>
 
@@ -288,12 +291,12 @@ export default function Welcome() {
           className="mb-10 grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4"
         >
           {[
-            { icon: Brain, label: "Any Topic", desc: "Create markets" },
-            { icon: TrendingUp, label: "Trade", desc: "Yes or No" },
-            { icon: Coins, label: "Earn", desc: "Win rewards" },
-            { icon: Zap, label: "Fast", desc: "Instant settlement" },
-            { icon: Users, label: "Social", desc: "Community driven" },
-            { icon: Sparkles, label: "Web3", desc: "Decentralized" },
+            { icon: Brain, label: t(selectedLanguage, "welcome.featureAnyTopic"), desc: t(selectedLanguage, "welcome.featureAnyTopicDesc") },
+            { icon: TrendingUp, label: t(selectedLanguage, "welcome.featureTrade"), desc: t(selectedLanguage, "welcome.featureTradeDesc") },
+            { icon: Coins, label: t(selectedLanguage, "welcome.featureEarn"), desc: t(selectedLanguage, "welcome.featureEarnDesc") },
+            { icon: Zap, label: t(selectedLanguage, "welcome.featureFast"), desc: t(selectedLanguage, "welcome.featureFastDesc") },
+            { icon: Users, label: t(selectedLanguage, "welcome.featureSocial"), desc: t(selectedLanguage, "welcome.featureSocialDesc") },
+            { icon: Sparkles, label: t(selectedLanguage, "welcome.featureWeb3"), desc: t(selectedLanguage, "welcome.featureWeb3Desc") },
           ].map((item, i) => (
             <motion.div
               key={item.label}
@@ -337,7 +340,7 @@ export default function Welcome() {
           transition={{ delay: 1.6, duration: 0.5 }}
           className="mt-8 text-center text-xs text-muted-foreground"
         >
-          Connect your wallet or sign in to get started
+          {t(selectedLanguage, "welcome.connectButtonHint")}
         </motion.p>
 
         {/* Decorative bottom line */}
