@@ -1059,7 +1059,7 @@ export default function MarketPage() {
             transition={{ delay: 0.5 }}
             className="rounded-2xl border border-white/60 bg-white/70 p-6 backdrop-blur-xl shadow-[0_4px_24px_-4px_hsl(220_30%_15%/0.1),inset_0_1px_0_hsl(0_0%_100%/0.8)] dark:border-border/50 dark:bg-card/50 dark:backdrop-blur-sm dark:shadow-none"
           >
-            <h2 className="mb-4 font-syne text-lg font-bold theme-option-a-gradient-text animate-shimmer-sweep">{t(selectedLanguage, "marketPage.trade")} <span className="text-xs font-normal theme-text-support">[Kamikaze trades have a 50% haircut for anyone desiring to alternate a vote position]</span></h2>
+            <h2 className="mb-4 font-syne text-lg font-bold theme-option-a-gradient-text animate-shimmer-sweep">{t(selectedLanguage, "marketPage.trade")} <span className="text-xs font-normal theme-text-support">[{t(selectedLanguage, "marketPage.tradeHaircutNotice")}]</span></h2>
             {isKamikazeUnavailable ? (
               <div>
                 <Button

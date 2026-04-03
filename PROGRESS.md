@@ -381,3 +381,12 @@ The AI will commit and push to BOTH GitHub and Vibecode servers automatically.
 - Localized CountdownTimer and CountdownTimerLarge status text (time remaining, closing/ended/resolving/closed states, day/hour/min/sec labels, adjudicator loading text).
 
 ---
+
+## 2026-04-03
+
+### Update: Localized MarketPage trade haircut notice
+- Replaced the hardcoded English trade warning text under the MarketPage Trade section with a translation key.
+- Added `marketPage.tradeHaircutNotice` translations for EN, ES, FR, DE, PT, and ZH.
+- Updated the Trade section copy to remove the leading "Kamikaze" term and use: "Trades have a 50% haircut for anyone desiring to alternate a vote position" in English.
+
+---
