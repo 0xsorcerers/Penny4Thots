@@ -10,6 +10,8 @@ import { MarketSearchIndex } from "@/lib/marketSearchIndex";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useMarketStore } from "@/store/marketStore";
+import { useLanguageStore } from "@/store/languageStore";
+import { t } from "@/tools/languages";
 
 const SEARCH_DEBOUNCE_MS = 3000;
 
@@ -55,6 +57,7 @@ export function MarketGrid({
   const [isTagsModalOpen, setIsTagsModalOpen] = useState(false);
   const [selectedTagFilter, setSelectedTagFilter] = useState<string | null>(null);
   const languageTagsByMarketId = useMarketStore((state) => state.languageTagsByMarketId);
+  const selectedLanguage = useLanguageStore((state) => state.selectedLanguage);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -260,7 +263,9 @@ export function MarketGrid({
           }`}
         >
           <span className="inline-block theme-option-a-gradient-text animate-shimmer-sweep">
-            {showClosedMarkets ? "Hide Closed Markets" : "Show Closed Markets"}
+            {showClosedMarkets
+              ? t(selectedLanguage, "marketGrid.hideClosed")
+              : t(selectedLanguage, "marketGrid.showClosed")}
           </span>
         </button>
       </div>
@@ -311,14 +316,21 @@ export function MarketGrid({
           className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
         >
           <div>
-            <h1 className="font-syne text-3xl font-bold theme-option-a-gradient-text animate-shimmer-sweep">Markets</h1>
+            <h1 className="font-syne text-3xl font-bold theme-option-a-gradient-text animate-shimmer-sweep">
+              {t(selectedLanguage, "marketGrid.title")}
+            </h1>
             <p className="mt-1 font-outfit theme-text-accent">
-              {effectiveMarketCount} prediction {effectiveMarketCount === 1 ? "market" : "markets"} available
+              {t(selectedLanguage, "marketGrid.marketsAvailable", { count: effectiveMarketCount })}
             </p>
             <p className="mt-1 font-outfit text-sm theme-text-support">
               {debouncedQuery
-                ? `Search results: ${filteredMarkets.length}`
-                : `Page ${currentPage} of ${totalPages} • Displaying Markets ${visibleEnd} - ${visibleStart}`}
+                ? t(selectedLanguage, "marketGrid.searchResults", { count: filteredMarkets.length })
+                : t(selectedLanguage, "marketGrid.pageDisplay", {
+                    current: currentPage,
+                    total: totalPages,
+                    start: visibleEnd,
+                    end: visibleStart,
+                  })}
             </p>
           </div>
 
@@ -329,7 +341,7 @@ export function MarketGrid({
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               className="relative flex h-11 w-11 items-center justify-center rounded-full border transition-all theme-vote-chip disabled:opacity-50 disabled:cursor-not-allowed"
-              title="Refresh all markets from blockchain"
+              title={t(selectedLanguage, "marketGrid.refreshTitle")}
             >
               <motion.div
                 animate={{ rotate: isRefreshing || isLoading ? 360 : 0 }}
@@ -345,7 +357,7 @@ export function MarketGrid({
             >
               <span className="relative z-10 flex items-center gap-2">
                 <Plus className="h-4 w-4" />
-                Create Market
+                {t(selectedLanguage, "marketGrid.createMarket")}
               </span>
             </Button>
 
@@ -363,7 +375,7 @@ export function MarketGrid({
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               type="text"
-              placeholder="Search by id, text, tags, language (supports multiple words)..."
+              placeholder={t(selectedLanguage, "marketGrid.searchPlaceholder")}
               value={searchQuery}
               onChange={(e) => handleSearchChange(e.target.value)}
               className="h-11 rounded-xl pl-10 font-outfit placeholder:text-muted-foreground focus:border-primary/50 focus:ring-primary/20"
@@ -387,7 +399,7 @@ export function MarketGrid({
                   : "bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground"
               }`}
             >
-              All ({marketCount})
+              {t(selectedLanguage, "marketGrid.filterAll")} ({marketCount})
             </button>
             <button
               onClick={() => handleBaseFilterSelect("trending")}
@@ -397,7 +409,7 @@ export function MarketGrid({
                   : "bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground"
               }`}
             >
-              Trending ({trendingFilterCount})
+              {t(selectedLanguage, "marketGrid.filterTrending")} ({trendingFilterCount})
             </button>
             <button
               onClick={() => handleBaseFilterSelect("symbol")}
@@ -407,7 +419,7 @@ export function MarketGrid({
                   : "bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground"
               }`}
             >
-              {networkSymbol} Markets ({symbolFilterCount})
+              {t(selectedLanguage, "marketGrid.filterSymbol", { symbol: networkSymbol })} ({symbolFilterCount})
             </button>
             <button
               onClick={() => handleBaseFilterSelect("token")}
@@ -417,7 +429,7 @@ export function MarketGrid({
                   : "bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground"
               }`}
             >
-              Token Markets ({tokenFilterCount})
+              {t(selectedLanguage, "marketGrid.filterToken")} ({tokenFilterCount})
             </button>
             <button
               onClick={() => setIsTagsModalOpen(true)}
@@ -427,7 +439,7 @@ export function MarketGrid({
                   : "bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground"
               }`}
             >
-              {selectedTagFilter ?? "Tags"}
+              {selectedTagFilter ?? t(selectedLanguage, "marketGrid.filterTags")}
             </button>
           </div>
         </motion.div>
@@ -444,7 +456,9 @@ export function MarketGrid({
               className="flex flex-col items-center justify-center rounded-2xl border border-dashed py-20 theme-surface-soft"
             >
               <Loader2 className="h-10 w-10 animate-spin text-primary mb-4" />
-              <p className="font-outfit theme-text-support">Loading markets from blockchain...</p>
+              <p className="font-outfit theme-text-support">
+                {t(selectedLanguage, "marketGrid.loadingMarkets")}
+              </p>
             </motion.div>
           ) : visibleMarkets.length > 0 ? (
             <motion.div
@@ -477,12 +491,14 @@ export function MarketGrid({
                 <Sparkles className="h-8 w-8 theme-text-accent" />
               </div>
               <h3 className="mb-2 font-syne text-xl font-bold text-foreground">
-                {searchQuery || selectedFilter !== "all" ? "No markets found" : "No markets yet"}
+                {searchQuery || selectedFilter !== "all"
+                  ? t(selectedLanguage, "marketGrid.noMarketsFound")
+                  : t(selectedLanguage, "marketGrid.noMarketsYet")}
               </h3>
               <p className="mb-6 max-w-sm text-center font-outfit theme-text-support">
                 {searchQuery || selectedFilter !== "all"
-                  ? "Try adjusting your search or filter criteria."
-                  : "Be the first to create a prediction market and share your insights with the world."}
+                  ? t(selectedLanguage, "marketGrid.adjustSearch")
+                  : t(selectedLanguage, "marketGrid.createFirstHint")}
               </p>
               {!searchQuery && selectedFilter === "all" && (
                 <Button
@@ -490,7 +506,7 @@ export function MarketGrid({
                   className="rounded-xl bg-primary font-outfit font-semibold"
                 >
                   <Plus className="mr-2 h-4 w-4" />
-                  Create First Market
+                  {t(selectedLanguage, "marketGrid.createFirstMarket")}
                 </Button>
               )}
             </motion.div>
@@ -503,13 +519,15 @@ export function MarketGrid({
       <Dialog open={isTagsModalOpen} onOpenChange={setIsTagsModalOpen}>
         <DialogContent className="max-w-xl border-border/50 bg-background/95 p-0 sm:max-h-[80vh]">
           <DialogHeader className="border-b border-border/40 px-6 py-4">
-            <DialogTitle className="font-syne text-xl">Select a Tag or Language</DialogTitle>
+            <DialogTitle className="font-syne text-xl">{t(selectedLanguage, "marketGrid.selectTag")}</DialogTitle>
           </DialogHeader>
 
           <ScrollArea className="max-h-[60vh] px-6 py-4">
             <div className="space-y-5">
               <div>
-                <p className="mb-2 text-sm font-semibold text-foreground">Languages available</p>
+                <p className="mb-2 text-sm font-semibold text-foreground">
+                  {t(selectedLanguage, "marketGrid.languagesAvailable")}
+                </p>
                 <div className="flex flex-wrap gap-2">
                   {availableLanguages.length > 0 ? availableLanguages.map((language) => (
                     <button
@@ -520,13 +538,13 @@ export function MarketGrid({
                       {language}
                     </button>
                   )) : (
-                    <p className="text-xs text-muted-foreground">No languages present.</p>
+                    <p className="text-xs text-muted-foreground">{t(selectedLanguage, "marketGrid.noLanguages")}</p>
                   )}
                 </div>
               </div>
 
               <div>
-                <p className="mb-2 text-sm font-semibold text-foreground">Tags available</p>
+                <p className="mb-2 text-sm font-semibold text-foreground">{t(selectedLanguage, "marketGrid.tagsAvailable")}</p>
                 <div className="flex flex-wrap gap-2">
                   {uniqueTags.length > 0 ? uniqueTags.map((tag) => (
                     <button
@@ -537,7 +555,7 @@ export function MarketGrid({
                       {tag}
                     </button>
                   )) : (
-                    <p className="text-xs text-muted-foreground">No tags available.</p>
+                    <p className="text-xs text-muted-foreground">{t(selectedLanguage, "marketGrid.noTags")}</p>
                   )}
                 </div>
               </div>
