@@ -134,8 +134,11 @@ export interface Translations {
     detailsStep: string;
     confirmStep: string;
     marketTitle: string;
+    marketTitlePlaceholder: string;
     marketSubtitle: string;
+    marketSubtitlePlaceholder: string;
     marketDescription: string;
+    marketDescriptionPlaceholder: string;
     posterImage: string;
     tags: string;
     optionAYes: string;
@@ -152,6 +155,114 @@ export interface Translations {
     platformFee: string;
     imageRequired: string;
     invalidImageUrl: string;
+  };
+  // Market Card
+  marketCard: {
+    tags: string;
+    moreTags: string;
+    removeMarket: string;
+    vote: string;
+    lateVote: string;
+    closed: string;
+    allTags: string;
+    creator: string;
+    voted: string;
+    visitMarket: string;
+    resolving: string;
+    loadingPositions: string;
+    claim: string;
+    claimAll: string;
+    claiming: string;
+    voteOnYourThot: string;
+    lateVoteOnYourThot: string;
+    voteAgain: string;
+  };
+  // Market Grid
+  marketGrid: {
+    title: string;
+    marketsAvailable: string;
+    searchResults: string;
+    pageDisplay: string;
+    refreshTitle: string;
+    createMarket: string;
+    searchPlaceholder: string;
+    filterAll: string;
+    filterTrending: string;
+    filterSymbol: string;
+    filterToken: string;
+    filterTags: string;
+    hideClosed: string;
+    showClosed: string;
+    loadingMarkets: string;
+    noMarketsFound: string;
+    noMarketsYet: string;
+    adjustSearch: string;
+    createFirstMarket: string;
+    createFirstHint: string;
+    selectTag: string;
+    languagesAvailable: string;
+    noLanguages: string;
+    tagsAvailable: string;
+    noTags: string;
+  };
+  // Vote Dialog
+  voteDialog: {
+    title: string;
+    yourVote: string;
+    amountToSend: string;
+    amountPlaceholder: string;
+    amountHelp: string;
+    cannotBeZero: string;
+    nonZeroRequired: string;
+    voting: string;
+    sendVote: string;
+  };
+  // Market Page
+  marketPage: {
+    aboutMarket: string;
+    castVote: string;
+    trade: string;
+    tradeHaircutNotice: string;
+    createdOn: string;
+    voteSingular: string;
+    votePlural: string;
+    live: string;
+    checking: string;
+    resolving: string;
+    ended: string;
+    back: string;
+    shareThisMarket: string;
+    copyLink: string;
+    shareOnX: string;
+    shareOnTelegram: string;
+    shareViaDevice: string;
+    penaltyWindow: string;
+    loadingPositions: string;
+    closed: string;
+    lateVote: string;
+    vote: string;
+    platformFee: string;
+  };
+  // Countdown
+  countdown: {
+    closing: string;
+    ended: string;
+    timeRemaining: string;
+    penaltyWindow: string;
+    marketResolving: string;
+    marketClosed: string;
+    votingWrapping: string;
+    votingClosed: string;
+    days: string;
+    hours: string;
+    mins: string;
+    secs: string;
+    loadingAdjudicators: string;
+  };
+  // Profile Menu
+  profileMenu: {
+    profile: string;
+    notConnected: string;
   };
   // Common
   common: {
@@ -312,8 +423,11 @@ export const translations: Record<LanguageCode, Translations> = {
       detailsStep: "Market Details",
       confirmStep: "Confirm",
       marketTitle: "Market Title",
+      marketTitlePlaceholder: "Will Bitcoin reach $100k? (Be specific and avoid ambiguity)",
       marketSubtitle: "Subtitle",
+      marketSubtitlePlaceholder: "Example: Crypto price prediction for 2025",
       marketDescription: "Description",
+      marketDescriptionPlaceholder: "Provide more info or helpful context about this prediction market to users and our AI adjudicators...",
       posterImage: "Poster Image URL",
       tags: "Tags",
       optionAYes: "Option A (Yes)",
@@ -332,6 +446,109 @@ export const translations: Record<LanguageCode, Translations> = {
       invalidImageUrl: "URL must end with a valid image extension (.jpg, .png, .gif, .webp, .svg)",
     },
     // Common
+    marketCard: {
+      tags: "tags",
+      moreTags: "+{count} tags",
+      removeMarket: "Remove market",
+      vote: "Vote",
+      lateVote: "Late vote",
+      closed: "Closed",
+      allTags: "All tags for this market",
+      creator: "Creator",
+      voted: "Voted",
+      visitMarket: "Visit Market",
+      resolving: "Resolving Market",
+      loadingPositions: "Loading positions...",
+      claim: "Claim",
+      claimAll: "Claim All ({count})",
+      claiming: "Claiming...",
+      voteOnYourThot: "Vote on Your Thot",
+      lateVoteOnYourThot: "Late vote on Your Thot",
+      voteAgain: "Vote Again",
+    },
+    marketGrid: {
+      title: "Markets",
+      marketsAvailable: "{count} markets available",
+      searchResults: "Search results: {count}",
+      pageDisplay: "Page {current} of {total} • Displaying Markets {start} - {end}",
+      refreshTitle: "Refresh all markets from blockchain",
+      createMarket: "Create Market",
+      searchPlaceholder: "Search by id, text, tags, language (supports multiple words)...",
+      filterAll: "All",
+      filterTrending: "Trending",
+      filterSymbol: "{symbol} Markets",
+      filterToken: "Token Markets",
+      filterTags: "Tags",
+      hideClosed: "Hide Closed Markets",
+      showClosed: "Show Closed Markets",
+      loadingMarkets: "Loading markets from blockchain...",
+      noMarketsFound: "No markets found",
+      noMarketsYet: "No markets yet",
+      adjustSearch: "Try adjusting your search or filter criteria.",
+      createFirstMarket: "Create First Market",
+      createFirstHint: "Be the first to create a prediction market and share your insights with the world.",
+      selectTag: "Select a Tag or Language",
+      languagesAvailable: "Languages available",
+      noLanguages: "No languages present.",
+      tagsAvailable: "Tags available",
+      noTags: "No tags available.",
+    },
+    voteDialog: {
+      title: "Place Your Vote",
+      yourVote: "Your Vote",
+      amountToSend: "Amount to Send ({symbol}) *",
+      amountPlaceholder: "0.01",
+      amountHelp: "This amount will be sent with your vote to engage your choice in the market",
+      cannotBeZero: "Cannot be zero",
+      nonZeroRequired: "You must send a non-zero amount to engage your vote",
+      voting: "Voting...",
+      sendVote: "Send Vote",
+    },
+    marketPage: {
+      aboutMarket: "About this market",
+      castVote: "Cast your vote",
+      trade: "Trade",
+      tradeHaircutNotice:
+        "Trades have a 50% haircut for anyone desiring to alternate a vote position",
+      createdOn: "Created {date}",
+      voteSingular: "vote",
+      votePlural: "votes",
+      live: "Live",
+      checking: "Checking...",
+      resolving: "Resolving",
+      ended: "Ended",
+      back: "Back",
+      shareThisMarket: "Share this market on {network}",
+      copyLink: "Copy link",
+      shareOnX: "Share on X",
+      shareOnTelegram: "Share on Telegram",
+      shareViaDevice: "Share via device",
+      penaltyWindow: "Penalty Window",
+      loadingPositions: "Loading positions...",
+      closed: "Closed",
+      lateVote: "Late Vote",
+      vote: "Vote",
+      platformFee: "Platform fee",
+    },
+    countdown: {
+      closing: "Closing",
+      ended: "Ended",
+      timeRemaining: "Time Remaining",
+      penaltyWindow: "Penalty Window.",
+      marketResolving: "Market Resolving.",
+      marketClosed: "Market Closed.",
+      votingWrapping: "Voting is wrapping up.",
+      votingClosed: "Voting is now closed.",
+      days: "Days",
+      hours: "Hours",
+      mins: "Mins",
+      secs: "Secs",
+      loadingAdjudicators: "Loading adjudicators...",
+    },
+    profileMenu: {
+      profile: "Your Profile",
+      notConnected: "Not connected",
+    },
     common: {
       yes: "Yes",
       no: "No",
@@ -476,8 +693,11 @@ export const translations: Record<LanguageCode, Translations> = {
       detailsStep: "Detalles",
       confirmStep: "Confirmar",
       marketTitle: "Título",
+      marketTitlePlaceholder: "¿Bitcoin alcanzará los $100k? (Sé específico y evita ambigüedades)",
       marketSubtitle: "Subtítulo",
+      marketSubtitlePlaceholder: "Ejemplo: Predicción del precio cripto para 2025",
       marketDescription: "Descripción",
+      marketDescriptionPlaceholder: "Agrega más información o contexto útil sobre este mercado de predicción para los usuarios y nuestros adjudicadores de IA...",
       posterImage: "URL de imagen",
       tags: "Tags",
       optionAYes: "Opción A (Sí)",
@@ -494,6 +714,109 @@ export const translations: Record<LanguageCode, Translations> = {
       platformFee: "Fee",
       imageRequired: "Imagen requerida",
       invalidImageUrl: "URL inválida",
+    },
+    marketCard: {
+      tags: "tags",
+      moreTags: "+{count} tags",
+      removeMarket: "Eliminar mercado",
+      vote: "Votar",
+      lateVote: "Voto tardío",
+      closed: "Cerrado",
+      allTags: "Todos los tags",
+      creator: "Creador",
+      voted: "Votado",
+      visitMarket: "Ver mercado",
+      resolving: "Resolviendo",
+      loadingPositions: "Cargando posiciones...",
+      claim: "Reclamar",
+      claimAll: "Reclamar todo ({count})",
+      claiming: "Reclamando...",
+      voteOnYourThot: "Votar en tu Thot",
+      lateVoteOnYourThot: "Voto tardío en tu Thot",
+      voteAgain: "Votar de nuevo",
+    },
+    marketGrid: {
+      title: "Mercados",
+      marketsAvailable: "{count} mercados disponibles",
+      searchResults: "Resultados: {count}",
+      pageDisplay: "Página {current} de {total} • Mostrando {start}-{end}",
+      refreshTitle: "Actualizar mercados desde blockchain",
+      createMarket: "Crear mercado",
+      searchPlaceholder: "Buscar por id, texto, tags o idioma...",
+      filterAll: "Todos",
+      filterTrending: "Tendencia",
+      filterSymbol: "Mercados {symbol}",
+      filterToken: "Mercados de token",
+      filterTags: "Tags",
+      hideClosed: "Ocultar cerrados",
+      showClosed: "Mostrar cerrados",
+      loadingMarkets: "Cargando mercados...",
+      noMarketsFound: "Sin resultados",
+      noMarketsYet: "Sin mercados",
+      adjustSearch: "Ajusta la búsqueda o filtros.",
+      createFirstMarket: "Crear primer mercado",
+      createFirstHint: "Sé el primero en crear un mercado de predicción y compartir tus ideas.",
+      selectTag: "Selecciona tag o idioma",
+      languagesAvailable: "Idiomas disponibles",
+      noLanguages: "Sin idiomas",
+      tagsAvailable: "Tags disponibles",
+      noTags: "Sin tags",
+    },
+    voteDialog: {
+      title: "Realiza tu voto",
+      yourVote: "Tu voto",
+      amountToSend: "Cantidad a enviar ({symbol}) *",
+      amountPlaceholder: "0.01",
+      amountHelp: "Esta cantidad se enviará con tu voto para respaldar tu elección en el mercado",
+      cannotBeZero: "No puede ser cero",
+      nonZeroRequired: "Debes enviar una cantidad mayor que cero para votar",
+      voting: "Votando...",
+      sendVote: "Enviar voto",
+    },
+    marketPage: {
+      aboutMarket: "Acerca de este mercado",
+      castVote: "Emite tu voto",
+      trade: "Trade",
+      tradeHaircutNotice:
+        "Las operaciones tienen un recorte del 50% para quienes deseen alternar una posición de voto",
+      createdOn: "Creado {date}",
+      voteSingular: "voto",
+      votePlural: "votos",
+      live: "Activo",
+      checking: "Verificando...",
+      resolving: "Resolviendo",
+      ended: "Finalizado",
+      back: "Atrás",
+      shareThisMarket: "Comparte este mercado en {network}",
+      copyLink: "Copiar enlace",
+      shareOnX: "Compartir en X",
+      shareOnTelegram: "Compartir en Telegram",
+      shareViaDevice: "Compartir con dispositivo",
+      penaltyWindow: "Ventana de penalización",
+      loadingPositions: "Cargando posiciones...",
+      closed: "Cerrado",
+      lateVote: "Voto tardío",
+      vote: "Votar",
+      platformFee: "Tarifa de plataforma",
+    },
+    countdown: {
+      closing: "Cerrando",
+      ended: "Finalizado",
+      timeRemaining: "Tiempo restante",
+      penaltyWindow: "Ventana de penalización.",
+      marketResolving: "Mercado resolviéndose.",
+      marketClosed: "Mercado cerrado.",
+      votingWrapping: "La votación está terminando.",
+      votingClosed: "La votación está cerrada.",
+      days: "Días",
+      hours: "Horas",
+      mins: "Min",
+      secs: "Seg",
+      loadingAdjudicators: "Cargando adjudicadores...",
+    },
+    profileMenu: {
+      profile: "Tu perfil",
+      notConnected: "No conectado",
     },
     common: {
       yes: "Sí",
@@ -638,8 +961,11 @@ export const translations: Record<LanguageCode, Translations> = {
       detailsStep: "Détails",
       confirmStep: "Confirmer",
       marketTitle: "Titre",
+      marketTitlePlaceholder: "Le Bitcoin atteindra-t-il 100k $ ? (Soyez précis et évitez toute ambiguïté)",
       marketSubtitle: "Sous-titre",
+      marketSubtitlePlaceholder: "Exemple : Prédiction du prix crypto pour 2025",
       marketDescription: "Description",
+      marketDescriptionPlaceholder: "Ajoutez plus d'informations ou de contexte utile sur ce marché de prédiction pour les utilisateurs et nos arbitres IA...",
       posterImage: "URL image",
       tags: "Tags",
       optionAYes: "Option A (Oui)",
@@ -656,6 +982,109 @@ export const translations: Record<LanguageCode, Translations> = {
       platformFee: "Frais",
       imageRequired: "Image requise",
       invalidImageUrl: "URL invalide",
+    },
+    marketCard: {
+      tags: "tags",
+      moreTags: "+{count} tags",
+      removeMarket: "Supprimer le marché",
+      vote: "Voter",
+      lateVote: "Vote tardif",
+      closed: "Fermé",
+      allTags: "Tous les tags",
+      creator: "Créateur",
+      voted: "Voté",
+      visitMarket: "Voir le marché",
+      resolving: "Résolution en cours",
+      loadingPositions: "Chargement des positions...",
+      claim: "Réclamer",
+      claimAll: "Tout réclamer ({count})",
+      claiming: "Réclamation...",
+      voteOnYourThot: "Voter sur votre Thot",
+      lateVoteOnYourThot: "Vote tardif sur votre Thot",
+      voteAgain: "Voter à nouveau",
+    },
+    marketGrid: {
+      title: "Marchés",
+      marketsAvailable: "{count} marchés disponibles",
+      searchResults: "Résultats : {count}",
+      pageDisplay: "Page {current} sur {total} • Affichage {start}-{end}",
+      refreshTitle: "Actualiser les marchés depuis la blockchain",
+      createMarket: "Créer un marché",
+      searchPlaceholder: "Rechercher par id, texte, tags ou langue...",
+      filterAll: "Tous",
+      filterTrending: "Tendance",
+      filterSymbol: "Marchés {symbol}",
+      filterToken: "Marchés de token",
+      filterTags: "Tags",
+      hideClosed: "Masquer les fermés",
+      showClosed: "Afficher les fermés",
+      loadingMarkets: "Chargement des marchés...",
+      noMarketsFound: "Aucun résultat",
+      noMarketsYet: "Aucun marché",
+      adjustSearch: "Ajustez la recherche ou les filtres.",
+      createFirstMarket: "Créer le premier marché",
+      createFirstHint: "Soyez le premier à créer un marché prédictif et à partager vos idées.",
+      selectTag: "Sélectionnez un tag ou une langue",
+      languagesAvailable: "Langues disponibles",
+      noLanguages: "Aucune langue",
+      tagsAvailable: "Tags disponibles",
+      noTags: "Aucun tag",
+    },
+    voteDialog: {
+      title: "Placez votre vote",
+      yourVote: "Votre vote",
+      amountToSend: "Montant à envoyer ({symbol}) *",
+      amountPlaceholder: "0.01",
+      amountHelp: "Ce montant sera envoyé avec votre vote pour soutenir votre choix sur le marché",
+      cannotBeZero: "Ne peut pas être zéro",
+      nonZeroRequired: "Vous devez envoyer un montant non nul pour voter",
+      voting: "Vote en cours...",
+      sendVote: "Envoyer le vote",
+    },
+    marketPage: {
+      aboutMarket: "À propos de ce marché",
+      castVote: "Votez",
+      trade: "Trade",
+      tradeHaircutNotice:
+        "Les transactions subissent une décote de 50% pour ceux qui souhaitent alterner une position de vote",
+      createdOn: "Créé {date}",
+      voteSingular: "vote",
+      votePlural: "votes",
+      live: "En direct",
+      checking: "Vérification...",
+      resolving: "Résolution",
+      ended: "Terminé",
+      back: "Retour",
+      shareThisMarket: "Partager ce marché sur {network}",
+      copyLink: "Copier le lien",
+      shareOnX: "Partager sur X",
+      shareOnTelegram: "Partager sur Telegram",
+      shareViaDevice: "Partager via l'appareil",
+      penaltyWindow: "Fenêtre de pénalité",
+      loadingPositions: "Chargement des positions...",
+      closed: "Fermé",
+      lateVote: "Vote tardif",
+      vote: "Voter",
+      platformFee: "Frais de plateforme",
+    },
+    countdown: {
+      closing: "Clôture",
+      ended: "Terminé",
+      timeRemaining: "Temps restant",
+      penaltyWindow: "Fenêtre de pénalité.",
+      marketResolving: "Résolution du marché.",
+      marketClosed: "Marché fermé.",
+      votingWrapping: "Le vote se termine.",
+      votingClosed: "Le vote est maintenant fermé.",
+      days: "Jours",
+      hours: "Heures",
+      mins: "Min",
+      secs: "Sec",
+      loadingAdjudicators: "Chargement des arbitres...",
+    },
+    profileMenu: {
+      profile: "Votre profil",
+      notConnected: "Non connecté",
     },
     common: {
       yes: "Oui",
@@ -800,8 +1229,11 @@ export const translations: Record<LanguageCode, Translations> = {
       detailsStep: "Details",
       confirmStep: "Bestätigen",
       marketTitle: "Titel",
+      marketTitlePlaceholder: "Wird Bitcoin 100.000 $ erreichen? (Sei konkret und vermeide Mehrdeutigkeit)",
       marketSubtitle: "Untertitel",
+      marketSubtitlePlaceholder: "Beispiel: Krypto-Preisprognose für 2025",
       marketDescription: "Beschreibung",
+      marketDescriptionPlaceholder: "Gib mehr Informationen oder hilfreichen Kontext zu diesem Prognosemarkt für Nutzer und unsere KI-Schiedsrichter an...",
       posterImage: "Bild URL",
       tags: "Tags",
       optionAYes: "Option A (Ja)",
@@ -818,6 +1250,109 @@ export const translations: Record<LanguageCode, Translations> = {
       platformFee: "Gebühr",
       imageRequired: "Bild nötig",
       invalidImageUrl: "Ungültige URL",
+    },
+    marketCard: {
+      tags: "tags",
+      moreTags: "+{count} tags",
+      removeMarket: "Markt entfernen",
+      vote: "Abstimmen",
+      lateVote: "Späte Abstimmung",
+      closed: "Geschlossen",
+      allTags: "Alle Tags",
+      creator: "Ersteller",
+      voted: "Abgestimmt",
+      visitMarket: "Markt besuchen",
+      resolving: "Wird aufgelöst",
+      loadingPositions: "Positionen werden geladen...",
+      claim: "Beanspruchen",
+      claimAll: "Alle beanspruchen ({count})",
+      claiming: "Wird beansprucht...",
+      voteOnYourThot: "Auf deinen Thot abstimmen",
+      lateVoteOnYourThot: "Späte Abstimmung auf deinen Thot",
+      voteAgain: "Erneut abstimmen",
+    },
+    marketGrid: {
+      title: "Märkte",
+      marketsAvailable: "{count} Märkte verfügbar",
+      searchResults: "Ergebnisse: {count}",
+      pageDisplay: "Seite {current} von {total} • Anzeige {start}-{end}",
+      refreshTitle: "Märkte aus der Blockchain aktualisieren",
+      createMarket: "Markt erstellen",
+      searchPlaceholder: "Nach id, Text, Tags oder Sprache suchen...",
+      filterAll: "Alle",
+      filterTrending: "Trend",
+      filterSymbol: "{symbol}-Märkte",
+      filterToken: "Token-Märkte",
+      filterTags: "Tags",
+      hideClosed: "Geschlossene ausblenden",
+      showClosed: "Geschlossene anzeigen",
+      loadingMarkets: "Märkte werden geladen...",
+      noMarketsFound: "Keine Ergebnisse",
+      noMarketsYet: "Keine Märkte",
+      adjustSearch: "Suche oder Filter anpassen.",
+      createFirstMarket: "Ersten Markt erstellen",
+      createFirstHint: "Erstelle als Erste:r einen Prognosemarkt und teile deine Ideen.",
+      selectTag: "Tag oder Sprache auswählen",
+      languagesAvailable: "Verfügbare Sprachen",
+      noLanguages: "Keine Sprachen",
+      tagsAvailable: "Verfügbare Tags",
+      noTags: "Keine Tags",
+    },
+    voteDialog: {
+      title: "Gib deine Stimme ab",
+      yourVote: "Deine Stimme",
+      amountToSend: "Zu sendender Betrag ({symbol}) *",
+      amountPlaceholder: "0.01",
+      amountHelp: "Dieser Betrag wird mit deiner Stimme gesendet, um deine Wahl im Markt zu unterstützen",
+      cannotBeZero: "Darf nicht null sein",
+      nonZeroRequired: "Du musst einen Betrag größer null senden, um abzustimmen",
+      voting: "Abstimmung läuft...",
+      sendVote: "Stimme senden",
+    },
+    marketPage: {
+      aboutMarket: "Über diesen Markt",
+      castVote: "Stimme ab",
+      trade: "Trade",
+      tradeHaircutNotice:
+        "Trades haben einen Abschlag von 50% für alle, die eine Stimmposition wechseln möchten",
+      createdOn: "Erstellt {date}",
+      voteSingular: "Stimme",
+      votePlural: "Stimmen",
+      live: "Live",
+      checking: "Prüfung...",
+      resolving: "Wird aufgelöst",
+      ended: "Beendet",
+      back: "Zurück",
+      shareThisMarket: "Diesen Markt auf {network} teilen",
+      copyLink: "Link kopieren",
+      shareOnX: "Auf X teilen",
+      shareOnTelegram: "Auf Telegram teilen",
+      shareViaDevice: "Über Gerät teilen",
+      penaltyWindow: "Strafzeitfenster",
+      loadingPositions: "Positionen werden geladen...",
+      closed: "Geschlossen",
+      lateVote: "Späte Abstimmung",
+      vote: "Abstimmen",
+      platformFee: "Plattformgebühr",
+    },
+    countdown: {
+      closing: "Schließt",
+      ended: "Beendet",
+      timeRemaining: "Verbleibende Zeit",
+      penaltyWindow: "Strafzeitfenster.",
+      marketResolving: "Markt wird aufgelöst.",
+      marketClosed: "Markt geschlossen.",
+      votingWrapping: "Abstimmung läuft aus.",
+      votingClosed: "Abstimmung ist jetzt geschlossen.",
+      days: "Tage",
+      hours: "Std",
+      mins: "Min",
+      secs: "Sek",
+      loadingAdjudicators: "Schiedsrichter werden geladen...",
+    },
+    profileMenu: {
+      profile: "Dein Profil",
+      notConnected: "Nicht verbunden",
     },
     common: {
       yes: "Ja",
@@ -962,8 +1497,11 @@ export const translations: Record<LanguageCode, Translations> = {
       detailsStep: "Detalhes",
       confirmStep: "Confirmar",
       marketTitle: "Título",
+      marketTitlePlaceholder: "O Bitcoin vai chegar a US$100k? (Seja específico e evite ambiguidades)",
       marketSubtitle: "Subtítulo",
+      marketSubtitlePlaceholder: "Exemplo: Previsão de preço cripto para 2025",
       marketDescription: "Descrição",
+      marketDescriptionPlaceholder: "Adicione mais informações ou contexto útil sobre este mercado de previsão para os usuários e nossos adjudicadores de IA...",
       posterImage: "URL imagem",
       tags: "Tags",
       optionAYes: "Opção A (Sim)",
@@ -980,6 +1518,109 @@ export const translations: Record<LanguageCode, Translations> = {
       platformFee: "Taxa",
       imageRequired: "Imagem necessária",
       invalidImageUrl: "URL inválida",
+    },
+    marketCard: {
+      tags: "tags",
+      moreTags: "+{count} tags",
+      removeMarket: "Remover mercado",
+      vote: "Votar",
+      lateVote: "Voto tardio",
+      closed: "Fechado",
+      allTags: "Todas as tags",
+      creator: "Criador",
+      voted: "Votado",
+      visitMarket: "Visitar mercado",
+      resolving: "Resolvendo",
+      loadingPositions: "Carregando posições...",
+      claim: "Resgatar",
+      claimAll: "Resgatar tudo ({count})",
+      claiming: "Resgatando...",
+      voteOnYourThot: "Votar no seu Thot",
+      lateVoteOnYourThot: "Voto tardio no seu Thot",
+      voteAgain: "Votar novamente",
+    },
+    marketGrid: {
+      title: "Mercados",
+      marketsAvailable: "{count} mercados disponíveis",
+      searchResults: "Resultados: {count}",
+      pageDisplay: "Página {current} de {total} • Mostrando {start}-{end}",
+      refreshTitle: "Atualizar mercados da blockchain",
+      createMarket: "Criar mercado",
+      searchPlaceholder: "Buscar por id, texto, tags ou idioma...",
+      filterAll: "Todos",
+      filterTrending: "Em alta",
+      filterSymbol: "Mercados {symbol}",
+      filterToken: "Mercados de token",
+      filterTags: "Tags",
+      hideClosed: "Ocultar fechados",
+      showClosed: "Mostrar fechados",
+      loadingMarkets: "Carregando mercados...",
+      noMarketsFound: "Sem resultados",
+      noMarketsYet: "Sem mercados",
+      adjustSearch: "Ajuste a busca ou os filtros.",
+      createFirstMarket: "Criar primeiro mercado",
+      createFirstHint: "Seja o primeiro a criar um mercado de previsão e compartilhar suas ideias.",
+      selectTag: "Selecione tag ou idioma",
+      languagesAvailable: "Idiomas disponíveis",
+      noLanguages: "Sem idiomas",
+      tagsAvailable: "Tags disponíveis",
+      noTags: "Sem tags",
+    },
+    voteDialog: {
+      title: "Faça seu voto",
+      yourVote: "Seu voto",
+      amountToSend: "Valor para enviar ({symbol}) *",
+      amountPlaceholder: "0.01",
+      amountHelp: "Esse valor será enviado com seu voto para apoiar sua escolha no mercado",
+      cannotBeZero: "Não pode ser zero",
+      nonZeroRequired: "Você deve enviar um valor maior que zero para votar",
+      voting: "Votando...",
+      sendVote: "Enviar voto",
+    },
+    marketPage: {
+      aboutMarket: "Sobre este mercado",
+      castVote: "Faça seu voto",
+      trade: "Trade",
+      tradeHaircutNotice:
+        "As negociações têm um corte de 50% para quem desejar alternar uma posição de voto",
+      createdOn: "Criado {date}",
+      voteSingular: "voto",
+      votePlural: "votos",
+      live: "Ao vivo",
+      checking: "Verificando...",
+      resolving: "Resolvendo",
+      ended: "Encerrado",
+      back: "Voltar",
+      shareThisMarket: "Compartilhe este mercado em {network}",
+      copyLink: "Copiar link",
+      shareOnX: "Compartilhar no X",
+      shareOnTelegram: "Compartilhar no Telegram",
+      shareViaDevice: "Compartilhar pelo dispositivo",
+      penaltyWindow: "Janela de penalidade",
+      loadingPositions: "Carregando posições...",
+      closed: "Fechado",
+      lateVote: "Voto tardio",
+      vote: "Votar",
+      platformFee: "Taxa da plataforma",
+    },
+    countdown: {
+      closing: "Encerrando",
+      ended: "Encerrado",
+      timeRemaining: "Tempo restante",
+      penaltyWindow: "Janela de penalidade.",
+      marketResolving: "Mercado resolvendo.",
+      marketClosed: "Mercado fechado.",
+      votingWrapping: "A votação está terminando.",
+      votingClosed: "A votação está encerrada.",
+      days: "Dias",
+      hours: "Horas",
+      mins: "Min",
+      secs: "Seg",
+      loadingAdjudicators: "Carregando adjudicadores...",
+    },
+    profileMenu: {
+      profile: "Seu perfil",
+      notConnected: "Não conectado",
     },
     common: {
       yes: "Sim",
@@ -1124,8 +1765,11 @@ export const translations: Record<LanguageCode, Translations> = {
       detailsStep: "详情",
       confirmStep: "确认",
       marketTitle: "标题",
+      marketTitlePlaceholder: "比特币会达到 10 万美元吗？（请尽量具体并避免歧义）",
       marketSubtitle: "副标题",
+      marketSubtitlePlaceholder: "示例：2025 年加密货币价格预测",
       marketDescription: "描述",
+      marketDescriptionPlaceholder: "为用户和我们的 AI 裁定系统提供更多关于该预测市场的信息或背景...",
       posterImage: "图片 URL",
       tags: "标签",
       optionAYes: "选项 A（是）",
@@ -1142,6 +1786,108 @@ export const translations: Record<LanguageCode, Translations> = {
       platformFee: "手续费",
       imageRequired: "需要图片",
       invalidImageUrl: "无效 URL",
+    },
+    marketCard: {
+      tags: "标签",
+      moreTags: "+{count} 个标签",
+      removeMarket: "移除市场",
+      vote: "投票",
+      lateVote: "延迟投票",
+      closed: "已关闭",
+      allTags: "该市场的所有标签",
+      creator: "创建者",
+      voted: "已投票",
+      visitMarket: "查看市场",
+      resolving: "结算中",
+      loadingPositions: "正在加载仓位...",
+      claim: "领取",
+      claimAll: "全部领取 ({count})",
+      claiming: "领取中...",
+      voteOnYourThot: "为你的 Thot 投票",
+      lateVoteOnYourThot: "为你的 Thot 延迟投票",
+      voteAgain: "再次投票",
+    },
+    marketGrid: {
+      title: "市场",
+      marketsAvailable: "可用 {count} 个市场",
+      searchResults: "搜索结果：{count}",
+      pageDisplay: "第 {current}/{total} 页 • 显示 {start}-{end}",
+      refreshTitle: "从区块链刷新市场",
+      createMarket: "创建市场",
+      searchPlaceholder: "按 id、文本、标签或语言搜索...",
+      filterAll: "全部",
+      filterTrending: "趋势",
+      filterSymbol: "{symbol} 市场",
+      filterToken: "代币市场",
+      filterTags: "标签",
+      hideClosed: "隐藏已关闭",
+      showClosed: "显示已关闭",
+      loadingMarkets: "正在加载市场...",
+      noMarketsFound: "未找到市场",
+      noMarketsYet: "暂无市场",
+      adjustSearch: "请调整搜索或筛选条件。",
+      createFirstMarket: "创建第一个市场",
+      createFirstHint: "成为第一个创建预测市场并分享见解的人。",
+      selectTag: "选择标签或语言",
+      languagesAvailable: "可用语言",
+      noLanguages: "无语言",
+      tagsAvailable: "可用标签",
+      noTags: "无标签",
+    },
+    voteDialog: {
+      title: "进行投票",
+      yourVote: "你的投票",
+      amountToSend: "发送金额 ({symbol}) *",
+      amountPlaceholder: "0.01",
+      amountHelp: "该金额将随投票一起发送，以支持你在市场中的选择",
+      cannotBeZero: "不能为零",
+      nonZeroRequired: "你必须发送非零金额才能投票",
+      voting: "投票中...",
+      sendVote: "发送投票",
+    },
+    marketPage: {
+      aboutMarket: "关于此市场",
+      castVote: "进行投票",
+      trade: "交易",
+      tradeHaircutNotice: "若要切换投票仓位，交易将有 50% 的折扣扣减",
+      createdOn: "创建于 {date}",
+      voteSingular: "票",
+      votePlural: "票",
+      live: "进行中",
+      checking: "检查中...",
+      resolving: "结算中",
+      ended: "已结束",
+      back: "返回",
+      shareThisMarket: "在 {network} 分享此市场",
+      copyLink: "复制链接",
+      shareOnX: "分享到 X",
+      shareOnTelegram: "分享到 Telegram",
+      shareViaDevice: "通过设备分享",
+      penaltyWindow: "惩罚窗口",
+      loadingPositions: "正在加载仓位...",
+      closed: "已关闭",
+      lateVote: "延迟投票",
+      vote: "投票",
+      platformFee: "平台费",
+    },
+    countdown: {
+      closing: "即将结束",
+      ended: "已结束",
+      timeRemaining: "剩余时间",
+      penaltyWindow: "惩罚窗口。",
+      marketResolving: "市场结算中。",
+      marketClosed: "市场已关闭。",
+      votingWrapping: "投票即将结束。",
+      votingClosed: "投票现已关闭。",
+      days: "天",
+      hours: "时",
+      mins: "分",
+      secs: "秒",
+      loadingAdjudicators: "正在加载裁决者...",
+    },
+    profileMenu: {
+      profile: "你的资料",
+      notConnected: "未连接",
     },
     common: {
       yes: "是",

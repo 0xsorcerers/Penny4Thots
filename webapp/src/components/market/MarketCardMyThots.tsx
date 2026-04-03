@@ -13,6 +13,8 @@ import { useActiveAccount } from "thirdweb/react";
 import { toast } from "sonner";
 import { useNetworkStore } from "@/store/networkStore";
 import { buildMarketRoute } from "@/lib/marketRoutes";
+import { useLanguageStore } from "@/store/languageStore";
+import { t } from "@/tools/languages";
 
 interface MarketCardMyThotsProps {
   market: Market;
@@ -26,6 +28,7 @@ const truncateOption = (option: string, maxLength: number = 9): string => {
 export function MarketCardMyThots({ market, onVoteClick }: MarketCardMyThotsProps) {
   const navigate = useNavigate();
   const selectedChainId = useNetworkStore((state) => state.selectedNetwork.chainId);
+  const selectedLanguage = useLanguageStore((state) => state.selectedLanguage);
   const account = useActiveAccount();
   const [isHovered, setIsHovered] = useState(false);
   const [showAllTags, setShowAllTags] = useState(false);
@@ -139,17 +142,17 @@ export function MarketCardMyThots({ market, onVoteClick }: MarketCardMyThotsProp
   const handleClaim = async (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!account?.address) {
-      toast.error("Please connect your wallet first");
+      toast.error(t(selectedLanguage, "voteModal.walletNotConnected"));
       return;
     }
 
     if (userPositions.length === 0) {
-      toast.error("No positions to claim");
+      toast.error(t(selectedLanguage, "market.noPositionsToClaim"));
       return;
     }
 
     try {
-      toast.info("Processing claim...", {
+      toast.info(t(selectedLanguage, "marketCard.claiming"), {
         description: `Claiming ${userPositions.length} position${userPositions.length > 1 ? 's' : ''}`,
       });
 
@@ -158,7 +161,7 @@ export function MarketCardMyThots({ market, onVoteClick }: MarketCardMyThotsProp
         positionIds: userPositions,
       });
 
-      toast.success("Claim successful!", {
+      toast.success(t(selectedLanguage, "market.claimSuccessful"), {
         description: `You have successfully claimed your rewards from ${userPositions.length} position${userPositions.length > 1 ? 's' : ''}`,
       });
 
@@ -166,7 +169,7 @@ export function MarketCardMyThots({ market, onVoteClick }: MarketCardMyThotsProp
       setUserPositions([]);
     } catch (err) {
       console.error("Claim failed:", err);
-      toast.error("Claim failed", {
+      toast.error(t(selectedLanguage, "market.claimFailed"), {
         description: err instanceof Error ? err.message : "Please try again",
       });
     }
@@ -198,7 +201,7 @@ export function MarketCardMyThots({ market, onVoteClick }: MarketCardMyThotsProp
       <div className="absolute top-4 right-4 z-20">
         <div className="flex items-center gap-1.5 rounded-full bg-emerald-500/20 px-2.5 py-1 border border-emerald-500/30">
           <Brain className="h-3 w-3 text-emerald-400" />
-          <span className="font-mono text-xs text-emerald-400">Creator</span>
+          <span className="font-mono text-xs text-emerald-400">{t(selectedLanguage, "marketCard.creator")}</span>
         </div>
       </div>
 
@@ -219,7 +222,7 @@ export function MarketCardMyThots({ market, onVoteClick }: MarketCardMyThotsProp
               onClick={handleShowMoreTags}
               className="rounded-full bg-emerald-500/10 px-2.5 py-0.5 font-mono text-xs text-emerald-400/70 transition-colors hover:bg-emerald-500/20 hover:text-emerald-400"
             >
-              +{market.tags.length - 3} tags
+              {t(selectedLanguage, "marketCard.moreTags", { count: market.tags.length - 3 })}
             </button>
           )}
         </div>
@@ -240,10 +243,10 @@ export function MarketCardMyThots({ market, onVoteClick }: MarketCardMyThotsProp
           <div className="mb-1.5 flex items-center justify-between text-xs">
             <span className="flex items-center gap-1 font-mono text-emerald-400">
               <TrendingUp className="h-3 w-3" />
-              {truncateOption(market.optionA || "Yes")} {yesPercentage.toFixed(0)}%
+              {truncateOption(market.optionA || t(selectedLanguage, "common.yes"))} {yesPercentage.toFixed(0)}%
             </span>
             <span className="flex items-center gap-1 font-mono text-teal-400">
-              {truncateOption(market.optionB || "No")} {(100 - yesPercentage).toFixed(0)}%
+              {truncateOption(market.optionB || t(selectedLanguage, "common.no"))} {(100 - yesPercentage).toFixed(0)}%
               <TrendingDown className="h-3 w-3" />
             </span>
           </div>
@@ -274,7 +277,9 @@ export function MarketCardMyThots({ market, onVoteClick }: MarketCardMyThotsProp
             // Check if timer has expired but market is not closed
             const now = Math.floor(Date.now() / 1000);
             const timerExpired = market.endTime && market.endTime > 0 && now >= market.endTime;
-            const buttonText = timerExpired ? "Late vote on Your Thot" : "Vote on Your Thot";
+            const buttonText = timerExpired
+              ? t(selectedLanguage, "marketCard.lateVoteOnYourThot")
+              : t(selectedLanguage, "marketCard.voteOnYourThot");
 
             return (
               <motion.button
@@ -290,12 +295,12 @@ export function MarketCardMyThots({ market, onVoteClick }: MarketCardMyThotsProp
         ) : marketClaimable === null || sharesFinalized === null ? (
           <div className="flex w-full items-center justify-center gap-2 rounded-xl py-2.5 bg-muted/30">
             <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-            <span className="font-outfit text-xs text-muted-foreground">Visit Market</span>
+            <span className="font-outfit text-xs text-muted-foreground">{t(selectedLanguage, "marketCard.visitMarket")}</span>
           </div>
         ) : !sharesFinalized ? (
           <div className="flex w-full items-center justify-center gap-2 rounded-xl py-2.5 bg-gradient-to-r from-orange-500/10 to-yellow-500/10 border border-orange-500/20 opacity-60">
             <Hourglass className="h-4 w-4 text-orange-500" />
-            <span className="font-outfit text-xs text-orange-500 dark:text-orange-400">Resolving Market</span>
+            <span className="font-outfit text-xs text-orange-500 dark:text-orange-400">{t(selectedLanguage, "marketCard.resolving")}</span>
           </div>
         ) : userPositions.length === 0 ? (
           <motion.button
@@ -305,12 +310,12 @@ export function MarketCardMyThots({ market, onVoteClick }: MarketCardMyThotsProp
             className="flex w-full items-center justify-center gap-2 rounded-xl py-2.5 font-outfit text-sm font-medium transition-all bg-slate-500/10 text-slate-400 hover:bg-slate-500/20 border border-slate-500/30 hover:border-slate-500/50"
           >
             <ExternalLink className="h-4 w-4" />
-            <span className="font-outfit text-xs text-slate-600 dark:text-slate-400">Visit Market</span>
+            <span className="font-outfit text-xs text-slate-600 dark:text-slate-400">{t(selectedLanguage, "marketCard.visitMarket")}</span>
           </motion.button>
         ) : isLoadingPositions ? (
           <div className="flex w-full items-center justify-center gap-2 rounded-xl py-2.5 bg-muted/30">
             <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-            <span className="font-outfit text-xs text-muted-foreground">Loading positions...</span>
+            <span className="font-outfit text-xs text-muted-foreground">{t(selectedLanguage, "marketCard.loadingPositions")}</span>
           </div>
         ) : (
           <motion.button
@@ -325,7 +330,11 @@ export function MarketCardMyThots({ market, onVoteClick }: MarketCardMyThotsProp
             ) : (
               <Gift className="h-4 w-4" />
             )}
-            {isClaiming ? "Claiming..." : userPositions.length > 1 ? `Claim All (${userPositions.length})` : "Claim"}
+            {isClaiming
+              ? t(selectedLanguage, "marketCard.claiming")
+              : userPositions.length > 1
+                ? t(selectedLanguage, "marketCard.claimAll", { count: userPositions.length })
+                : t(selectedLanguage, "marketCard.claim")}
           </motion.button>
         )}
       </div>
@@ -349,7 +358,7 @@ export function MarketCardMyThots({ market, onVoteClick }: MarketCardMyThotsProp
             <DialogTitle className="text-xl font-bold">{market.title}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <p className="text-sm text-muted-foreground">All tags for this market</p>
+            <p className="text-sm text-muted-foreground">{t(selectedLanguage, "marketCard.allTags")}</p>
             <div className="flex flex-wrap gap-2">
               {market.tags.map((tag) => (
                 <span
