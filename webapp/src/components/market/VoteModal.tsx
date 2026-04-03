@@ -7,6 +7,8 @@ import { Label } from "@/components/ui/label";
 import { MarketBalance } from "./MarketBalance";
 import { Connector } from "@/tools/utils";
 import { useNetworkStore } from "@/store/networkStore";
+import { useLanguageStore } from "@/store/languageStore";
+import { t } from "@/tools/languages";
 import { useActiveAccount } from "thirdweb/react";
 import {
   readPaymentToken,
@@ -52,6 +54,7 @@ export function VoteModal({
   optionB = "No",
 }: VoteModalProps) {
   const selectedNetwork = useNetworkStore((state) => state.selectedNetwork);
+  const selectedLanguage = useLanguageStore((state) => state.selectedLanguage);
   const account = useActiveAccount();
   const [step, setStep] = useState<VoteStep>("select");
   const [selectedSignal, setSelectedSignal] = useState<boolean | null>(null);
@@ -310,9 +313,9 @@ export function VoteModal({
                 <div className="flex items-center justify-between border-b border-border/50 p-6">
                   <div>
                     <h2 className="font-syne text-xl font-bold text-white">
-                      {step === "select" && "Cast Your Vote"}
-                      {step === "amount" && "Enter Amount"}
-                      {step === "success" && "Vote Submitted!"}
+                      {step === "select" && t(selectedLanguage, "voteModal.selectOption")}
+                      {step === "amount" && t(selectedLanguage, "voteModal.enterAmount")}
+                      {step === "success" && t(selectedLanguage, "voteModal.voteSuccess")}
                     </h2>
                     <p className="mt-1 font-outfit text-sm text-white/80 line-clamp-1">
                       {marketTitle}
@@ -333,13 +336,13 @@ export function VoteModal({
                     <div className="flex flex-col items-center justify-center py-8">
                       <Loader2 className="h-8 w-8 animate-spin text-primary" />
                       <p className="mt-4 text-sm text-white/80">
-                        Loading market data...
+                        {t(selectedLanguage, "market.loadingMarket")}
                       </p>
                     </div>
                   ) : step === "select" ? (
                     <div className="space-y-4">
                       <p className="text-sm text-white/80 text-center mb-6">
-                        Choose your position
+                        {t(selectedLanguage, "voteModal.selectOption")}
                       </p>
 
                       <div className="grid grid-cols-2 gap-4">
@@ -371,7 +374,7 @@ export function VoteModal({
                       {/* Selected Option */}
                       <div className="rounded-xl bg-muted/50 p-4">
                         <p className="text-sm text-muted-foreground mb-2">
-                          Your Vote
+                          {t(selectedLanguage, "voteDialog.yourVote")}
                         </p>
                         <p
                           className={`text-2xl font-bold ${selectedSignal ? "text-yes" : "text-no"}`}
@@ -402,7 +405,7 @@ export function VoteModal({
                             }}
                           >
                             <p className="font-syne text-sm font-bold text-white/80">
-                              Pay with{" "}
+                              {t(selectedLanguage, "createMarket.useToken")}{" "}
                               <span className="theme-option-a-gradient-text animate-shimmer-sweep">
                                 {tokenSymbol ? tokenSymbol : isZeroAddress(paymentToken) ? selectedNetwork.symbol : "Token"}
                               </span>
@@ -422,7 +425,7 @@ export function VoteModal({
                           htmlFor="vote-amount"
                           className="font-outfit text-white/80"
                         >
-                          Spending Amount{" "}
+                          {t(selectedLanguage, "createMarket.marketBalance")}{" "}
                           <span className="theme-option-a-gradient-text animate-shimmer-sweep">
                             ({tokenSymbol ? tokenSymbol : isZeroAddress(paymentToken) ? selectedNetwork.symbol : "Token"})
                           </span>{" "}
@@ -441,12 +444,12 @@ export function VoteModal({
                           autoFocus
                         />
                         <p className="text-xs text-white/80">
-                          Amount to stake with your vote
+                          {t(selectedLanguage, "voteModal.enterAmount")}
                         </p>
                         {/* Platform Fee Display */}
                         {platformFeePercentage !== null && (
                           <p className="text-xs mt-2">
-                            <span className="text-white/80">Platform fee: </span>
+                            <span className="text-white/80">{t(selectedLanguage, "createMarket.platformFee")}: </span>
                             <span
                               style={{
                                 color: isZeroAddress(paymentToken) ? "hsl(var(--primary))" : "hsl(var(--accent))",
@@ -463,9 +466,9 @@ export function VoteModal({
                       <div className="flex gap-3 rounded-xl bg-yellow-500/10 border border-yellow-500/20 p-3">
                         <AlertCircle className="h-5 w-5 text-yellow-500 flex-shrink-0 mt-0.5" />
                         <div className="text-sm text-yellow-300">
-                          <p className="font-semibold">Cannot be zero</p>
+                          <p className="font-semibold">{t(selectedLanguage, "voteDialog.cannotBeZero")}</p>
                           <p className="mt-1">
-                            You must send a non-zero amount to engage your vote
+                            {t(selectedLanguage, "voteDialog.nonZeroRequired")}
                           </p>
                         </div>
                       </div>
@@ -482,7 +485,7 @@ export function VoteModal({
                         <div className="pt-2">
                           {account ? (
                             <p className="text-center text-xs text-primary">
-                              {showProceedMessage ? "Connected. You can now stake your vote." : ""}
+                              {showProceedMessage ? t(selectedLanguage, "voteModal.proceedAnyway") : ""}
                             </p>
                           ) : showConnectCta ? (
                             <div className="flex justify-center">
@@ -492,7 +495,7 @@ export function VoteModal({
                             </div>
                           ) : (
                             <p className="text-center text-xs text-white/80">
-                              Get Started button will appear shortly…
+                              {t(selectedLanguage, "voteModal.connectToProceed")}
                             </p>
                           )}
                         </div>
@@ -507,7 +510,7 @@ export function VoteModal({
                           disabled={isLoading}
                           className="flex-1 rounded-xl font-outfit"
                         >
-                          Back
+                          {t(selectedLanguage, "nav.back")}
                         </Button>
                         <Button
                           type="button"
@@ -518,10 +521,10 @@ export function VoteModal({
                           {isLoading ? (
                             <>
                               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                              Submitting...
+                              {t(selectedLanguage, "voteDialog.voting")}
                             </>
                           ) : (
-                            "Submit Vote"
+                            t(selectedLanguage, "voteDialog.sendVote")
                           )}
                         </Button>
                       </div>
@@ -536,7 +539,7 @@ export function VoteModal({
                         <CheckCircle className="h-16 w-16 text-yes" />
                       </motion.div>
                       <p className="mt-4 font-semibold text-primary text-lg">
-                        Vote Submitted!
+                        {t(selectedLanguage, "voteModal.voteSuccess")}
                       </p>
                       <p className="mt-2 text-sm text-white/80">
                         Your vote for{" "}
@@ -545,7 +548,7 @@ export function VoteModal({
                         >
                           {selectedOption}
                         </span>{" "}
-                        has been recorded
+                        {t(selectedLanguage, "voteModal.voteSuccess")}
                       </p>
                     </div>
                   ) : null}
@@ -559,5 +562,4 @@ export function VoteModal({
     </AnimatePresence>
   );
 }
-
 

@@ -360,3 +360,14 @@ The AI will commit and push to BOTH GitHub and Vibecode servers automatically.
 - Added translations across all supported languages (EN, ES, FR, DE, PT, ZH), including localized Create Market button text and market interaction labels.
 
 ---
+
+
+## 2026-04-03
+
+### Update: Added translation wiring for remaining market/profile surfaces
+- Localized additional Create Market modal labels and action text beyond title/subtitle/description fields.
+- Localized Vote Modal section headers and helper/warning/action text.
+- Localized MarketPage toasts/loading/empty-state strings using shared translation keys.
+- Localized Profile dropdown labels/descriptions and disconnected state text.
+
+---

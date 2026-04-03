@@ -12,30 +12,33 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useActiveAccount } from "thirdweb/react";
 import { truncateAddress } from "@/tools/utils";
+import { useLanguageStore } from "@/store/languageStore";
+import { t } from "@/tools/languages";
 
 export function ProfileDropdown() {
   const navigate = useNavigate();
   const account = useActiveAccount();
+  const selectedLanguage = useLanguageStore((state) => state.selectedLanguage);
   const [isOpen, setIsOpen] = useState(false);
 
   const menuItems = [
     {
-      label: "My Thots",
-      description: "Markets you created",
+      label: t(selectedLanguage, "myThots.title"),
+      description: t(selectedLanguage, "myThots.subtitle"),
       icon: Brain,
       path: "/my-thots",
       gradient: "from-primary to-secondary",
     },
     {
-      label: "Your Thots",
-      description: "Markets you voted on",
+      label: t(selectedLanguage, "yourThots.title"),
+      description: t(selectedLanguage, "yourThots.subtitle"),
       icon: MessageCircle,
       path: "/your-thots",
       gradient: "from-secondary to-accent",
     },
     {
-      label: "History",
-      description: "Your claim history",
+      label: t(selectedLanguage, "history.title"),
+      description: t(selectedLanguage, "history.subtitle"),
       icon: History,
       path: "/history",
       gradient: "from-accent to-primary",
@@ -53,7 +56,7 @@ export function ProfileDropdown() {
           <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-primary/20 to-accent/20 ring-2 ring-primary/30">
             <User className="h-4 w-4 text-primary" />
           </div>
-          <span className="hidden sm:inline font-syne font-semibold">Your Profile</span>
+          <span className="hidden sm:inline font-syne font-semibold">{t(selectedLanguage, "profileMenu.profile")}</span>
           <motion.div
             animate={{ rotate: isOpen ? 180 : 0 }}
             transition={{ duration: 0.2 }}
@@ -84,9 +87,9 @@ export function ProfileDropdown() {
                     <User className="h-5 w-5 text-primary-foreground" />
                   </div>
                   <div className="flex flex-col">
-                    <span className="font-syne font-bold text-foreground">Your Profile</span>
+                    <span className="font-syne font-bold text-foreground">{t(selectedLanguage, "profileMenu.profile")}</span>
                     <span className="font-mono text-xs text-muted-foreground">
-                      {account ? truncateAddress(account.address) : "Not connected"}
+                      {account ? truncateAddress(account.address) : t(selectedLanguage, "profileMenu.notConnected")}
                     </span>
                   </div>
                 </div>
