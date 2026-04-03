@@ -7,6 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { formatEther } from "@/tools/utils";
 import { useNetworkStore } from "@/store/networkStore";
+import { useLanguageStore } from "@/store/languageStore";
+import { t } from "@/tools/languages";
 
 interface VoteDialogProps {
   isOpen: boolean;
@@ -26,13 +28,16 @@ export function VoteDialog({
   isLoading = false,
   marketTitle,
   signal,
-  optionA = "Yes",
-  optionB = "No",
+  optionA,
+  optionB,
 }: VoteDialogProps) {
   const selectedNetwork = useNetworkStore((state) => state.selectedNetwork);
+  const selectedLanguage = useLanguageStore((state) => state.selectedLanguage);
   const [amount, setAmount] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const selectedOption = signal ? optionA : optionB;
+  const selectedOption = signal
+    ? (optionA ?? t(selectedLanguage, "common.yes"))
+    : (optionB ?? t(selectedLanguage, "common.no"));
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -80,7 +85,7 @@ export function VoteDialog({
                 <div className="flex items-center justify-between border-b border-border/50 p-6">
                   <div>
                     <h2 className="font-syne text-xl font-bold text-foreground">
-                      Place Your Vote
+                      {t(selectedLanguage, "voteDialog.title")}
                     </h2>
                     <p className="mt-1 font-outfit text-sm text-muted-foreground">
                       {marketTitle}
@@ -98,7 +103,9 @@ export function VoteDialog({
                 <form onSubmit={handleSubmit} className="space-y-6 p-6">
                   {/* Vote Direction */}
                   <div className="rounded-xl bg-muted/50 p-4">
-                    <p className="text-sm text-muted-foreground mb-2">Your Vote</p>
+                    <p className="text-sm text-muted-foreground mb-2">
+                      {t(selectedLanguage, "voteDialog.yourVote")}
+                    </p>
                     <p className={`text-2xl font-bold ${signal ? "text-yes" : "text-no"}`}>
                       {selectedOption}
                     </p>
@@ -107,7 +114,7 @@ export function VoteDialog({
                   {/* Amount Input */}
                   <div className="space-y-2">
                     <Label htmlFor="amount" className="font-outfit text-foreground">
-                      Amount to Send ({selectedNetwork.symbol}) *
+                      {t(selectedLanguage, "voteDialog.amountToSend", { symbol: selectedNetwork.symbol })}
                     </Label>
                     <Input
                       id="amount"
@@ -116,13 +123,13 @@ export function VoteDialog({
                       min="0"
                       value={amount}
                       onChange={(e) => setAmount(e.target.value)}
-                      placeholder="0.01"
+                      placeholder={t(selectedLanguage, "voteDialog.amountPlaceholder")}
                       className="rounded-xl border-border/50 bg-background font-outfit"
                       disabled={isSubmitting}
                       required
                     />
                     <p className="text-xs text-muted-foreground">
-                      This amount will be sent with your vote to engage your choice in the market
+                      {t(selectedLanguage, "voteDialog.amountHelp")}
                     </p>
                   </div>
 
@@ -130,8 +137,8 @@ export function VoteDialog({
                   <div className="flex gap-3 rounded-xl bg-yellow-500/10 border border-yellow-500/20 p-3">
                     <AlertCircle className="h-5 w-5 text-yellow-500 flex-shrink-0 mt-0.5" />
                     <div className="text-sm text-yellow-600 dark:text-yellow-400">
-                      <p className="font-semibold">Cannot be zero</p>
-                      <p className="mt-1">You must send a non-zero amount to engage your vote</p>
+                      <p className="font-semibold">{t(selectedLanguage, "voteDialog.cannotBeZero")}</p>
+                      <p className="mt-1">{t(selectedLanguage, "voteDialog.nonZeroRequired")}</p>
                     </div>
                   </div>
 
@@ -144,7 +151,7 @@ export function VoteDialog({
                       disabled={isSubmitting}
                       className="flex-1 rounded-xl font-outfit"
                     >
-                      Cancel
+                      {t(selectedLanguage, "common.cancel")}
                     </Button>
                     <Button
                       type="submit"
@@ -154,10 +161,10 @@ export function VoteDialog({
                       {isSubmitting || isLoading ? (
                         <>
                           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Voting...
+                          {t(selectedLanguage, "voteDialog.voting")}
                         </>
                       ) : (
-                        "Send Vote"
+                        t(selectedLanguage, "voteDialog.sendVote")
                       )}
                     </Button>
                   </div>

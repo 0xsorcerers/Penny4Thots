@@ -14,6 +14,8 @@ import { MarketBalance } from "./MarketBalance";
 import { readPaymentToken } from "@/tools/utils";
 import { toast } from "sonner";
 import type { Address } from "viem";
+import { useLanguageStore } from "@/store/languageStore";
+import { t } from "@/tools/languages";
 
 interface MarketCardProps {
   market: Market;
@@ -28,6 +30,7 @@ export function MarketCard({ market, onVoteClick }: MarketCardProps) {
   const navigate = useNavigate();
   const { deleteMarket } = useMarketStore();
   const selectedChainId = useNetworkStore((state) => state.selectedNetwork.chainId);
+  const selectedLanguage = useLanguageStore((state) => state.selectedLanguage);
   const [isHovered, setIsHovered] = useState(false);
   const [tradeMode, setTradeMode] = useState<"idle" | "active">("idle");
   const [showAllTags, setShowAllTags] = useState(false);
@@ -77,7 +80,7 @@ export function MarketCard({ market, onVoteClick }: MarketCardProps) {
     e.stopPropagation();
     if (market.indexer !== undefined) {
       deleteMarket(market.indexer);
-      toast.success("Market removed from your view");
+      toast.success(t(selectedLanguage, "marketCard.removeMarket"));
     }
   };
 
@@ -126,7 +129,7 @@ export function MarketCard({ market, onVoteClick }: MarketCardProps) {
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.95 }}
           className="absolute top-4 right-4 z-20 rounded-full p-2 bg-destructive/10 text-destructive hover:bg-destructive/20 transition-all"
-          title="Remove market from view"
+          title={t(selectedLanguage, "marketCard.removeMarket")}
         >
           <X className="h-4 w-4" />
         </motion.button>
@@ -146,7 +149,7 @@ export function MarketCard({ market, onVoteClick }: MarketCardProps) {
               onClick={handleShowMoreTags}
               className="rounded-full border px-2.5 py-0.5 font-mono text-xs transition-colors theme-chip-secondary"
             >
-              +{market.tags.length - 3} tags
+              {t(selectedLanguage, "marketCard.moreTags", { count: market.tags.length - 3 })}
             </button>
           )}
         </div>
@@ -167,10 +170,10 @@ export function MarketCard({ market, onVoteClick }: MarketCardProps) {
           <div className="mb-1.5 flex items-center justify-between text-xs">
             <span className="flex items-center gap-1 font-mono text-yes">
               <TrendingUp className="h-3 w-3" />
-              {truncateOption(market.optionA || "Yes")} {yesPercentage.toFixed(0)}%
+              {truncateOption(market.optionA || t(selectedLanguage, "common.yes"))} {yesPercentage.toFixed(0)}%
             </span>
             <span className="flex items-center gap-1 font-mono text-no">
-              {truncateOption(market.optionB || "No")} {(100 - yesPercentage).toFixed(0)}%
+              {truncateOption(market.optionB || t(selectedLanguage, "common.no"))} {(100 - yesPercentage).toFixed(0)}%
               <TrendingDown className="h-3 w-3" />
             </span>
           </div>
@@ -202,7 +205,9 @@ export function MarketCard({ market, onVoteClick }: MarketCardProps) {
               // Check if timer has expired but market is not closed
               const now = Math.floor(Date.now() / 1000);
               const timerExpired = market.endTime && market.endTime > 0 && now >= market.endTime;
-              const buttonText = timerExpired ? "Late vote" : "Vote";
+              const buttonText = timerExpired
+                ? t(selectedLanguage, "marketCard.lateVote")
+                : t(selectedLanguage, "marketCard.vote");
 
               return (
                 <motion.button
@@ -226,7 +231,7 @@ export function MarketCard({ market, onVoteClick }: MarketCardProps) {
               className="flex w-full items-center justify-center gap-2 rounded-xl py-2.5 font-outfit text-sm font-medium bg-muted/40 text-muted-foreground cursor-not-allowed opacity-60"
             >
               <CircleOff className="h-4 w-4" />
-              Closed
+              {t(selectedLanguage, "marketCard.closed")}
             </motion.div>
           )}
         </AnimatePresence>
@@ -251,7 +256,7 @@ export function MarketCard({ market, onVoteClick }: MarketCardProps) {
             <DialogTitle className="text-xl font-bold">{market.title}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <p className="text-sm text-muted-foreground">All tags for this market</p>
+            <p className="text-sm text-muted-foreground">{t(selectedLanguage, "marketCard.allTags")}</p>
             <div className="flex flex-wrap gap-2">
               {market.tags.map((tag) => (
                 <span
