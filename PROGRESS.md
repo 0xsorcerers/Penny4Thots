@@ -350,3 +350,13 @@ The AI will commit and push to BOTH GitHub and Vibecode servers automatically.
 - Kept filtered views paginated and hydrated with fresh market data for visible IDs
 
 ---
+
+
+## 2026-04-03
+
+### Update: Market Folder Translation Coverage Expanded
+- Added localized translation keys for Market Grid UI, Market Card labels/actions, and Vote Dialog explanatory text.
+- Wired MarketGrid, MarketCard, MarketCardMyThots, MarketCardYourThots, and VoteDialog to the selected language store using shared translation keys.
+- Added translations across all supported languages (EN, ES, FR, DE, PT, ZH), including localized Create Market button text and market interaction labels.
+
+---
