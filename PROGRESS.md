@@ -4,6 +4,15 @@ This file tracks all significant progress. Updated automatically after major cha
 
 ---
 
+## 2026-04-03
+
+### Feature: Translated Market Elaboration Inputs
+- Added localized translation keys for market title, subtitle, and description placeholders in all supported app languages (EN, ES, FR, DE, PT, ZH).
+- Updated the Create Market modal to read title/subtitle/description labels and placeholders from the shared translations map using the selected language.
+- Result: market elaboration inputs now match each user's chosen app language.
+
+---
+
 ## 2026-04-02
 
 ### Bug Fix: Unicode Search Tokenization

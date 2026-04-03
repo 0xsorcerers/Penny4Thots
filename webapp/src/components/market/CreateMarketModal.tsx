@@ -7,6 +7,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { getPublicClient, isZeroAddress, ZERO_ADDRESS, fetchDataConstants, calculatePlatformFeePercentage, readTokenDecimals, toTokenSmallestUnit, formatTokenAmount } from "@/tools/utils";
 import { useNetworkStore } from "@/store/networkStore";
+import { useLanguageStore } from "@/store/languageStore";
+import { t } from "@/tools/languages";
 import { useTheme } from "@/hooks/useTheme";
 import blackLogo from "@/assets/images/black-no-bkg.webp";
 import type { CreateMarketData } from "@/types/market";
@@ -32,6 +34,7 @@ const PLACEHOLDER_IMAGES = [
 export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false }: CreateMarketModalProps) {
   const { theme } = useTheme();
   const selectedNetwork = useNetworkStore((state) => state.selectedNetwork);
+  const selectedLanguage = useLanguageStore((state) => state.selectedLanguage);
   const [step, setStep] = useState<"details" | "confirm">("details");
   const [formData, setFormData] = useState({
     title: "",
@@ -384,13 +387,13 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
                         {/* Title */}
                         <div className="space-y-2">
                           <Label htmlFor="title" className="font-outfit text-foreground">
-                            Title *
+                            {t(selectedLanguage, "createMarket.marketTitle")} *
                           </Label>
                           <Input
                             id="title"
                             value={formData.title}
                             onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                            placeholder="Will Bitcoin reach $100k? (Be specific and avoid ambiguity)"
+                            placeholder={t(selectedLanguage, "createMarket.marketTitlePlaceholder")}
                             className="rounded-xl border-border/50 bg-background font-outfit"
                             required
                           />
@@ -399,13 +402,13 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
                         {/* Subtitle */}
                         <div className="space-y-2">
                           <Label htmlFor="subtitle" className="font-outfit text-foreground">
-                            Subtitle *
+                            {t(selectedLanguage, "createMarket.marketSubtitle")} *
                           </Label>
                           <Input
                             id="subtitle"
                             value={formData.subtitle}
                             onChange={(e) => setFormData({ ...formData, subtitle: e.target.value })}
-                            placeholder="Example: Crypto price prediction for 2025"
+                            placeholder={t(selectedLanguage, "createMarket.marketSubtitlePlaceholder")}
                             className="rounded-xl border-border/50 bg-background font-outfit"
                             required
                           />
@@ -414,13 +417,13 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
                         {/* Description */}
                         <div className="space-y-2">
                           <Label htmlFor="description" className="font-outfit text-foreground">
-                            Description *
+                            {t(selectedLanguage, "createMarket.marketDescription")} *
                           </Label>
                           <Textarea
                             id="description"
                             value={formData.description}
                             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                            placeholder="Provide more info or helpful context about this prediction market to users and our AI adjudicators..."
+                            placeholder={t(selectedLanguage, "createMarket.marketDescriptionPlaceholder")}
                             rows={3}
                             className="resize-none rounded-xl border-border/50 bg-background font-outfit"
                             required
