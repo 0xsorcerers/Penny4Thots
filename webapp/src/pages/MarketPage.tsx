@@ -95,10 +95,10 @@ export default function MarketPage() {
 
   const shareMessage = useMemo(() => {
     const title = market?.title || "Penny4Thots Market";
-    const optionA = market?.optionA || "Yes";
-    const optionB = market?.optionB || "No";
+    const optionA = market?.optionA || t(selectedLanguage, "common.yes");
+    const optionB = market?.optionB || t(selectedLanguage, "common.no");
     return `${title} — ${optionA} vs ${optionB} on ${selectedNetwork.name}`;
-  }, [market?.optionA, market?.optionB, market?.title, selectedNetwork.name]);
+  }, [market?.optionA, market?.optionB, market?.title, selectedNetwork.name, selectedLanguage]);
 
   const handleCopyShareLink = async () => {
     try {
@@ -320,7 +320,7 @@ export default function MarketPage() {
     }
     if (!market || market.indexer === undefined) {
       console.error("Market or indexer not available", { market, indexer: market?.indexer });
-      toast.error("Market data not loaded");
+      toast.error(t(selectedLanguage, "market.loadingMarket"));
       return;
     }
     setSelectedVoteSignal(signal);
@@ -332,7 +332,7 @@ export default function MarketPage() {
       return;
     }
     if (!market || market.indexer === undefined) {
-      toast.error("Market data not loaded");
+      toast.error(t(selectedLanguage, "market.loadingMarket"));
       return;
     }
     if (userPositions.length === 0) {
@@ -436,7 +436,7 @@ export default function MarketPage() {
       } catch (err) {
         console.error("Failed to refresh market data after vote:", err);
       }
-      toast.success("Vote submitted successfully!");
+      toast.success(t(selectedLanguage, "voteModal.voteSuccess"));
     } catch (err: unknown) {
       console.error("Failed to vote:", err);
       const errorMessage = err instanceof Error ? err.message : String(err);
@@ -444,9 +444,9 @@ export default function MarketPage() {
           errorMessage.toLowerCase().includes("denied") ||
           errorMessage.toLowerCase().includes("cancel") ||
           errorMessage.toLowerCase().includes("user refused")) {
-        toast.error("Transaction cancelled");
+        toast.error(t(selectedLanguage, "common.transactionCancelled"));
       } else {
-        toast.error(errorMessage || "Failed to submit vote");
+        toast.error(errorMessage || t(selectedLanguage, "voteModal.voteFailed"));
       }
       throw err;
     } finally {
@@ -579,7 +579,7 @@ export default function MarketPage() {
       return;
     }
     if (!market || market.indexer === undefined) {
-      toast.error("Market data not loaded");
+      toast.error(t(selectedLanguage, "market.loadingMarket"));
       return;
     }
     if (market.closed) {
@@ -604,7 +604,7 @@ export default function MarketPage() {
 
   const submitBatchKamikaze = async (positionIds: number[]) => {
     if (!market || market.indexer === undefined) {
-      throw new Error("Market data not loaded");
+      throw new Error(t(selectedLanguage, "market.loadingMarket"));
     }
 
     const uniqueIds = Array.from(new Set(positionIds)).filter((id) => Number.isInteger(id) && id >= 0);
@@ -630,7 +630,7 @@ export default function MarketPage() {
       return;
     }
     if (!market || market.indexer === undefined) {
-      toast.error("Market data not loaded");
+      toast.error(t(selectedLanguage, "market.loadingMarket"));
       return;
     }
     if (market.closed) {
@@ -710,8 +710,16 @@ export default function MarketPage() {
   };
   const isKamikazeUnavailable = market.closed;
   const isKamikazeBusy = isLoadingKamikazePositions || isSubmittingKamikaze || isBatchKamikazing;
+  const localeMap: Record<string, string> = {
+    EN: "en-US",
+    ES: "es-ES",
+    FR: "fr-FR",
+    DE: "de-DE",
+    PT: "pt-PT",
+    ZH: "zh-CN",
+  };
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
+    return new Date(dateString).toLocaleDateString(localeMap[selectedLanguage] ?? "en-US", {
       year: "numeric",
       month: "short",
       day: "numeric",
@@ -749,7 +757,7 @@ export default function MarketPage() {
             className="rounded-xl border border-white/50 bg-white/70 backdrop-blur-xl hover:bg-white/80 shadow-[0_2px_12px_-2px_hsl(220_30%_15%/0.08)] dark:border-border/50 dark:bg-card/80 dark:backdrop-blur-sm dark:hover:bg-card dark:shadow-none"
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Back
+            {t(selectedLanguage, "marketPage.back")}
           </Button>
         </motion.div>
         {/* Share Button */}
@@ -777,7 +785,7 @@ export default function MarketPage() {
                   className="absolute right-0 mt-2 w-56 rounded-xl border border-white/40 bg-white/85 p-2 shadow-lg backdrop-blur-xl dark:border-border/50 dark:bg-card/95"
                 >
                   <p className="px-2 pb-2 pt-1 font-outfit text-xs text-muted-foreground">
-                    Share this market on {selectedNetwork.name}
+                    {t(selectedLanguage, "marketPage.shareThisMarket", { network: selectedNetwork.name })}
                   </p>
                   <div className="space-y-1">
                     <Button
@@ -786,7 +794,7 @@ export default function MarketPage() {
                       onClick={handleCopyShareLink}
                     >
                       <Copy className="mr-2 h-4 w-4" />
-                      Copy link
+                      {t(selectedLanguage, "marketPage.copyLink")}
                     </Button>
                     <Button
                       variant="ghost"
@@ -794,7 +802,7 @@ export default function MarketPage() {
                       onClick={() => openShareIntent("https://x.com/intent/post")}
                     >
                       <Send className="mr-2 h-4 w-4" />
-                      Share on X
+                      {t(selectedLanguage, "marketPage.shareOnX")}
                     </Button>
                     <Button
                       variant="ghost"
@@ -802,7 +810,7 @@ export default function MarketPage() {
                       onClick={() => openShareIntent("https://t.me/share/url")}
                     >
                       <MessageCircle className="mr-2 h-4 w-4" />
-                      Share on Telegram
+                      {t(selectedLanguage, "marketPage.shareOnTelegram")}
                     </Button>
                     <Button
                       variant="ghost"
@@ -810,7 +818,7 @@ export default function MarketPage() {
                       onClick={handleNativeShare}
                     >
                       <Share2 className="mr-2 h-4 w-4" />
-                      Share via device
+                      {t(selectedLanguage, "marketPage.shareViaDevice")}
                     </Button>
                   </div>
                 </motion.div>
@@ -858,34 +866,34 @@ export default function MarketPage() {
               {/* Market Status Badge */}
               <span className="flex items-center gap-1.5">
                 <Clock className="h-4 w-4" />
-                Created {formatDate(market.createdAt)}
+                {t(selectedLanguage, "marketPage.createdOn", { date: formatDate(market.createdAt) })}
               </span>
               <span className="flex items-center gap-1.5 theme-text-accent">
                 <Users className="h-4 w-4" />
-                {totalVotes} {totalVotes === 1 ? "vote" : "votes"}
+                {totalVotes} {totalVotes === 1 ? t(selectedLanguage, "marketPage.voteSingular") : t(selectedLanguage, "marketPage.votePlural")}
               </span>
               
               {market.closed ? (
                 sharesFinalized === null ? (
                   <span className="flex items-center gap-1.5 rounded-full bg-slate-500/10 px-3 py-1 font-mono text-xs font-semibold text-slate-600 dark:bg-slate-500/20 dark:text-slate-400">
                     <CircleOff className="h-3.5 w-3.5" />
-                    Checking...
+                    {t(selectedLanguage, "marketPage.checking")}
                   </span>
                 ) : sharesFinalized === false ? (
                   <span className="flex items-center gap-1.5 rounded-full bg-amber-500/10 px-3 py-1 font-mono text-xs font-semibold text-amber-600 dark:bg-amber-500/20 dark:text-amber-400">
                     <CircleOff className="h-3.5 w-3.5" />
-                    Resolving
+                    {t(selectedLanguage, "marketPage.resolving")}
                   </span>
                 ) : (
                   <span className="flex items-center gap-1.5 rounded-full bg-red-500/10 px-3 py-1 font-mono text-xs font-semibold text-red-500 dark:bg-red-500/20 dark:text-red-400">
                     <CircleOff className="h-3.5 w-3.5" />
-                    Ended
+                    {t(selectedLanguage, "marketPage.ended")}
                   </span>
                 )
               ) : (
                 <span className="flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-3 py-1 font-mono text-xs font-semibold text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400">
                   <CircleDot className="h-3.5 w-3.5" />
-                  Live
+                  {t(selectedLanguage, "marketPage.live")}
                 </span>
               )}
             </div>
@@ -916,7 +924,7 @@ export default function MarketPage() {
             transition={{ delay: 0.3 }}
             className="mb-8 rounded-2xl border border-white/60 bg-white/70 p-6 backdrop-blur-xl shadow-[0_4px_24px_-4px_hsl(220_30%_15%/0.1),inset_0_1px_0_hsl(0_0%_100%/0.8)] dark:border-border/50 dark:bg-card/50 dark:backdrop-blur-sm dark:shadow-none"
           >
-            <h2 className="mb-3 font-syne text-lg font-bold theme-option-a-gradient-text animate-shimmer-sweep">About this market</h2>
+            <h2 className="mb-3 font-syne text-lg font-bold theme-option-a-gradient-text animate-shimmer-sweep">{t(selectedLanguage, "marketPage.aboutMarket")}</h2>
             <p className="font-outfit leading-relaxed theme-text-support">{market.description}</p>
           </motion.div>
           {/* Voting Section */}
@@ -926,7 +934,7 @@ export default function MarketPage() {
             transition={{ delay: 0.4 }}
             className="mb-8 rounded-2xl border border-white/60 bg-white/70 p-6 backdrop-blur-xl shadow-[0_4px_24px_-4px_hsl(220_30%_15%/0.1),inset_0_1px_0_hsl(0_0%_100%/0.8)] dark:border-border/50 dark:bg-card/50 dark:backdrop-blur-sm dark:shadow-none"
           >
-            <h2 className="mb-4 font-syne text-lg font-bold theme-option-a-gradient-text animate-shimmer-sweep">Cast your vote</h2>
+            <h2 className="mb-4 font-syne text-lg font-bold theme-option-a-gradient-text animate-shimmer-sweep">{t(selectedLanguage, "marketPage.castVote")}</h2>
             {/* Progress bar */}
             <div className="mb-6">
               <div className="mb-2 flex items-center justify-between text-sm">
@@ -948,8 +956,8 @@ export default function MarketPage() {
                 />
               </div>
               <div className="mt-2 flex items-center justify-between text-xs">
-                <span className="theme-text-positive">{market.yesVotes} votes</span>
-                <span className="theme-text-negative">{market.noVotes} votes</span>
+                <span className="theme-text-positive">{market.yesVotes} {t(selectedLanguage, "marketPage.votePlural")}</span>
+                <span className="theme-text-negative">{market.noVotes} {t(selectedLanguage, "marketPage.votePlural")}</span>
               </div>
             </div>
             {/* Stats Section - Just Vote Stats */}
@@ -959,14 +967,14 @@ export default function MarketPage() {
             {isRestoringWallet && (
               <div className="mb-4 flex items-center justify-center gap-2 rounded-xl border border-border/50 bg-card/40 px-4 py-3 text-sm text-muted-foreground sm:justify-start">
                 <Loader2 className="h-4 w-4 animate-spin" />
-                <span className="font-outfit">Restoring wallet...</span>
+                <span className="font-outfit">{t(selectedLanguage, "market.restoringWallet")}</span>
               </div>
             )}
             {/* Platform Fee Display */}
             {platformFeePercentage !== null && (
               <div className="mb-6 text-center sm:text-left">
                 <p className="text-xs theme-text-support">
-                  Platform fee:{" "}
+                  {t(selectedLanguage, "marketPage.platformFee")}:{" "}
                   <span
                     className="font-semibold theme-text-accent"
                   >
@@ -991,7 +999,7 @@ export default function MarketPage() {
                   >
                     <span className="relative z-10 flex items-center justify-center gap-2">
                       <TrendingUp className="h-6 w-6" />
-                      {timerExpired ? "Late Vote" : "Vote"}
+                      {timerExpired ? t(selectedLanguage, "marketPage.lateVote") : t(selectedLanguage, "marketPage.vote")}
                     </span>
                   </motion.button>
                 );
@@ -1000,25 +1008,25 @@ export default function MarketPage() {
               /* Closed Market - endTime expired, closed=true, sharesFinalized=false - Penalty Window */
               <div className="w-full rounded-xl py-5 bg-muted/30 flex items-center justify-center gap-2">
                 <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-                <span className="font-outfit text-muted-foreground">Penalty Window</span>
+                <span className="font-outfit text-muted-foreground">{t(selectedLanguage, "marketPage.penaltyWindow")}</span>
               </div>
             ) : !sharesFinalized ? (
               /* Closed Market - closed=true, sharesFinalized=false - Resolving */
               <div className="w-full rounded-xl py-5 bg-gradient-to-r from-slate-500/10 to-gray-500/10 border border-slate-500/20 flex items-center justify-center gap-2">
                 <Hourglass className="h-5 w-5 text-slate-600 dark:text-slate-400 animate-pulse" />
-                <span className="font-syne text-lg font-semibold text-slate-600 dark:text-slate-400">Resolving Market</span>
+                <span className="font-syne text-lg font-semibold text-slate-600 dark:text-slate-400">{t(selectedLanguage, "marketCard.resolving")}</span>
               </div>
             ) : isLoadingPositions ? (
               /* Closed Market - Loading positions to check claimable status */
               <div className="w-full rounded-xl py-5 bg-muted/30 flex items-center justify-center gap-2">
                 <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-                <span className="font-outfit text-muted-foreground">Loading positions...</span>
+                <span className="font-outfit text-muted-foreground">{t(selectedLanguage, "marketPage.loadingPositions")}</span>
               </div>
             ) : userPositions.length === 0 ? (
               /* Closed & Finalized - User has no winning positions - Show Closed (disabled) */
               <div className="w-full rounded-xl py-5 bg-gradient-to-r from-slate-500/10 to-gray-500/10 border border-slate-500/20 flex items-center justify-center gap-2 opacity-60">
                 <CircleOff className="h-5 w-5 text-slate-600 dark:text-slate-500" />
-                <span className="font-syne text-lg font-semibold text-slate-600 dark:text-slate-400">Closed</span>
+                <span className="font-syne text-lg font-semibold text-slate-600 dark:text-slate-400">{t(selectedLanguage, "marketPage.closed")}</span>
               </div>
             ) : (
               /* Closed & Finalized - User has winning positions - Show Claim button */
@@ -1035,7 +1043,11 @@ export default function MarketPage() {
                   ) : (
                     <Gift className="h-6 w-6" />
                   )}
-                  {isClaiming ? "Claiming..." : userPositions.length > 1 ? `Claim All (${userPositions.length})` : "Claim"}
+                  {isClaiming
+                    ? t(selectedLanguage, "marketCard.claiming")
+                    : userPositions.length > 1
+                      ? t(selectedLanguage, "marketCard.claimAll", { count: userPositions.length })
+                      : t(selectedLanguage, "marketCard.claim")}
                 </span>
               </motion.button>
             )}
@@ -1047,7 +1059,7 @@ export default function MarketPage() {
             transition={{ delay: 0.5 }}
             className="rounded-2xl border border-white/60 bg-white/70 p-6 backdrop-blur-xl shadow-[0_4px_24px_-4px_hsl(220_30%_15%/0.1),inset_0_1px_0_hsl(0_0%_100%/0.8)] dark:border-border/50 dark:bg-card/50 dark:backdrop-blur-sm dark:shadow-none"
           >
-            <h2 className="mb-4 font-syne text-lg font-bold theme-option-a-gradient-text animate-shimmer-sweep">Trade <span className="text-xs font-normal theme-text-support">[Kamikaze trades have a 50% haircut for anyone desiring to alternate a vote position]</span></h2>
+            <h2 className="mb-4 font-syne text-lg font-bold theme-option-a-gradient-text animate-shimmer-sweep">{t(selectedLanguage, "marketPage.trade")} <span className="text-xs font-normal theme-text-support">[Kamikaze trades have a 50% haircut for anyone desiring to alternate a vote position]</span></h2>
             {isKamikazeUnavailable ? (
               <div>
                 <Button
@@ -1142,7 +1154,7 @@ export default function MarketPage() {
             {isLoadingKamikazePositions ? (
               <div className="flex items-center justify-center py-6 text-muted-foreground">
                 <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                Loading positions...
+                {t(selectedLanguage, "marketPage.loadingPositions")}
               </div>
             ) : kamikazeDisplayPositionIds.length === 0 ? (
               <p className="py-4 text-center font-outfit text-sm text-muted-foreground">
@@ -1237,4 +1249,3 @@ export default function MarketPage() {
     </div>
   );
 }
-

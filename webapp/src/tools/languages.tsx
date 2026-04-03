@@ -217,6 +217,47 @@ export interface Translations {
     voting: string;
     sendVote: string;
   };
+  // Market Page
+  marketPage: {
+    aboutMarket: string;
+    castVote: string;
+    trade: string;
+    createdOn: string;
+    voteSingular: string;
+    votePlural: string;
+    live: string;
+    checking: string;
+    resolving: string;
+    ended: string;
+    back: string;
+    shareThisMarket: string;
+    copyLink: string;
+    shareOnX: string;
+    shareOnTelegram: string;
+    shareViaDevice: string;
+    penaltyWindow: string;
+    loadingPositions: string;
+    closed: string;
+    lateVote: string;
+    vote: string;
+    platformFee: string;
+  };
+  // Countdown
+  countdown: {
+    closing: string;
+    ended: string;
+    timeRemaining: string;
+    penaltyWindow: string;
+    marketResolving: string;
+    marketClosed: string;
+    votingWrapping: string;
+    votingClosed: string;
+    days: string;
+    hours: string;
+    mins: string;
+    secs: string;
+    loadingAdjudicators: string;
+  };
   // Profile Menu
   profileMenu: {
     profile: string;
@@ -462,6 +503,45 @@ export const translations: Record<LanguageCode, Translations> = {
       voting: "Voting...",
       sendVote: "Send Vote",
     },
+    marketPage: {
+      aboutMarket: "About this market",
+      castVote: "Cast your vote",
+      trade: "Trade",
+      createdOn: "Created {date}",
+      voteSingular: "vote",
+      votePlural: "votes",
+      live: "Live",
+      checking: "Checking...",
+      resolving: "Resolving",
+      ended: "Ended",
+      back: "Back",
+      shareThisMarket: "Share this market on {network}",
+      copyLink: "Copy link",
+      shareOnX: "Share on X",
+      shareOnTelegram: "Share on Telegram",
+      shareViaDevice: "Share via device",
+      penaltyWindow: "Penalty Window",
+      loadingPositions: "Loading positions...",
+      closed: "Closed",
+      lateVote: "Late Vote",
+      vote: "Vote",
+      platformFee: "Platform fee",
+    },
+    countdown: {
+      closing: "Closing",
+      ended: "Ended",
+      timeRemaining: "Time Remaining",
+      penaltyWindow: "Penalty Window.",
+      marketResolving: "Market Resolving.",
+      marketClosed: "Market Closed.",
+      votingWrapping: "Voting is wrapping up.",
+      votingClosed: "Voting is now closed.",
+      days: "Days",
+      hours: "Hours",
+      mins: "Mins",
+      secs: "Secs",
+      loadingAdjudicators: "Loading adjudicators...",
+    },
     profileMenu: {
       profile: "Your Profile",
       notConnected: "Not connected",
@@ -690,6 +770,45 @@ export const translations: Record<LanguageCode, Translations> = {
       voting: "Votando...",
       sendVote: "Enviar voto",
     },
+    marketPage: {
+      aboutMarket: "Acerca de este mercado",
+      castVote: "Emite tu voto",
+      trade: "Trade",
+      createdOn: "Creado {date}",
+      voteSingular: "voto",
+      votePlural: "votos",
+      live: "Activo",
+      checking: "Verificando...",
+      resolving: "Resolviendo",
+      ended: "Finalizado",
+      back: "Atrás",
+      shareThisMarket: "Comparte este mercado en {network}",
+      copyLink: "Copiar enlace",
+      shareOnX: "Compartir en X",
+      shareOnTelegram: "Compartir en Telegram",
+      shareViaDevice: "Compartir con dispositivo",
+      penaltyWindow: "Ventana de penalización",
+      loadingPositions: "Cargando posiciones...",
+      closed: "Cerrado",
+      lateVote: "Voto tardío",
+      vote: "Votar",
+      platformFee: "Tarifa de plataforma",
+    },
+    countdown: {
+      closing: "Cerrando",
+      ended: "Finalizado",
+      timeRemaining: "Tiempo restante",
+      penaltyWindow: "Ventana de penalización.",
+      marketResolving: "Mercado resolviéndose.",
+      marketClosed: "Mercado cerrado.",
+      votingWrapping: "La votación está terminando.",
+      votingClosed: "La votación está cerrada.",
+      days: "Días",
+      hours: "Horas",
+      mins: "Min",
+      secs: "Seg",
+      loadingAdjudicators: "Cargando adjudicadores...",
+    },
     profileMenu: {
       profile: "Tu perfil",
       notConnected: "No conectado",
@@ -916,6 +1035,45 @@ export const translations: Record<LanguageCode, Translations> = {
       nonZeroRequired: "Vous devez envoyer un montant non nul pour voter",
       voting: "Vote en cours...",
       sendVote: "Envoyer le vote",
+    },
+    marketPage: {
+      aboutMarket: "À propos de ce marché",
+      castVote: "Votez",
+      trade: "Trade",
+      createdOn: "Créé {date}",
+      voteSingular: "vote",
+      votePlural: "votes",
+      live: "En direct",
+      checking: "Vérification...",
+      resolving: "Résolution",
+      ended: "Terminé",
+      back: "Retour",
+      shareThisMarket: "Partager ce marché sur {network}",
+      copyLink: "Copier le lien",
+      shareOnX: "Partager sur X",
+      shareOnTelegram: "Partager sur Telegram",
+      shareViaDevice: "Partager via l'appareil",
+      penaltyWindow: "Fenêtre de pénalité",
+      loadingPositions: "Chargement des positions...",
+      closed: "Fermé",
+      lateVote: "Vote tardif",
+      vote: "Voter",
+      platformFee: "Frais de plateforme",
+    },
+    countdown: {
+      closing: "Clôture",
+      ended: "Terminé",
+      timeRemaining: "Temps restant",
+      penaltyWindow: "Fenêtre de pénalité.",
+      marketResolving: "Résolution du marché.",
+      marketClosed: "Marché fermé.",
+      votingWrapping: "Le vote se termine.",
+      votingClosed: "Le vote est maintenant fermé.",
+      days: "Jours",
+      hours: "Heures",
+      mins: "Min",
+      secs: "Sec",
+      loadingAdjudicators: "Chargement des arbitres...",
     },
     profileMenu: {
       profile: "Votre profil",
@@ -1144,6 +1302,45 @@ export const translations: Record<LanguageCode, Translations> = {
       voting: "Abstimmung läuft...",
       sendVote: "Stimme senden",
     },
+    marketPage: {
+      aboutMarket: "Über diesen Markt",
+      castVote: "Stimme ab",
+      trade: "Trade",
+      createdOn: "Erstellt {date}",
+      voteSingular: "Stimme",
+      votePlural: "Stimmen",
+      live: "Live",
+      checking: "Prüfung...",
+      resolving: "Wird aufgelöst",
+      ended: "Beendet",
+      back: "Zurück",
+      shareThisMarket: "Diesen Markt auf {network} teilen",
+      copyLink: "Link kopieren",
+      shareOnX: "Auf X teilen",
+      shareOnTelegram: "Auf Telegram teilen",
+      shareViaDevice: "Über Gerät teilen",
+      penaltyWindow: "Strafzeitfenster",
+      loadingPositions: "Positionen werden geladen...",
+      closed: "Geschlossen",
+      lateVote: "Späte Abstimmung",
+      vote: "Abstimmen",
+      platformFee: "Plattformgebühr",
+    },
+    countdown: {
+      closing: "Schließt",
+      ended: "Beendet",
+      timeRemaining: "Verbleibende Zeit",
+      penaltyWindow: "Strafzeitfenster.",
+      marketResolving: "Markt wird aufgelöst.",
+      marketClosed: "Markt geschlossen.",
+      votingWrapping: "Abstimmung läuft aus.",
+      votingClosed: "Abstimmung ist jetzt geschlossen.",
+      days: "Tage",
+      hours: "Std",
+      mins: "Min",
+      secs: "Sek",
+      loadingAdjudicators: "Schiedsrichter werden geladen...",
+    },
     profileMenu: {
       profile: "Dein Profil",
       notConnected: "Nicht verbunden",
@@ -1371,6 +1568,45 @@ export const translations: Record<LanguageCode, Translations> = {
       voting: "Votando...",
       sendVote: "Enviar voto",
     },
+    marketPage: {
+      aboutMarket: "Sobre este mercado",
+      castVote: "Faça seu voto",
+      trade: "Trade",
+      createdOn: "Criado {date}",
+      voteSingular: "voto",
+      votePlural: "votos",
+      live: "Ao vivo",
+      checking: "Verificando...",
+      resolving: "Resolvendo",
+      ended: "Encerrado",
+      back: "Voltar",
+      shareThisMarket: "Compartilhe este mercado em {network}",
+      copyLink: "Copiar link",
+      shareOnX: "Compartilhar no X",
+      shareOnTelegram: "Compartilhar no Telegram",
+      shareViaDevice: "Compartilhar pelo dispositivo",
+      penaltyWindow: "Janela de penalidade",
+      loadingPositions: "Carregando posições...",
+      closed: "Fechado",
+      lateVote: "Voto tardio",
+      vote: "Votar",
+      platformFee: "Taxa da plataforma",
+    },
+    countdown: {
+      closing: "Encerrando",
+      ended: "Encerrado",
+      timeRemaining: "Tempo restante",
+      penaltyWindow: "Janela de penalidade.",
+      marketResolving: "Mercado resolvendo.",
+      marketClosed: "Mercado fechado.",
+      votingWrapping: "A votação está terminando.",
+      votingClosed: "A votação está encerrada.",
+      days: "Dias",
+      hours: "Horas",
+      mins: "Min",
+      secs: "Seg",
+      loadingAdjudicators: "Carregando adjudicadores...",
+    },
     profileMenu: {
       profile: "Seu perfil",
       notConnected: "Não conectado",
@@ -1597,6 +1833,45 @@ export const translations: Record<LanguageCode, Translations> = {
       nonZeroRequired: "你必须发送非零金额才能投票",
       voting: "投票中...",
       sendVote: "发送投票",
+    },
+    marketPage: {
+      aboutMarket: "关于此市场",
+      castVote: "进行投票",
+      trade: "交易",
+      createdOn: "创建于 {date}",
+      voteSingular: "票",
+      votePlural: "票",
+      live: "进行中",
+      checking: "检查中...",
+      resolving: "结算中",
+      ended: "已结束",
+      back: "返回",
+      shareThisMarket: "在 {network} 分享此市场",
+      copyLink: "复制链接",
+      shareOnX: "分享到 X",
+      shareOnTelegram: "分享到 Telegram",
+      shareViaDevice: "通过设备分享",
+      penaltyWindow: "惩罚窗口",
+      loadingPositions: "正在加载仓位...",
+      closed: "已关闭",
+      lateVote: "延迟投票",
+      vote: "投票",
+      platformFee: "平台费",
+    },
+    countdown: {
+      closing: "即将结束",
+      ended: "已结束",
+      timeRemaining: "剩余时间",
+      penaltyWindow: "惩罚窗口。",
+      marketResolving: "市场结算中。",
+      marketClosed: "市场已关闭。",
+      votingWrapping: "投票即将结束。",
+      votingClosed: "投票现已关闭。",
+      days: "天",
+      hours: "时",
+      mins: "分",
+      secs: "秒",
+      loadingAdjudicators: "正在加载裁决者...",
     },
     profileMenu: {
       profile: "你的资料",
