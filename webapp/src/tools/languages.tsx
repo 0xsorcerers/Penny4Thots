@@ -134,8 +134,11 @@ export interface Translations {
     detailsStep: string;
     confirmStep: string;
     marketTitle: string;
+    marketTitlePlaceholder: string;
     marketSubtitle: string;
+    marketSubtitlePlaceholder: string;
     marketDescription: string;
+    marketDescriptionPlaceholder: string;
     posterImage: string;
     tags: string;
     optionAYes: string;
@@ -312,8 +315,11 @@ export const translations: Record<LanguageCode, Translations> = {
       detailsStep: "Market Details",
       confirmStep: "Confirm",
       marketTitle: "Market Title",
+      marketTitlePlaceholder: "Will Bitcoin reach $100k? (Be specific and avoid ambiguity)",
       marketSubtitle: "Subtitle",
+      marketSubtitlePlaceholder: "Example: Crypto price prediction for 2025",
       marketDescription: "Description",
+      marketDescriptionPlaceholder: "Provide more info or helpful context about this prediction market to users and our AI adjudicators...",
       posterImage: "Poster Image URL",
       tags: "Tags",
       optionAYes: "Option A (Yes)",
@@ -476,8 +482,11 @@ export const translations: Record<LanguageCode, Translations> = {
       detailsStep: "Detalles",
       confirmStep: "Confirmar",
       marketTitle: "Título",
+      marketTitlePlaceholder: "¿Bitcoin alcanzará los $100k? (Sé específico y evita ambigüedades)",
       marketSubtitle: "Subtítulo",
+      marketSubtitlePlaceholder: "Ejemplo: Predicción del precio cripto para 2025",
       marketDescription: "Descripción",
+      marketDescriptionPlaceholder: "Agrega más información o contexto útil sobre este mercado de predicción para los usuarios y nuestros adjudicadores de IA...",
       posterImage: "URL de imagen",
       tags: "Tags",
       optionAYes: "Opción A (Sí)",
@@ -638,8 +647,11 @@ export const translations: Record<LanguageCode, Translations> = {
       detailsStep: "Détails",
       confirmStep: "Confirmer",
       marketTitle: "Titre",
+      marketTitlePlaceholder: "Le Bitcoin atteindra-t-il 100k $ ? (Soyez précis et évitez toute ambiguïté)",
       marketSubtitle: "Sous-titre",
+      marketSubtitlePlaceholder: "Exemple : Prédiction du prix crypto pour 2025",
       marketDescription: "Description",
+      marketDescriptionPlaceholder: "Ajoutez plus d'informations ou de contexte utile sur ce marché de prédiction pour les utilisateurs et nos arbitres IA...",
       posterImage: "URL image",
       tags: "Tags",
       optionAYes: "Option A (Oui)",
@@ -800,8 +812,11 @@ export const translations: Record<LanguageCode, Translations> = {
       detailsStep: "Details",
       confirmStep: "Bestätigen",
       marketTitle: "Titel",
+      marketTitlePlaceholder: "Wird Bitcoin 100.000 $ erreichen? (Sei konkret und vermeide Mehrdeutigkeit)",
       marketSubtitle: "Untertitel",
+      marketSubtitlePlaceholder: "Beispiel: Krypto-Preisprognose für 2025",
       marketDescription: "Beschreibung",
+      marketDescriptionPlaceholder: "Gib mehr Informationen oder hilfreichen Kontext zu diesem Prognosemarkt für Nutzer und unsere KI-Schiedsrichter an...",
       posterImage: "Bild URL",
       tags: "Tags",
       optionAYes: "Option A (Ja)",
@@ -962,8 +977,11 @@ export const translations: Record<LanguageCode, Translations> = {
       detailsStep: "Detalhes",
       confirmStep: "Confirmar",
       marketTitle: "Título",
+      marketTitlePlaceholder: "O Bitcoin vai chegar a US$100k? (Seja específico e evite ambiguidades)",
       marketSubtitle: "Subtítulo",
+      marketSubtitlePlaceholder: "Exemplo: Previsão de preço cripto para 2025",
       marketDescription: "Descrição",
+      marketDescriptionPlaceholder: "Adicione mais informações ou contexto útil sobre este mercado de previsão para os usuários e nossos adjudicadores de IA...",
       posterImage: "URL imagem",
       tags: "Tags",
       optionAYes: "Opção A (Sim)",
@@ -1124,8 +1142,11 @@ export const translations: Record<LanguageCode, Translations> = {
       detailsStep: "详情",
       confirmStep: "确认",
       marketTitle: "标题",
+      marketTitlePlaceholder: "比特币会达到 10 万美元吗？（请尽量具体并避免歧义）",
       marketSubtitle: "副标题",
+      marketSubtitlePlaceholder: "示例：2025 年加密货币价格预测",
       marketDescription: "描述",
+      marketDescriptionPlaceholder: "为用户和我们的 AI 裁定系统提供更多关于该预测市场的信息或背景...",
       posterImage: "图片 URL",
       tags: "标签",
       optionAYes: "选项 A（是）",
