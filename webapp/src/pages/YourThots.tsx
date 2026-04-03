@@ -9,6 +9,8 @@ import { Button } from "@/components/ui/button";
 import type { Market } from "@/types/market";
 import type { Address } from "viem";
 import { toast } from "sonner";
+import { t } from "@/tools/languages";
+import { useLanguageStore } from "@/store/languageStore";
 import {
   getUserMarkets,
   getUserTotalMarkets,
@@ -65,6 +67,7 @@ const clearCache = () => {
 export default function YourThots() {
   const navigate = useNavigate();
   const account = useActiveAccount();
+  const { selectedLanguage } = useLanguageStore();
   const [allMarketIds, setAllMarketIds] = useState<number[]>([]);
   const [markets, setMarkets] = useState<Market[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -257,7 +260,7 @@ export default function YourThots() {
         className="border-violet-500/30 bg-violet-500/10 hover:bg-violet-500/20"
       >
         <ChevronLeft className="h-4 w-4 mr-1" />
-        Previous
+        {t(selectedLanguage, "nav.previous")}
       </Button>
 
       {getPagePickerItems().map((item, idx) => {
@@ -288,7 +291,7 @@ export default function YourThots() {
         disabled={currentPage === totalPages}
         className="border-violet-500/30 bg-violet-500/10 hover:bg-violet-500/20"
       >
-        Next
+        {t(selectedLanguage, "nav.next")}
         <ChevronRight className="h-4 w-4 ml-1" />
       </Button>
     </div>
@@ -403,7 +406,7 @@ export default function YourThots() {
             className="mb-8 flex items-center gap-2 font-outfit text-muted-foreground hover:text-foreground transition-colors"
           >
             <ArrowLeft className="h-4 w-4" />
-            Back to Markets
+            {t(selectedLanguage, "nav.backToMarkets")}
           </motion.button>
 
           <motion.div
@@ -415,9 +418,9 @@ export default function YourThots() {
               <MessageCircle className="h-8 w-8 text-white" />
             </div>
             <div>
-              <h1 className="font-syne text-4xl font-bold text-foreground">Your Thots</h1>
+              <h1 className="font-syne text-4xl font-bold text-foreground">{t(selectedLanguage, "yourThots.title")}</h1>
               <p className="mt-1 font-outfit text-lg text-muted-foreground">
-                Markets you've voted on
+                {t(selectedLanguage, "yourThots.subtitle")}
               </p>
             </div>
           </motion.div>
@@ -430,13 +433,13 @@ export default function YourThots() {
           >
             <div className="rounded-full bg-violet-500/10 px-4 py-2">
               <span className="font-mono text-sm text-violet-500">
-                {uniqueMarketCount} {uniqueMarketCount === 1 ? "market" : "markets"}
+                {uniqueMarketCount} {uniqueMarketCount === 1 ? t(selectedLanguage, "yourThots.marketCountSingular") : t(selectedLanguage, "yourThots.marketCountPlural")}
               </span>
             </div>
             {totalPages > 1 && (
               <div className="rounded-full bg-muted px-4 py-2">
                 <span className="font-mono text-sm text-muted-foreground">
-                  Page {currentPage} of {totalPages}
+                  {t(selectedLanguage, "yourThots.pageOf", { current: currentPage, total: totalPages })}
                 </span>
               </div>
             )}
@@ -453,7 +456,7 @@ export default function YourThots() {
                 >
                   <RefreshCw className="h-4 w-4" />
                 </motion.div>
-                {isRefreshing ? "Refreshing..." : "Refresh"}
+                {isRefreshing ? t(selectedLanguage, "nav.refreshing") : t(selectedLanguage, "nav.refresh")}
               </button>
             )}
           </motion.div>
@@ -475,10 +478,10 @@ export default function YourThots() {
                 <MessageCircle className="h-8 w-8 text-violet-500" />
               </div>
               <h3 className="mb-2 font-syne text-xl font-bold text-foreground">
-                Connect Your Wallet
+                {t(selectedLanguage, "yourThots.connectWalletTitle")}
               </h3>
               <p className="max-w-sm text-center font-outfit text-muted-foreground">
-                Connect your wallet to view the markets you've voted on.
+                {t(selectedLanguage, "yourThots.connectWalletDesc")}
               </p>
             </motion.div>
           ) : isLoading ? (
@@ -490,7 +493,7 @@ export default function YourThots() {
               className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-violet-500/30 bg-card/50 py-20"
             >
               <Loader2 className="h-10 w-10 animate-spin text-violet-500 mb-4" />
-              <p className="font-outfit text-muted-foreground">{loadingProgress || "Loading your voted markets..."}</p>
+              <p className="font-outfit text-muted-foreground">{loadingProgress || t(selectedLanguage, "yourThots.loadingMarkets")}</p>
             </motion.div>
           ) : markets.length > 0 ? (
             <>
@@ -528,17 +531,16 @@ export default function YourThots() {
                 <Sparkles className="h-8 w-8 text-violet-500" />
               </div>
               <h3 className="mb-2 font-syne text-xl font-bold text-foreground">
-                No Votes Yet
+                {t(selectedLanguage, "yourThots.emptyStateTitle")}
               </h3>
               <p className="mb-6 max-w-sm text-center font-outfit text-muted-foreground">
-                You haven't voted on any prediction markets yet. Explore markets and share your
-                thots!
+                {t(selectedLanguage, "yourThots.emptyStateDesc")}
               </p>
               <Button
                 onClick={() => navigate("/app")}
                 className="rounded-xl bg-violet-500 hover:bg-violet-600 font-outfit font-semibold"
               >
-                Explore Markets
+                {t(selectedLanguage, "yourThots.exploreMarketsButton")}
               </Button>
             </motion.div>
           )}

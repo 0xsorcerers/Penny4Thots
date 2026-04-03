@@ -9,6 +9,8 @@ import { Button } from "@/components/ui/button";
 import type { Market } from "@/types/market";
 import type { Address } from "viem";
 import { toast } from "sonner";
+import { t } from "@/tools/languages";
+import { useLanguageStore } from "@/store/languageStore";
 import {
   getUserThots,
   getUserTotalThots,
@@ -65,6 +67,7 @@ const clearCache = () => {
 export default function MyThots() {
   const navigate = useNavigate();
   const account = useActiveAccount();
+  const { selectedLanguage } = useLanguageStore();
   const [allMarketIds, setAllMarketIds] = useState<number[]>([]);
   const [markets, setMarkets] = useState<Market[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -260,7 +263,7 @@ export default function MyThots() {
         className="border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20"
       >
         <ChevronLeft className="h-4 w-4 mr-1" />
-        Previous
+        {t(selectedLanguage, "nav.previous")}
       </Button>
 
       {getPagePickerItems().map((item, idx) => {
@@ -291,7 +294,7 @@ export default function MyThots() {
         disabled={currentPage === totalPages}
         className="border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20"
       >
-        Next
+        {t(selectedLanguage, "nav.next")}
         <ChevronRight className="h-4 w-4 ml-1" />
       </Button>
     </div>
@@ -405,7 +408,7 @@ export default function MyThots() {
             className="mb-8 flex items-center gap-2 font-outfit text-muted-foreground hover:text-foreground transition-colors"
           >
             <ArrowLeft className="h-4 w-4" />
-            Back to Markets
+            {t(selectedLanguage, "nav.backToMarkets")}
           </motion.button>
 
           <motion.div
@@ -417,9 +420,9 @@ export default function MyThots() {
               <Brain className="h-8 w-8 text-white" />
             </div>
             <div>
-              <h1 className="font-syne text-4xl font-bold text-foreground">My Thots</h1>
+              <h1 className="font-syne text-4xl font-bold text-foreground">{t(selectedLanguage, "myThots.title")}</h1>
               <p className="mt-1 font-outfit text-lg text-muted-foreground">
-                Markets you've created
+                {t(selectedLanguage, "myThots.subtitle")}
               </p>
             </div>
           </motion.div>
@@ -432,13 +435,13 @@ export default function MyThots() {
           >
             <div className="rounded-full bg-emerald-500/10 px-4 py-2">
               <span className="font-mono text-sm text-emerald-500">
-                {allMarketIds.length} {allMarketIds.length === 1 ? "market" : "markets"}
+                {allMarketIds.length} {allMarketIds.length === 1 ? t(selectedLanguage, "myThots.marketCountSingular") : t(selectedLanguage, "myThots.marketCountPlural")}
               </span>
             </div>
             {totalPages > 1 && (
               <div className="rounded-full bg-muted px-4 py-2">
                 <span className="font-mono text-sm text-muted-foreground">
-                  Page {currentPage} of {totalPages}
+                  {t(selectedLanguage, "myThots.pageOf", { current: currentPage, total: totalPages })}
                 </span>
               </div>
             )}
@@ -455,7 +458,7 @@ export default function MyThots() {
                 >
                   <RefreshCw className="h-4 w-4" />
                 </motion.div>
-                {isRefreshing ? "Refreshing..." : "Refresh"}
+                {isRefreshing ? t(selectedLanguage, "nav.refreshing") : t(selectedLanguage, "nav.refresh")}
               </button>
             )}
           </motion.div>
@@ -477,10 +480,10 @@ export default function MyThots() {
                 <Brain className="h-8 w-8 text-emerald-500" />
               </div>
               <h3 className="mb-2 font-syne text-xl font-bold text-foreground">
-                Connect Your Wallet
+                {t(selectedLanguage, "myThots.connectWalletTitle")}
               </h3>
               <p className="max-w-sm text-center font-outfit text-muted-foreground">
-                Connect your wallet to view the markets you've created.
+                {t(selectedLanguage, "myThots.connectWalletDesc")}
               </p>
             </motion.div>
           ) : isLoading ? (
@@ -492,7 +495,7 @@ export default function MyThots() {
               className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-emerald-500/30 bg-card/50 py-20"
             >
               <Loader2 className="h-10 w-10 animate-spin text-emerald-500 mb-4" />
-              <p className="font-outfit text-muted-foreground">{loadingProgress || "Loading your thots..."}</p>
+              <p className="font-outfit text-muted-foreground">{loadingProgress || t(selectedLanguage, "myThots.loadingThots")}</p>
             </motion.div>
           ) : markets.length > 0 ? (
             <>
@@ -530,17 +533,16 @@ export default function MyThots() {
                 <Sparkles className="h-8 w-8 text-emerald-500" />
               </div>
               <h3 className="mb-2 font-syne text-xl font-bold text-foreground">
-                No Thots Yet
+                {t(selectedLanguage, "myThots.emptyStateTitle")}
               </h3>
               <p className="mb-6 max-w-sm text-center font-outfit text-muted-foreground">
-                You haven't created any prediction markets yet. Start sharing your thots with the
-                world!
+                {t(selectedLanguage, "myThots.emptyStateDesc")}
               </p>
               <Button
                 onClick={() => navigate("/app")}
                 className="rounded-xl bg-emerald-500 hover:bg-emerald-600 font-outfit font-semibold"
               >
-                Create Your First Thot
+                {t(selectedLanguage, "myThots.createFirstThotButton")}
               </Button>
             </motion.div>
           )}
