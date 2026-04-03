@@ -371,3 +371,13 @@ The AI will commit and push to BOTH GitHub and Vibecode servers automatically.
 - Localized Profile dropdown labels/descriptions and disconnected state text.
 
 ---
+
+
+## 2026-04-03
+
+### Update: MarketPage + Countdown full localization sweep
+- Localized remaining MarketPage section headers and action/status labels (About, Cast Vote, Trade, votes, status badges, share menu text, late-vote/claim labels).
+- Localized market creation date formatting by selected language locale.
+- Localized CountdownTimer and CountdownTimerLarge status text (time remaining, closing/ended/resolving/closed states, day/hour/min/sec labels, adjudicator loading text).
+
+---

@@ -2,6 +2,8 @@ import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Timer, Clock, Flame, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { readAdjudicators, renderParsedAdjudicators } from "../../tools/utils";
+import { useLanguageStore } from "@/store/languageStore";
+import { t } from "@/tools/languages";
 
 interface CountdownTimerProps {
   endTime: number; // Unix timestamp in seconds
@@ -34,6 +36,7 @@ const calculateTimeRemaining = (endTime: number): TimeRemaining => {
 };
 
 export function CountdownTimer({ endTime, closed, compact = false, className = "" }: CountdownTimerProps) {
+  const selectedLanguage = useLanguageStore((state) => state.selectedLanguage);
   const [timeRemaining, setTimeRemaining] = useState<TimeRemaining>(() => calculateTimeRemaining(endTime));
 
   useEffect(() => {
@@ -58,10 +61,10 @@ export function CountdownTimer({ endTime, closed, compact = false, className = "
   // Format time display
   const formatTime = () => {
     if (timeRemaining.total === 0 && !closed) {
-      return "Closing";
+      return t(selectedLanguage, "countdown.closing");
     }
     if (closed || timeRemaining.total === 0) {
-      return "Ended";
+      return t(selectedLanguage, "countdown.ended");
     }
 
     const { days, hours, minutes, seconds } = timeRemaining;
@@ -152,6 +155,7 @@ export function CountdownTimer({ endTime, closed, compact = false, className = "
 
 // Larger version for MarketPage
 export function CountdownTimerLarge({ endTime, closed, sharesFinalized, className = "", marketId }: CountdownTimerProps) {
+  const selectedLanguage = useLanguageStore((state) => state.selectedLanguage);
   const [timeRemaining, setTimeRemaining] = useState<TimeRemaining>(() => calculateTimeRemaining(endTime));
   const [adjudicators, setAdjudicators] = useState<string>("");
   const [isLoadingAdjudicators, setIsLoadingAdjudicators] = useState(false);
@@ -250,18 +254,18 @@ export function CountdownTimerLarge({ endTime, closed, sharesFinalized, classNam
 
   // Determine the status text based on market state
   const getStatusText = () => {
-    if (!isEnded) return "Time Remaining";
+    if (!isEnded) return t(selectedLanguage, "countdown.timeRemaining");
 
     // Market timer has ended, check closed and sharesFinalized status
     if (!closed) {
       // Timer ended but market not yet closed
-      return "Penalty Window.";
+      return t(selectedLanguage, "countdown.penaltyWindow");
     } else if (!sharesFinalized) {
       // Market is closed but shares not finalized (resolving)
-      return "Market Resolving.";
+      return t(selectedLanguage, "countdown.marketResolving");
     } else {
       // Market is closed and shares are finalized
-      return "Market Closed.";
+      return t(selectedLanguage, "countdown.marketClosed");
     }
   };
 
@@ -272,10 +276,10 @@ export function CountdownTimerLarge({ endTime, closed, sharesFinalized, classNam
     // Market timer has ended, check closed and sharesFinalized status
     if (!closed) {
       // Timer ended but market not yet closed
-      return "Voting is wrapping up.";
+      return t(selectedLanguage, "countdown.votingWrapping");
     } else if (!sharesFinalized) {
       // Market is closed but shares not finalized
-      return "Voting is now closed.";
+      return t(selectedLanguage, "countdown.votingClosed");
     } else {
       // Market is closed and shares are finalized
       console.log('Returning adjudicators message:', adjudicatorsMessage);
@@ -307,10 +311,10 @@ export function CountdownTimerLarge({ endTime, closed, sharesFinalized, classNam
 
       {!isEnded ? (
         <div className="flex justify-center gap-4">
-          {timeRemaining.days > 0 && <TimeBlock value={timeRemaining.days} label="Days" />}
-          <TimeBlock value={timeRemaining.hours} label="Hours" />
-          <TimeBlock value={timeRemaining.minutes} label="Mins" />
-          <TimeBlock value={timeRemaining.seconds} label="Secs" />
+          {timeRemaining.days > 0 && <TimeBlock value={timeRemaining.days} label={t(selectedLanguage, "countdown.days")} />}
+          <TimeBlock value={timeRemaining.hours} label={t(selectedLanguage, "countdown.hours")} />
+          <TimeBlock value={timeRemaining.minutes} label={t(selectedLanguage, "countdown.mins")} />
+          <TimeBlock value={timeRemaining.seconds} label={t(selectedLanguage, "countdown.secs")} />
         </div>
       ) : (
         <div className="flex min-w-0 items-center justify-center gap-2">
@@ -319,7 +323,7 @@ export function CountdownTimerLarge({ endTime, closed, sharesFinalized, classNam
               {renderParsedAdjudicators(getStatusMessage(adjudicators))}
             </span>
           ) : (
-            <span className="block min-w-0 max-w-full text-center font-outfit text-base leading-relaxed text-slate-600 break-words [overflow-wrap:anywhere] sm:text-lg dark:text-slate-400">{getStatusMessage("Loading adjudicators...")}</span>
+            <span className="block min-w-0 max-w-full text-center font-outfit text-base leading-relaxed text-slate-600 break-words [overflow-wrap:anywhere] sm:text-lg dark:text-slate-400">{getStatusMessage(t(selectedLanguage, "countdown.loadingAdjudicators"))}</span>
           )}
         </div>
       )}
