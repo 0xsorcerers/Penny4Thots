@@ -2,6 +2,8 @@ import { motion } from "framer-motion";
 import { ArrowRight, Sparkles, TrendingUp, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Connector } from "@/tools/utils";
+import { t } from "@/tools/languages";
+import { useLanguageStore } from "@/store/languageStore";
 import { useActiveAccount } from "thirdweb/react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -17,6 +19,7 @@ export function GetStartedPage({ onGetStarted }: GetStartedPageProps) {
   const navigate = useNavigate();
   const [showConnectNotice, setShowConnectNotice] = useState(true);
   const { theme } = useTheme();
+  const { selectedLanguage } = useLanguageStore();
   const logoSrc = theme === "dark" ? "/logo-white-no-bkg.webp" : "/logo-black-no-bkg.webp";
 
   // Redirect to main app when connected
@@ -120,9 +123,9 @@ export function GetStartedPage({ onGetStarted }: GetStartedPageProps) {
         {showConnectNotice && (
           <div className="mb-8 w-full max-w-xl">
             <Alert variant="destructive" className="rounded-xl bg-amber-50/70 backdrop-blur-xl border-destructive/30 dark:bg-destructive/10 dark:backdrop-blur-none">
-              <AlertTitle>Wallet not connected</AlertTitle>
+              <AlertTitle>{t(selectedLanguage, "getStarted.walletNotConnectedTitle")}</AlertTitle>
               <AlertDescription>
-                Connect your wallet to participate. This message will disappear shortly.
+                {t(selectedLanguage, "getStarted.walletNotConnectedDesc")}
               </AlertDescription>
             </Alert>
           </div>
@@ -137,7 +140,7 @@ export function GetStartedPage({ onGetStarted }: GetStartedPageProps) {
         >
           <div className="theme-option-a-chip inline-flex items-center gap-2 rounded-full border px-4 py-2 backdrop-blur-lg shadow-[0_2px_12px_-2px_hsl(220_30%_15%/0.08)] dark:backdrop-blur-sm dark:shadow-none">
             <Sparkles className="h-4 w-4 theme-text-positive" />
-            <span className="inline-block font-mono text-sm theme-option-a-gradient-text">Next Gen Prediction Market</span>
+            <span className="inline-block font-mono text-sm theme-option-a-gradient-text">{t(selectedLanguage, "getStarted.badge")}</span>
           </div>
         </motion.div>
 
@@ -178,7 +181,7 @@ export function GetStartedPage({ onGetStarted }: GetStartedPageProps) {
           transition={{ duration: 0.6, delay: 0.6 }}
           className="mb-12 max-w-xl text-center font-outfit text-xl text-muted-foreground sm:text-2xl"
         >
-          <span className="italic text-foreground/90">"If you can think it, it's important."</span>
+          <span className="italic text-foreground/90">{t(selectedLanguage, "getStarted.taglineQuote")}</span>
         </motion.p>
 
         {/* Feature pills */}
@@ -189,9 +192,9 @@ export function GetStartedPage({ onGetStarted }: GetStartedPageProps) {
           className="mb-12 flex flex-wrap justify-center gap-3"
         >
           {[
-            { icon: TrendingUp, label: "Trade Predictions" },
-            { icon: Zap, label: "Real-time Markets" },
-            { icon: Sparkles, label: "Any Topic" },
+            { icon: TrendingUp, label: t(selectedLanguage, "getStarted.featureTradePredictions") },
+            { icon: Zap, label: t(selectedLanguage, "getStarted.featureRealtimeMarkets") },
+            { icon: Sparkles, label: t(selectedLanguage, "getStarted.featureAnyTopic") },
           ].map((item, i) => (
             <motion.div
               key={item.label}
@@ -225,7 +228,7 @@ export function GetStartedPage({ onGetStarted }: GetStartedPageProps) {
           transition={{ delay: 1.4, duration: 0.5 }}
           className="mt-8 text-center text-sm text-muted-foreground"
         >
-          Connect your wallet to get started
+          {t(selectedLanguage, "getStarted.connectButtonHint")}
         </motion.p>
 
         {/* Decorative bottom line */}

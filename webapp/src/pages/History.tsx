@@ -18,6 +18,8 @@ import {
 import { useNavigate } from "react-router-dom";
 import { useActiveAccount } from "thirdweb/react";
 import type { Address } from "viem";
+import { t } from "@/tools/languages";
+import { useLanguageStore } from "@/store/languageStore";
 import {
   getUserTotalClaimHistory,
   getUserClaims,
@@ -64,6 +66,7 @@ export default function History() {
   const navigate = useNavigate();
   const account = useActiveAccount();
   const selectedNetwork = useNetworkStore((state) => state.selectedNetwork);
+  const { selectedLanguage } = useLanguageStore();
   const [claims, setClaims] = useState<ClaimWithMarketInfo[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -323,7 +326,7 @@ export default function History() {
             className="mb-8 flex items-center gap-2 font-outfit text-muted-foreground hover:text-foreground transition-colors"
           >
             <ArrowLeft className="h-4 w-4" />
-            Back
+            {t(selectedLanguage, "nav.back")}
           </motion.button>
 
           <motion.div
@@ -339,9 +342,9 @@ export default function History() {
                 </div>
               </div>
               <div>
-                <h1 className="font-syne text-4xl font-bold text-foreground">Claim History</h1>
+                <h1 className="font-syne text-4xl font-bold text-foreground">{t(selectedLanguage, "history.title")}</h1>
                 <p className="mt-1 font-outfit text-lg text-muted-foreground">
-                  Your winning positions and rewards
+                  {t(selectedLanguage, "history.subtitle")}
                 </p>
               </div>
             </div>
@@ -358,7 +361,7 @@ export default function History() {
                 >
                   <RefreshCw className="h-4 w-4" />
                 </motion.div>
-                {isRefreshing ? "Refreshing..." : "Refresh"}
+                {isRefreshing ? t(selectedLanguage, "nav.refreshing") : t(selectedLanguage, "nav.refresh")}
               </button>
             )}
           </motion.div>
@@ -374,7 +377,7 @@ export default function History() {
               <div className="rounded-2xl border border-border/50 bg-card/50 backdrop-blur-sm p-4">
                 <div className="flex items-center gap-2 text-muted-foreground mb-1">
                   <Layers className="h-4 w-4" />
-                  <span className="font-outfit text-sm">Total Claims</span>
+                  <span className="font-outfit text-sm">{t(selectedLanguage, "history.totalClaims")}</span>
                 </div>
                 <p className="font-mono text-2xl font-bold text-foreground">{claims.length}</p>
               </div>
@@ -382,7 +385,7 @@ export default function History() {
               <div className="rounded-2xl border border-border/50 bg-card/50 backdrop-blur-sm p-4">
                 <div className="flex items-center gap-2 text-muted-foreground mb-1">
                   <Coins className="h-4 w-4" />
-                  <span className="font-outfit text-sm">Total Earned</span>
+                  <span className="font-outfit text-sm">{t(selectedLanguage, "history.totalEarned")}</span>
                 </div>
                 <p className="font-mono text-2xl font-bold text-yes">{formatAmount(totalClaimed.toString())}</p>
               </div>
@@ -390,7 +393,7 @@ export default function History() {
               <div className="rounded-2xl border border-border/50 bg-card/50 backdrop-blur-sm p-4">
                 <div className="flex items-center gap-2 text-muted-foreground mb-1">
                   <Hash className="h-4 w-4" />
-                  <span className="font-outfit text-sm">Markets Won</span>
+                  <span className="font-outfit text-sm">{t(selectedLanguage, "history.marketsWon")}</span>
                 </div>
                 <p className="font-mono text-2xl font-bold text-foreground">{marketSummary.size}</p>
               </div>
@@ -398,7 +401,7 @@ export default function History() {
               <div className="rounded-2xl border border-border/50 bg-card/50 backdrop-blur-sm p-4">
                 <div className="flex items-center gap-2 text-muted-foreground mb-1">
                   <TrendingUp className="h-4 w-4" />
-                  <span className="font-outfit text-sm">Avg per Claim</span>
+                  <span className="font-outfit text-sm">{t(selectedLanguage, "history.avgPerClaim")}</span>
                 </div>
                 <p className="font-mono text-2xl font-bold text-accent">
                   {formatAmount((totalClaimed / claims.length).toString())}
@@ -424,10 +427,10 @@ export default function History() {
                 <HistoryIcon className="h-8 w-8 text-muted-foreground" />
               </div>
               <h3 className="mb-2 font-syne text-xl font-bold text-foreground">
-                Connect Your Wallet
+                {t(selectedLanguage, "history.connectWalletTitle")}
               </h3>
               <p className="max-w-sm text-center font-outfit text-muted-foreground">
-                Connect your wallet to view your claim history.
+                {t(selectedLanguage, "history.connectWalletDesc")}
               </p>
             </motion.div>
           ) : isLoading ? (
@@ -439,7 +442,7 @@ export default function History() {
               className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border/50 bg-card/50 py-20"
             >
               <Loader2 className="h-10 w-10 animate-spin text-accent mb-4" />
-              <p className="font-outfit text-muted-foreground">Loading your claim history...</p>
+              <p className="font-outfit text-muted-foreground">{t(selectedLanguage, "history.loadingHistory")}</p>
             </motion.div>
           ) : claims.length > 0 ? (
             <motion.div
@@ -572,7 +575,7 @@ export default function History() {
 
                         {/* Click hint */}
                         <div className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <span className="font-outfit text-xs text-muted-foreground">Click to view market</span>
+                          <span className="font-outfit text-xs text-muted-foreground">{t(selectedLanguage, "history.clickHint")}</span>
                         </div>
                       </div>
                     </motion.div>
@@ -595,11 +598,10 @@ export default function History() {
                 </div>
               </div>
               <h3 className="mb-2 font-syne text-xl font-bold text-foreground">
-                No Claims Yet
+                {t(selectedLanguage, "history.emptyStateTitle")}
               </h3>
               <p className="mb-6 max-w-sm text-center font-outfit text-muted-foreground">
-                You haven't claimed any winnings yet. Vote on markets and claim your rewards when
-                they resolve!
+                {t(selectedLanguage, "history.emptyStateDesc")}
               </p>
               <motion.button
                 whileHover={{ scale: 1.05 }}
@@ -607,7 +609,7 @@ export default function History() {
                 onClick={() => navigate("/app")}
                 className="rounded-xl bg-gradient-to-r from-accent to-primary px-6 py-3 font-outfit font-semibold text-primary-foreground shadow-lg hover:shadow-xl transition-shadow"
               >
-                Explore Markets
+                {t(selectedLanguage, "history.exploreMarketsButton")}
               </motion.button>
             </motion.div>
           )}
