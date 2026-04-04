@@ -313,7 +313,7 @@ export default function YourThots() {
 
   const handleSubmitVote = async (voteParams: VoteParams) => {
     if (!account?.address) {
-      toast.error("Please connect your wallet first");
+      toast.error(t(selectedLanguage, "voteModal.walletNotConnected"));
       throw new Error("Wallet not connected");
     }
 
@@ -329,7 +329,7 @@ export default function YourThots() {
           const tokenDecimals = await readTokenDecimals(voteParams.paymentToken);
           const balanceInToken = fromTokenSmallestUnit(userBalance, tokenDecimals);
           const requiredInToken = fromTokenSmallestUnit(voteParams.marketBalance, tokenDecimals);
-          toast.error("Insufficient token balance", {
+          toast.error(t(selectedLanguage, "voteModal.insufficientBalance"), {
             description: `You have ${balanceInToken} but need ${requiredInToken}`, 
           });
           throw new Error(`Insufficient balance: have ${balanceInToken}, need ${requiredInToken}`);
@@ -342,17 +342,17 @@ export default function YourThots() {
         );
 
         if (currentAllowance < voteParams.marketBalance) {
-          toast.info("Approval required", {
-            description: "Approving token spending in your wallet",
+          toast.info(t(selectedLanguage, "voteModal.approvalRequired"), {
+            description: t(selectedLanguage, "voteModal.approvalDesc"),
           });
 
           await approve(voteParams.paymentToken, voteParams.marketBalance);
-          toast.success("Token approved!");
+          toast.success(t(selectedLanguage, "voteModal.tokenApproved"));
         }
       }
 
       await vote(voteParams);
-      toast.success("Vote submitted successfully!");
+      toast.success(t(selectedLanguage, "voteModal.voteSuccess"));
       await loadMarketsForPage(currentPage, allMarketIds);
     } catch (err: unknown) {
       console.error("Failed to vote:", err);
@@ -363,9 +363,9 @@ export default function YourThots() {
         errorMessage.toLowerCase().includes("cancel") ||
         errorMessage.toLowerCase().includes("user refused")
       ) {
-        toast.error("Transaction cancelled");
+        toast.error(t(selectedLanguage, "common.transactionCancelled"));
       } else {
-        toast.error(errorMessage || "Failed to submit vote");
+        toast.error(errorMessage || t(selectedLanguage, "voteModal.voteFailed"));
       }
       throw err;
     } finally {

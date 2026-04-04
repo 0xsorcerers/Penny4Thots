@@ -575,7 +575,7 @@ export default function MarketPage() {
   };
   const handleOpenKamikazeModal = async () => {
     if (!account?.address) {
-      toast.error("Please connect your wallet first");
+      toast.error(t(selectedLanguage, "voteModal.walletNotConnected"));
       return;
     }
     if (!market || market.indexer === undefined) {
@@ -583,7 +583,7 @@ export default function MarketPage() {
       return;
     }
     if (market.closed) {
-      toast.error("Kamikaze is disabled for this market");
+      toast.error(t(selectedLanguage, "market.kamikazeDisabled"));
       return;
     }
 
@@ -596,9 +596,9 @@ export default function MarketPage() {
 
     const { eligible, display } = await loadKamikazePositions();
     if (display.length === 0) {
-      toast.info("No positions found for this market");
+      toast.info(t(selectedLanguage, "market.noPositionsFound"));
     } else if (eligible.length === 0) {
-      toast.info("All listed positions are already kamikazed");
+      toast.info(t(selectedLanguage, "market.allPositionsKamikazed"));
     }
   };
 
@@ -609,7 +609,7 @@ export default function MarketPage() {
 
     const uniqueIds = Array.from(new Set(positionIds)).filter((id) => Number.isInteger(id) && id >= 0);
     if (uniqueIds.length === 0) {
-      throw new Error("No positions selected for kamikaze");
+      throw new Error(t(selectedLanguage, "market.selectAtLeastOne"));
     }
 
     console.log("[Kamikaze] batchKamikaze payload", {
@@ -626,7 +626,7 @@ export default function MarketPage() {
 
   const handleKamikazeAll = async () => {
     if (!account?.address) {
-      toast.error("Please connect your wallet first");
+      toast.error(t(selectedLanguage, "voteModal.walletNotConnected"));
       return;
     }
     if (!market || market.indexer === undefined) {
@@ -634,7 +634,7 @@ export default function MarketPage() {
       return;
     }
     if (market.closed) {
-      toast.error("Kamikaze is disabled for this market");
+      toast.error(t(selectedLanguage, "market.kamikazeDisabled"));
       return;
     }
 
@@ -643,14 +643,12 @@ export default function MarketPage() {
       const { eligible } = await loadKamikazePositions();
       const ids = eligible;
       if (ids.length === 0) {
-        toast.error("No positions available for kamikaze");
+        toast.error(t(selectedLanguage, "market.noPositionsToClaim"));
         return;
       }
 
       await submitBatchKamikaze(ids);
-      toast.success("Kamikaze successful", {
-        description: `Kamikazed ${ids.length} position${ids.length > 1 ? "s" : ""}.`,
-      });
+      toast.success(t(selectedLanguage, "market.kamikazeSuccessful"));
       setSelectedKamikazeIds(new Set());
       setKamikazePositionIds([]);
       setKamikazeDisplayPositionIds([]);
@@ -658,8 +656,8 @@ export default function MarketPage() {
       setKamikazePositionCapital(new Map());
     } catch (err) {
       console.error("Kamikaze all failed:", err);
-      toast.error("Kamikaze failed", {
-        description: err instanceof Error ? err.message : "Please try again",
+      toast.error(t(selectedLanguage, "market.kamikazeFailed"), {
+        description: err instanceof Error ? err.message : t(selectedLanguage, "common.error"),
       });
     } finally {
       setIsSubmittingKamikaze(false);
@@ -670,16 +668,14 @@ export default function MarketPage() {
 
     const selected = kamikazePositionIds.filter((id) => selectedKamikazeIds.has(id));
     if (selected.length === 0) {
-      toast.error("Select at least one position");
+      toast.error(t(selectedLanguage, "market.selectAtLeastOne"));
       return;
     }
 
     setIsSubmittingKamikaze(true);
     try {
       await submitBatchKamikaze(selected);
-      toast.success("Kamikaze successful", {
-        description: `Kamikazed ${selected.length} position${selected.length > 1 ? "s" : ""}.`,
-      });
+      toast.success(t(selectedLanguage, "market.kamikazeSuccessful"));
       setIsSellModalOpen(false);
       setSelectedKamikazeIds(new Set());
       setKamikazePositionIds([]);
@@ -688,8 +684,8 @@ export default function MarketPage() {
       setKamikazePositionCapital(new Map());
     } catch (err) {
       console.error("Kamikaze failed:", err);
-      toast.error("Kamikaze failed", {
-        description: err instanceof Error ? err.message : "Please try again",
+      toast.error(t(selectedLanguage, "market.kamikazeFailed"), {
+        description: err instanceof Error ? err.message : t(selectedLanguage, "common.error"),
       });
     } finally {
       setIsSubmittingKamikaze(false);
