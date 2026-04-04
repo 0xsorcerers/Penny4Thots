@@ -4,6 +4,15 @@ This file tracks all significant progress. Updated automatically after major cha
 
 ---
 
+## 2026-04-03
+
+### Feature: Translated Market Elaboration Inputs
+- Added localized translation keys for market title, subtitle, and description placeholders in all supported app languages (EN, ES, FR, DE, PT, ZH).
+- Updated the Create Market modal to read title/subtitle/description labels and placeholders from the shared translations map using the selected language.
+- Result: market elaboration inputs now match each user's chosen app language.
+
+---
+
 ## 2026-04-02
 
 ### Bug Fix: Unicode Search Tokenization
@@ -339,5 +348,54 @@ The AI will commit and push to BOTH GitHub and Vibecode servers automatically.
 - Added `Trending` back into the market filter chips (now: All, Trending, [Network Symbol] Markets, Token Markets)
 - Updated symbol-market chip label to use active network symbol (e.g. `ETH Markets` on Sepolia)
 - Kept filtered views paginated and hydrated with fresh market data for visible IDs
+
+---
+
+
+## 2026-04-03
+
+### Update: Market Folder Translation Coverage Expanded
+- Added localized translation keys for Market Grid UI, Market Card labels/actions, and Vote Dialog explanatory text.
+- Wired MarketGrid, MarketCard, MarketCardMyThots, MarketCardYourThots, and VoteDialog to the selected language store using shared translation keys.
+- Added translations across all supported languages (EN, ES, FR, DE, PT, ZH), including localized Create Market button text and market interaction labels.
+
+---
+
+
+## 2026-04-03
+
+### Update: Added translation wiring for remaining market/profile surfaces
+- Localized additional Create Market modal labels and action text beyond title/subtitle/description fields.
+- Localized Vote Modal section headers and helper/warning/action text.
+- Localized MarketPage toasts/loading/empty-state strings using shared translation keys.
+- Localized Profile dropdown labels/descriptions and disconnected state text.
+
+---
+
+
+## 2026-04-03
+
+### Update: MarketPage + Countdown full localization sweep
+- Localized remaining MarketPage section headers and action/status labels (About, Cast Vote, Trade, votes, status badges, share menu text, late-vote/claim labels).
+- Localized market creation date formatting by selected language locale.
+- Localized CountdownTimer and CountdownTimerLarge status text (time remaining, closing/ended/resolving/closed states, day/hour/min/sec labels, adjudicator loading text).
+
+---
+
+## 2026-04-03
+
+### Update: Localized MarketPage trade haircut notice
+- Replaced the hardcoded English trade warning text under the MarketPage Trade section with a translation key.
+- Added `marketPage.tradeHaircutNotice` translations for EN, ES, FR, DE, PT, and ZH.
+- Updated the Trade section copy to remove the leading "Kamikaze" term and use: "Trades have a 50% haircut for anyone desiring to alternate a vote position" in English.
+
+---
+
+## 2026-04-04
+
+### Update: Localized user toast notifications across market pages
+- Replaced remaining hardcoded English toast notifications in Index, MyThots, YourThots, and MarketPage with translation keys tied to selected language.
+- Added new shared translation keys for toast-specific messages (`voteModal.balanceRequired`, `marketGrid.loadFailed`, `createMarket.marketCreatedSuccess`, `createMarket.marketCreatedFailed`, `market.kamikazePositionsUpdated`, `market.tryAgain`).
+- Populated the new toast keys for all supported languages (EN, ES, FR, DE, PT, ZH).
 
 ---
