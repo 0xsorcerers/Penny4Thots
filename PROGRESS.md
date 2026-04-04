@@ -390,3 +390,12 @@ The AI will commit and push to BOTH GitHub and Vibecode servers automatically.
 - Updated the Trade section copy to remove the leading "Kamikaze" term and use: "Trades have a 50% haircut for anyone desiring to alternate a vote position" in English.
 
 ---
+
+## 2026-04-04
+
+### Update: Localized remaining toast notifications across trading flows
+- Replaced hardcoded English toast messages in Home, Market, My Thots, and Your Thots pages with translated keys based on the user's selected language.
+- Localized wallet, approval, vote, cancellation, and kamikaze status notifications so alerts now follow language preferences.
+- Standardized fallback toast keys to existing translated strings to avoid English-only regressions.
+
+---
