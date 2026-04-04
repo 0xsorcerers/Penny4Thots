@@ -11,6 +11,8 @@ import { useWriteMarket, useVote, useTokenApprove, fetchMarketsFromBlockchain, f
 import type { CreateMarketData, Market } from "@/types/market";
 import type { Address } from "viem";
 import { toast } from "sonner";
+import { t } from "@/tools/languages";
+import { useLanguageStore } from "@/store/languageStore";
 
 const SHOW_CLOSED_MARKETS_STORAGE_KEY = "penny4thots-show-closed-markets";
 const getShowClosedMarketsStorageKey = (chainId: number): string =>
@@ -47,6 +49,7 @@ export default function Index() {
   const lastVisibleHydrationKeyRef = useRef<string>("");
   const hasHydratedShowClosedRef = useRef<number | null>(null);
   const marketLoadRequestIdRef = useRef(0);
+  const { selectedLanguage } = useLanguageStore();
 
   // Smart fetch: hydrate immutable market info in background, keep mutable data fresh per visible page.
   const loadMarketsFromBlockchain = useCallback(async () => {
@@ -128,7 +131,7 @@ export default function Index() {
     } catch (err) {
       if (isStaleRequest()) return;
       console.error("Failed to load markets from blockchain:", err);
-      toast.error("Failed to load markets from blockchain");
+      toast.error(t(selectedLanguage, "marketGrid.loadFailed"));
       setIsLoadingFromBlockchain(false);
     }
   }, [
@@ -290,7 +293,7 @@ export default function Index() {
 
   const handleSubmitVote = async (voteParams: VoteParams) => {
     if (!account?.address) {
-      toast.error("Please connect your wallet first");
+      toast.error(t(selectedLanguage, "voteModal.walletNotConnected"));
       throw new Error("Wallet not connected");
     }
 
@@ -309,8 +312,11 @@ export default function Index() {
           const tokenDecimals = await readTokenDecimals(voteParams.paymentToken);
           const balanceFormatted = fromTokenSmallestUnit(userBalance, tokenDecimals);
           const requiredFormatted = fromTokenSmallestUnit(voteParams.marketBalance, tokenDecimals);
-          toast.error("Insufficient token balance", {
-            description: `You have ${balanceFormatted} but need ${requiredFormatted}`,
+          toast.error(t(selectedLanguage, "voteModal.insufficientBalance"), {
+            description: t(selectedLanguage, "voteModal.balanceRequired", {
+              balance: balanceFormatted,
+              required: requiredFormatted,
+            }),
           });
           throw new Error(`Insufficient balance: have ${balanceFormatted}, need ${requiredFormatted}`);
         }
@@ -324,19 +330,19 @@ export default function Index() {
 
         // Only approve if allowance is insufficient
         if (currentAllowance < voteParams.marketBalance) {
-          toast.info("Approval required", {
-            description: "Approving token spending in your wallet",
+          toast.info(t(selectedLanguage, "voteModal.approvalRequired"), {
+            description: t(selectedLanguage, "voteModal.approvalDesc"),
           });
 
           await approve(voteParams.paymentToken, voteParams.marketBalance);
-          toast.success("Token approved!");
+          toast.success(t(selectedLanguage, "voteModal.tokenApproved"));
         }
         // If allowance is adequate, proceed directly to vote
       }
 
       // Submit the vote
       await vote(voteParams);
-      toast.success("Vote submitted successfully!");
+      toast.success(t(selectedLanguage, "voteModal.voteSuccess"));
 
       // Reload markets from blockchain after successful vote
       await loadMarketsFromBlockchain();
@@ -347,9 +353,9 @@ export default function Index() {
           errorMessage.toLowerCase().includes("denied") ||
           errorMessage.toLowerCase().includes("cancel") ||
           errorMessage.toLowerCase().includes("user refused")) {
-        toast.error("Transaction cancelled");
+        toast.error(t(selectedLanguage, "common.transactionCancelled"));
       } else {
-        toast.error(errorMessage || "Failed to submit vote");
+        toast.error(errorMessage || t(selectedLanguage, "voteModal.voteFailed"));
       }
       throw err;
     } finally {
@@ -359,7 +365,7 @@ export default function Index() {
 
   const handleCreateMarket = async (data: CreateMarketData & { marketBalance: string; initialVote: "YES" | "NO" | null; useToken: boolean; tokenAddress: Address; endTime: number; signal: boolean; feetype: boolean }) => {
     if (!account) {
-      toast.error("Please connect your wallet first");
+      toast.error(t(selectedLanguage, "voteModal.walletNotConnected"));
       throw new Error("Wallet not connected");
     }
 
@@ -392,8 +398,11 @@ export default function Index() {
           const tokenDecimals = await readTokenDecimals(data.tokenAddress);
           const balanceFormatted = fromTokenSmallestUnit(userBalance, tokenDecimals);
           const requiredFormatted = fromTokenSmallestUnit(marketBalanceBigInt, tokenDecimals);
-          toast.error("Insufficient token balance", {
-            description: `You have ${balanceFormatted} but need ${requiredFormatted}`,
+          toast.error(t(selectedLanguage, "voteModal.insufficientBalance"), {
+            description: t(selectedLanguage, "voteModal.balanceRequired", {
+              balance: balanceFormatted,
+              required: requiredFormatted,
+            }),
           });
           throw new Error(`Insufficient balance: have ${balanceFormatted}, need ${requiredFormatted}`);
         }
@@ -407,12 +416,12 @@ export default function Index() {
 
         // Only approve if allowance is insufficient
         if (currentAllowance < marketBalanceBigInt) {
-          toast.info("Approval required", {
-            description: "Approving token spending in your wallet",
+          toast.info(t(selectedLanguage, "voteModal.approvalRequired"), {
+            description: t(selectedLanguage, "voteModal.approvalDesc"),
           });
 
           await approve(data.tokenAddress, marketBalanceBigInt);
-          toast.success("Token approved!");
+          toast.success(t(selectedLanguage, "voteModal.tokenApproved"));
         }
         // If allowance is adequate, proceed directly to market creation
       }
@@ -434,7 +443,7 @@ export default function Index() {
         endTime: data.endTime,
       });
 
-      toast.success("Market created successfully!");
+      toast.success(t(selectedLanguage, "createMarket.marketCreatedSuccess"));
       setIsCreateModalOpen(false);
 
       // Reload markets from blockchain after successful transaction
@@ -447,9 +456,9 @@ export default function Index() {
           errorMessage.toLowerCase().includes("denied") ||
           errorMessage.toLowerCase().includes("cancel") ||
           errorMessage.toLowerCase().includes("user refused")) {
-        toast.error("Transaction cancelled");
+        toast.error(t(selectedLanguage, "common.transactionCancelled"));
       } else {
-        toast.error(errorMessage || "Failed to create market");
+        toast.error(errorMessage || t(selectedLanguage, "createMarket.marketCreatedFailed"));
       }
       // Re-throw so modal knows submission failed and doesn't reset form
       throw err;
