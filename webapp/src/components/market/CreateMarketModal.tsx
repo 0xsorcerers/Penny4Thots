@@ -15,6 +15,7 @@ import type { CreateMarketData } from "@/types/market";
 import type { Address } from "viem";
 import erc20 from "@/abi/ERC20.json";
 import { Abi } from "viem";
+import { getRemoteMediaSizeBytes, isSupportedMediaUrl, MAX_MEDIA_SIZE_BYTES } from "@/tools/media";
 
 interface CreateMarketModalProps {
   isOpen: boolean;
@@ -126,26 +127,46 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
     }
   }, [selectedNetwork]);
 
-  // Validate image URL
-  const validateImageUrl = useCallback((url: string) => {
+  // Validate media URL (image, gif, video)
+  const validatePosterUrl = useCallback(async (url: string) => {
     if (!url.trim()) {
       setPosterImageError(t(selectedLanguage, "createMarket.imageRequired"));
       return;
     }
 
     try {
-      const urlObj = new URL(url);
-      const isValidImageExtension = /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(urlObj.pathname);
-
-      if (!isValidImageExtension) {
+      if (!isSupportedMediaUrl(url)) {
         setPosterImageError(t(selectedLanguage, "createMarket.invalidImageUrl"));
-      } else {
-        setPosterImageError(null);
+        return;
       }
+
+      const mediaSizeBytes = await getRemoteMediaSizeBytes(url);
+      if (mediaSizeBytes !== null && mediaSizeBytes > MAX_MEDIA_SIZE_BYTES) {
+        setPosterImageError("Media must be 5MB or smaller.");
+        return;
+      }
+
+      setPosterImageError(null);
     } catch {
       setPosterImageError(t(selectedLanguage, "createMarket.invalidImageUrl"));
     }
-  }, []);
+  }, [selectedLanguage]);
+
+  useEffect(() => {
+    const trimmedUrl = formData.posterImage.trim();
+    if (!trimmedUrl) {
+      setPosterImageError(null);
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      validatePosterUrl(trimmedUrl);
+    }, 250);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [formData.posterImage, validatePosterUrl]);
 
   // Fetch platform fee on modal open
   useEffect(() => {
@@ -445,9 +466,8 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
                             value={formData.posterImage}
                             onChange={(e) => {
                               setFormData({ ...formData, posterImage: e.target.value });
-                              validateImageUrl(e.target.value);
                             }}
-                            placeholder="https://example.com/image.jpg"
+                            placeholder="https://example.com/image-gif-or-video.mp4"
                             className={`rounded-xl border-border/50 bg-background font-outfit ${
                               posterImageError ? "border-destructive/50" : ""
                             }`}
@@ -460,7 +480,7 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
                             <p className="text-xs text-success font-semibold">{t(selectedLanguage, "common.confirm")} ✓</p>
                           )}
                           <p className="text-xs text-muted-foreground">
-                            Try Pinterest for lots of free images. (HINT: copy image address, not page URL 😉)
+                            Supports image, GIF, and direct video links (mp4/webm/mov). Max file size: 5MB when detectable.
                           </p>
                         </div>
 

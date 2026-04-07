@@ -25,6 +25,7 @@ import {
 import type { Address } from "viem";
 import erc20 from "@/abi/ERC20.json";
 import { Abi } from "viem";
+import { MarketMedia } from "./MarketMedia";
 
 interface VoteModalProps {
   isOpen: boolean;
@@ -238,7 +239,7 @@ export function VoteModal({
     <AnimatePresence>
       {isOpen && (
         <>
-          {/* Background with market image */}
+          {/* Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{
@@ -248,34 +249,7 @@ export function VoteModal({
             transition={{ duration: 0.3 }}
             onClick={onClose}
             className="fixed inset-0 z-50 bg-black backdrop-blur-md overflow-hidden"
-          >
-            {/* Market image background - always visible */}
-            {marketImage ? (
-              <>
-                <img
-                  src={marketImage}
-                  alt="Market background"
-                  loading="eager"
-                  decoding="async"
-                  onError={(e) => {
-                    console.error("Failed to load market image:", marketImage, e);
-                  }}
-                  onLoad={() => {
-                    console.log("Market image loaded successfully:", marketImage);
-                  }}
-                  className="absolute inset-0 h-full w-full object-cover"
-                  style={{
-                    opacity: step === "select" ? 0.4 : 0.25,
-                    mixBlendMode: "overlay",
-                  }}
-                />
-              </>
-            ) : (
-              <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-transparent" />
-            )}
-            {/* Additional dark overlay for contrast */}
-            <div className="absolute inset-0 bg-black/40" />
-          </motion.div>
+          />
 
           {/* Dialog */}
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
@@ -291,11 +265,9 @@ export function VoteModal({
                 {/* Background image */}
                 {marketImage && (
                   <>
-                    <img
+                    <MarketMedia
                       src={marketImage}
                       alt="Market background"
-                      loading="eager"
-                      decoding="async"
                       className="absolute inset-0 h-full w-full object-cover"
                     />
                     {/* Overlay for text readability */}
@@ -562,4 +534,3 @@ export function VoteModal({
     </AnimatePresence>
   );
 }
-

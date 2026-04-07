@@ -14,6 +14,7 @@ import { useVote, useTokenApprove, readPaymentToken, readTokenAllowance, readTok
   useBatchClaim, useBatchKamikaze, readMarketLock, getUserPositionCount, getUserPositions,
   getPositionDetailsBatch, formatTokenAmount, fromTokenSmallestUnit, getBlockchain, type VoteParams } from "@/tools/utils";
 import { VoteModal } from "@/components/market/VoteModal";
+import { MarketMedia } from "@/components/market/MarketMedia";
 import { VoteStats } from "@/components/market/VoteStats";
 import { MarketBalance } from "@/components/market/MarketBalance";
 import { CountdownTimerLarge } from "@/components/market/CountdownTimer";
@@ -725,7 +726,7 @@ export default function MarketPage() {
     <div className="relative min-h-screen textured-bg">
       {/* Background Image */}
       <div className="fixed inset-0 z-0">
-        <img
+        <MarketMedia
           src={market.posterImage}
           alt=""
           className="h-full w-full object-cover opacity-25"
@@ -907,7 +908,7 @@ export default function MarketPage() {
             transition={{ delay: 0.2 }}
             className="mb-8 overflow-hidden rounded-2xl border border-white/60 shadow-[0_8px_32px_-8px_hsl(220_30%_15%/0.15)] dark:border-border/50 dark:shadow-none"
           >
-            <img
+            <MarketMedia
               src={market.posterImage}
               alt={market.title}
               className="aspect-video w-full object-cover"
