@@ -25,6 +25,7 @@ import {
 import type { Address } from "viem";
 import erc20 from "@/abi/ERC20.json";
 import { Abi } from "viem";
+import { MarketMedia } from "./MarketMedia";
 
 interface VoteModalProps {
   isOpen: boolean;
@@ -252,21 +253,17 @@ export function VoteModal({
             {/* Market image background - always visible */}
             {marketImage ? (
               <>
-                <img
+                <MarketMedia
                   src={marketImage}
                   alt="Market background"
-                  loading="eager"
-                  decoding="async"
-                  onError={(e) => {
-                    console.error("Failed to load market image:", marketImage, e);
-                  }}
-                  onLoad={() => {
-                    console.log("Market image loaded successfully:", marketImage);
-                  }}
                   className="absolute inset-0 h-full w-full object-cover"
+                />
+                <div
+                  className="absolute inset-0"
                   style={{
                     opacity: step === "select" ? 0.4 : 0.25,
                     mixBlendMode: "overlay",
+                    backgroundColor: "black",
                   }}
                 />
               </>
@@ -291,11 +288,9 @@ export function VoteModal({
                 {/* Background image */}
                 {marketImage && (
                   <>
-                    <img
+                    <MarketMedia
                       src={marketImage}
                       alt="Market background"
-                      loading="eager"
-                      decoding="async"
                       className="absolute inset-0 h-full w-full object-cover"
                     />
                     {/* Overlay for text readability */}
@@ -562,4 +557,3 @@ export function VoteModal({
     </AnimatePresence>
   );
 }
-
