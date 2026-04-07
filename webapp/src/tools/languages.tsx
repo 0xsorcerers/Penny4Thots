@@ -458,7 +458,7 @@ export const translations: Record<LanguageCode, Translations> = {
       createMarketButton: "Create Market",
       platformFee: "Platform Fee",
       imageRequired: "Poster image URL is required",
-      invalidImageUrl: "URL must end with a valid image extension (.jpg, .png, .gif, .webp, .svg)",
+      invalidImageUrl: "URL must end with a supported media extension (.jpg, .png, .gif, .webp, .svg, .mp4, .webm, .mov)",
     },
     // Common
     marketCard: {
