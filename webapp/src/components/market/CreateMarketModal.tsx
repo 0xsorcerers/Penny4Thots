@@ -12,6 +12,7 @@ import { t } from "@/tools/languages";
 import { useTheme } from "@/hooks/useTheme";
 import blackLogo from "@/assets/images/black-no-bkg.webp";
 import type { CreateMarketData } from "@/types/market";
+import { isSupportedMarketMediaUrl, MAX_MARKET_MEDIA_BYTES, validateMarketMediaSize } from "@/lib/marketMedia";
 import type { Address } from "viem";
 import erc20 from "@/abi/ERC20.json";
 import { Abi } from "viem";
@@ -55,6 +56,7 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
   const [tokenInputError, setTokenInputError] = useState(false);
   const [platformFeePercentage, setPlatformFeePercentage] = useState<number | null>(null);
   const [posterImageError, setPosterImageError] = useState<string | null>(null);
+  const [posterImageWarning, setPosterImageWarning] = useState<string | null>(null);
 
   // End time state for countdown timer
   const [endDate, setEndDate] = useState("");
@@ -94,7 +96,7 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
 
     setEndTimeError(null);
     return Math.floor(selectedDateTime.getTime() / 1000);
-  }, [endDate, endTimeInput]);
+  }, [endDate, endTimeInput, selectedLanguage]);
 
   // Get current end time as unix timestamp
   const endTimeTimestamp = useMemo(() => validateEndTime(), [validateEndTime]);
@@ -127,25 +129,40 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
   }, [selectedNetwork]);
 
   // Validate image URL
-  const validateImageUrl = useCallback((url: string) => {
+  const validateImageUrl = useCallback(async (url: string) => {
     if (!url.trim()) {
       setPosterImageError(t(selectedLanguage, "createMarket.imageRequired"));
+      setPosterImageWarning(null);
       return;
     }
 
     try {
       const urlObj = new URL(url);
-      const isValidImageExtension = /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(urlObj.pathname);
+      const isSupportedMedia = isSupportedMarketMediaUrl(urlObj.toString());
 
-      if (!isValidImageExtension) {
+      if (!isSupportedMedia) {
         setPosterImageError(t(selectedLanguage, "createMarket.invalidImageUrl"));
+        setPosterImageWarning(null);
       } else {
+        const sizeValidation = await validateMarketMediaSize(urlObj.toString(), MAX_MARKET_MEDIA_BYTES);
+        if (!sizeValidation.withinLimit) {
+          setPosterImageError("Media file must be 5MB or smaller.");
+          setPosterImageWarning(null);
+          return;
+        }
+
         setPosterImageError(null);
+        setPosterImageWarning(
+          sizeValidation.unknown
+            ? "Could not verify file size from host. Keep media under 5MB."
+            : null
+        );
       }
     } catch {
       setPosterImageError(t(selectedLanguage, "createMarket.invalidImageUrl"));
+      setPosterImageWarning(null);
     }
-  }, []);
+  }, [selectedLanguage]);
 
   // Fetch platform fee on modal open
   useEffect(() => {
@@ -445,9 +462,9 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
                             value={formData.posterImage}
                             onChange={(e) => {
                               setFormData({ ...formData, posterImage: e.target.value });
-                              validateImageUrl(e.target.value);
+                              void validateImageUrl(e.target.value);
                             }}
-                            placeholder="https://example.com/image.jpg"
+                            placeholder="https://example.com/image-or-video.mp4"
                             className={`rounded-xl border-border/50 bg-background font-outfit ${
                               posterImageError ? "border-destructive/50" : ""
                             }`}
@@ -456,11 +473,14 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
                           {posterImageError && (
                             <p className="text-xs text-destructive font-semibold">{posterImageError}</p>
                           )}
+                          {posterImageWarning && !posterImageError && (
+                            <p className="text-xs text-amber-500 font-semibold">{posterImageWarning}</p>
+                          )}
                           {formData.posterImage && !posterImageError && (
                             <p className="text-xs text-success font-semibold">{t(selectedLanguage, "common.confirm")} ✓</p>
                           )}
                           <p className="text-xs text-muted-foreground">
-                            Try Pinterest for lots of free images. (HINT: copy image address, not page URL 😉)
+                            Supports image, GIF, and video URLs (.mp4, .webm, .mov). Max size: 5MB.
                           </p>
                         </div>
 
