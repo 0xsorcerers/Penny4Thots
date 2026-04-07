@@ -16,6 +16,7 @@ import { toast } from "sonner";
 import type { Address } from "viem";
 import { useLanguageStore } from "@/store/languageStore";
 import { t } from "@/tools/languages";
+import { MarketBackgroundMedia } from "./MarketBackgroundMedia";
 
 interface MarketCardProps {
   market: Market;
@@ -111,7 +112,7 @@ export function MarketCard({ market, onVoteClick }: MarketCardProps) {
     >
       {/* Background image with overlay */}
       <div className="absolute inset-0">
-        <img
+        <MarketBackgroundMedia
           src={market.posterImage}
           alt=""
           className="h-full w-full object-cover opacity-40 transition-opacity duration-500 group-hover:opacity-50"
