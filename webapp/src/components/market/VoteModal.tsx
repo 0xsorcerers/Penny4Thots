@@ -239,7 +239,7 @@ export function VoteModal({
     <AnimatePresence>
       {isOpen && (
         <>
-          {/* Background with market image */}
+          {/* Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{
@@ -249,30 +249,7 @@ export function VoteModal({
             transition={{ duration: 0.3 }}
             onClick={onClose}
             className="fixed inset-0 z-50 bg-black backdrop-blur-md overflow-hidden"
-          >
-            {/* Market image background - always visible */}
-            {marketImage ? (
-              <>
-                <MarketMedia
-                  src={marketImage}
-                  alt="Market background"
-                  className="absolute inset-0 h-full w-full object-cover"
-                />
-                <div
-                  className="absolute inset-0"
-                  style={{
-                    opacity: step === "select" ? 0.4 : 0.25,
-                    mixBlendMode: "overlay",
-                    backgroundColor: "black",
-                  }}
-                />
-              </>
-            ) : (
-              <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-transparent" />
-            )}
-            {/* Additional dark overlay for contrast */}
-            <div className="absolute inset-0 bg-black/40" />
-          </motion.div>
+          />
 
           {/* Dialog */}
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">

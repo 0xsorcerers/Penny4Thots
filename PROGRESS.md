@@ -10,6 +10,7 @@ This file tracks all significant progress. Updated automatically after major cha
 - Added shared media helpers to detect supported poster URLs (images, GIFs, and direct video files like mp4/webm/mov) and render video backgrounds safely with native `<video>` tags.
 - Updated `CreateMarketModal` poster URL validation to accept image/GIF/video URLs and enforce a 5MB max file size when server headers allow size detection.
 - Updated Market cards, Market page, and Vote modal background rendering to use the shared media renderer so GIF/video posters display without breaking layout or card/modal positioning.
+- Optimized `VoteModal` to render multimedia backgrounds only once inside the dialog card instead of duplicating media rendering in both modal backdrop and dialog.
 - Result: creators can now use GIFs and compatible video links as market backgrounds while retaining existing UI structure and visual layering.
 
 ---
