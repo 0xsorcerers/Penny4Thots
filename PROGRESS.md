@@ -399,3 +399,12 @@ The AI will commit and push to BOTH GitHub and Vibecode servers automatically.
 - Standardized fallback toast keys to existing translated strings to avoid English-only regressions.
 
 ---
+
+## 2026-04-07
+
+### Update: Enabled GIF/video market backgrounds with 5MB validation
+- Extended market media URL support to include GIFs and common video formats (`.mp4`, `.webm`, `.mov`, etc.) in Create Market.
+- Added best-effort remote file size validation with a 5MB cap (strict when server reports size; warning shown when host blocks size checks).
+- Updated Market cards, Market page, and Vote modal to render either image or looping video backgrounds while preserving existing overlay/layout styling.
+
+---
