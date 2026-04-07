@@ -15,6 +15,7 @@ import { useNetworkStore } from "@/store/networkStore";
 import { buildMarketRoute } from "@/lib/marketRoutes";
 import { useLanguageStore } from "@/store/languageStore";
 import { t } from "@/tools/languages";
+import { MarketBackgroundMedia } from "./MarketBackgroundMedia";
 
 interface MarketCardYourThotsProps {
   market: Market;
@@ -189,7 +190,7 @@ export function MarketCardYourThots({ market, onVoteClick }: MarketCardYourThots
     >
       {/* Background image with violet-tinted overlay */}
       <div className="absolute inset-0">
-        <img
+        <MarketBackgroundMedia
           src={market.posterImage}
           alt=""
           className="h-full w-full object-cover opacity-30 transition-opacity duration-500 group-hover:opacity-40"
