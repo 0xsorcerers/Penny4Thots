@@ -40,6 +40,18 @@ const bnb: NetworkConfig = {
   contract_address: '0x825Bb9873b9E982e3692eA69715E162206B2ecc1' as Address, // 0x13B9CD2340E8224D4c1CC86d3481c217d9078AAe
 };
 
+const hashkey: NetworkConfig = {
+  name: 'HashKey Chain (Live)',
+  chainId: 177,
+  rpc: 'https://mainnet.hsk.xyz',
+  blockExplorer: 'https://hashkey.blockscout.com',
+  decimals: 18,
+  symbol: 'HSK',
+  contract_address: '0x24C89D67d1C8B569fFe564b8493C0fbD1f55d7F7' as Address,
+};
+
+
+// Relegated Networks
 const scroll: NetworkConfig = {
   name: 'Scroll Network (Live)',
   chainId: 534352,
@@ -70,16 +82,6 @@ const opbnb: NetworkConfig = {
   contract_address: '0x8d4a1A116Fd092D21b47Aa29a1882995af234353' as Address,
 };
 
-const hashkey: NetworkConfig = {
-  name: 'HashKey Chain (Live)',
-  chainId: 177,
-  rpc: 'https://mainnet.hsk.xyz',
-  blockExplorer: 'https://hashkey.blockscout.com',
-  decimals: 18,
-  symbol: 'HSK',
-  contract_address: '0x24C89D67d1C8B569fFe564b8493C0fbD1f55d7F7' as Address,
-};
-
-const chains: NetworkConfig[] = [sepolia, base, bnb, scroll, hashkey]; // , manta, opbnb
+const chains: NetworkConfig[] = [sepolia, base, bnb, hashkey]; // , scroll, manta, opbnb
 
 export { chains };

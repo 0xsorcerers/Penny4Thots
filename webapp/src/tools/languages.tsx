@@ -1,5 +1,20 @@
 export const availableLanguages = ["EN", "ES", "FR", "DE", "PT", "ZH", "JA", "KO", "HI", "AR", "HE"] as const;
 
+// Native language names for display in the language selector
+export const languageNativeNames: Record<LanguageCode, string> = {
+  EN: "English",
+  ES: "Español",
+  FR: "Français",
+  DE: "Deutsch",
+  PT: "Português",
+  ZH: "中文 (简体)",
+  JA: "日本語",
+  KO: "한국어",
+  HI: "हिन्दी",
+  AR: "العربية",
+  HE: "עברית",
+};
+
 export type LanguageCode = (typeof availableLanguages)[number];
 
 export interface Translations {
