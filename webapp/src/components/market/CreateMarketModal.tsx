@@ -467,7 +467,7 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
                             onChange={(e) => {
                               setFormData({ ...formData, posterImage: e.target.value });
                             }}
-                            placeholder="https://example.com/image-gif-or-video.mp4"
+                            placeholder="https://example.com/image.jpg (*.gif or *.mp4 links allowed)"
                             className={`rounded-xl border-border/50 bg-background font-outfit ${
                               posterImageError ? "border-destructive/50" : ""
                             }`}
@@ -480,7 +480,7 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
                             <p className="text-xs text-success font-semibold">{t(selectedLanguage, "common.confirm")} ✓</p>
                           )}
                           <p className="text-xs text-muted-foreground">
-                            Supports image, GIF, and direct video links (mp4/webm/mov). Max file size: 5MB when detectable.
+                            Supports image, GIF, and direct video links (mp4/webm/mov). Max file size: 5MB.
                           </p>
                         </div>
 
