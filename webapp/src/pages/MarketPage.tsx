@@ -1073,8 +1073,8 @@ export default function MarketPage() {
               <div className="grid gap-4 sm:grid-cols-2">
                 <Button
                   onClick={handleOpenKamikazeModal}
-                  disabled={isKamikazeBusy}
-                  className="rounded-xl bg-red-500 py-6 font-outfit text-lg font-bold text-white transition-all hover:bg-red-600 hover:shadow-[0_0_30px_rgba(239,68,68,0.3)] disabled:cursor-not-allowed disabled:opacity-60"
+                  disabled={!canVote || isKamikazeBusy}
+                  className="rounded-xl bg-red-500 py-6 font-outfit text-lg font-bold text-white transition-all hover:bg-red-600 hover:shadow-[0_0_30px_rgba(239,68,68,0.3)] disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {isLoadingKamikazePositions ? (
                     <>
@@ -1087,8 +1087,8 @@ export default function MarketPage() {
                 </Button>
                 <Button
                   onClick={handleKamikazeAll}
-                  disabled={isKamikazeBusy}
-                  className="rounded-xl bg-red-700 py-6 font-outfit text-lg font-bold text-white transition-all hover:bg-red-800 hover:shadow-[0_0_30px_rgba(185,28,28,0.3)] disabled:cursor-not-allowed disabled:opacity-60"
+                  disabled={!canVote || isKamikazeBusy}
+                  className="rounded-xl bg-red-700 py-6 font-outfit text-lg font-bold text-white transition-all hover:bg-red-800 hover:shadow-[0_0_30px_rgba(185,28,28,0.3)] disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {isSubmittingKamikaze || isBatchKamikazing ? (
                     <>

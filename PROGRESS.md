@@ -4,6 +4,15 @@ This file tracks all significant progress. Updated automatically after major cha
 
 ---
 
+## 2026-04-09
+
+### UI Fix: Disable Kamikaze Trade Buttons When Wallet Is Not Connected
+- Updated the Market page Trade section so **Kamikaze** and **Kamikaze All** are disabled whenever a user wallet is not connected.
+- Applied dimmed disabled styling so these buttons no longer appear active for first-time or disconnected users arriving via direct market links.
+- Result: disconnected users now see a clearer, consistent state that prompts wallet connection before trade actions are available.
+
+---
+
 ## 2026-04-07
 
 ### Feature: GIF + Video Market Background Support with 5MB Validation
