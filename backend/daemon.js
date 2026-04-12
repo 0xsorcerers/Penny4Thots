@@ -537,18 +537,24 @@ const networks = [
     chainId: 56
   },
   {
-    name: 'scroll',
-    rpc: 'https://rpc.scroll.io',
-    contract: '0x554C2ca099DC9676470f92Df3083040B7f4DdeF5', // 0x06F94c107808bC4d9c27fA8476C3E2f5F83A9c3C // 0x554C2ca099DC9676470f92Df3083040B7f4DdeF5
-    chainId: 534352
-  },
-  {
     name: 'hashkey',
     rpc: 'https://mainnet.hsk.xyz',
     contract: '0x24C89D67d1C8B569fFe564b8493C0fbD1f55d7F7', // 
     chainId: 177
+  },
+  {
+    name: 'monad',
+    rpc: 'https://rpc4.monad.xyz',
+    contract: '0x24C89D67d1C8B569fFe564b8493C0fbD1f55d7F7',
+    chainId: 143
   }
 //   ,
+//   {
+//     name: 'scroll',
+//     rpc: 'https://rpc.scroll.io',
+//     contract: '0x554C2ca099DC9676470f92Df3083040B7f4DdeF5', // 0x06F94c107808bC4d9c27fA8476C3E2f5F83A9c3C // 0x554C2ca099DC9676470f92Df3083040B7f4DdeF5
+//     chainId: 534352
+//   },
 //   {
 //     name: 'manta',
 //     rpc: 'https://pacific-rpc.manta.network/http',
