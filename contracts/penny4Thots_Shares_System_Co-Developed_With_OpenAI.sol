@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 //Penny4Thots Shares System Co-Developed with OpenAI GPT-5.0/GPT-4.0
+//Re-Designed by Grok.
 
 pragma solidity ^0.8.20;
 
@@ -22,6 +23,7 @@ contract Penny4Thots is ReentrancyGuard {
     
     event ProofOfMarket(uint256 indexed marketId, address indexed creator, address indexed paymentToken, uint256 amount);
     event Claimed(address indexed user, uint256 indexed marketId, uint256 indexed positionId, address token, uint256 amount);
+    event CapitalRescued(uint256 indexed marketId, address token, uint256 amount);
 
     address public pennyDAO;
     address private dAI;
@@ -36,11 +38,11 @@ contract Penny4Thots is ReentrancyGuard {
     uint256 public lasttax = 0;
     uint256 public devtax = 0;
     uint256 public gasfee = 0;
-    uint256 public platformFee = 5;
+    uint256 public platformFee = 5; // A specialized fractional denominator fee indicator resolving to 0.2%
     uint256 public marketCount = 0;
     uint256 public constant BPS = 10000;
-    uint256 public DECAY_WINDOW_BPS = 700;  // last 7%
-    uint256 public DECAY_PROFIT_BPS = 5000; // 50% profit haircut
+    uint256 public DECAY_WINDOW_BPS = 700;   // last 7%
+    uint256 public DECAY_PROFIT_BPS = 8500;  // 85% soft glow for late entries ✨
     uint256 public KAMIKAZE_BURN_BPS = 5000; // 50% capital burn
     uint256 public MAX_FINALIZE_BATCH = 200;
 
@@ -62,8 +64,8 @@ contract Penny4Thots is ReentrancyGuard {
     struct Position {
         address user;
         Side side;
-        uint256 amount;        // capital backing this tranche
-        uint256 timestamp;     // entry or last kamikaze
+        uint256 amount;
+        uint256 timestamp;
         bool claimed;
         bool kamikazed;
     }
@@ -91,7 +93,6 @@ contract Penny4Thots is ReentrancyGuard {
         uint256 aVotes;
         uint256 bVotes;
 
-        // === Shares system ===
         uint256 startTime;
         uint256 endTime;
         bool closed;
@@ -99,13 +100,14 @@ contract Penny4Thots is ReentrancyGuard {
 
         uint256 totalSharesA;
         uint256 totalSharesB;
+        uint256 totalWinningPrincipal;  // NEW: sum of original winning positions for clean principal return
 
         uint256 positionCount;
         bool blacklist;
     }
 
     struct MarketLock {
-        uint256 finalizedUpTo;   // exclusive index
+        uint256 finalizedUpTo;
         bool sharesFinalized;
     }
 
@@ -117,18 +119,17 @@ contract Penny4Thots is ReentrancyGuard {
         uint256 positionId;
     }
 
-    //Array
     TokenInfo[] public AllowedCrypto;
     address[] public AllowedFarms;
     uint256[] public AllowedAmounts;
     uint256[] public permittedFarms;
 
-    //Maps
     mapping (uint256 => MarketInfo) private allMarkets;
     mapping (uint256 => MarketData) public allMarketData;
     mapping (uint256 => MarketLock) public allMarketLocks;
 
     mapping (uint256 => address) public paymentTokens;
+    mapping (uint256 => string) public adjudicators;
     mapping (address => uint256) public allMarketVolume;
     mapping (address => uint256) public farmTokensDistributed;
     mapping (address => uint256) public TotalClaimsDistributed;
@@ -150,18 +151,13 @@ contract Penny4Thots is ReentrancyGuard {
     mapping(uint256 => mapping(address => mapping(uint256 => uint256))) public userPositions;
     mapping(uint256 => mapping(address => uint256)) public userPositionCount;
 
-
     mapping(address => mapping(address => uint256)) public userTokenClaims;
     mapping(uint256 => mapping(address => uint256)) public marketTokenClaims;
     mapping(uint256 => mapping(address => uint256)) public totalClaimedSoFar;
     mapping(address => mapping(uint256 => mapping(address => uint256))) public userMarketTokenClaims;
     
     function addCurrency(IERC20 _paytoken) external onlyPennyDAO {
-        AllowedCrypto.push(
-            TokenInfo({
-                paytoken: _paytoken
-            })
-        );
+        AllowedCrypto.push(TokenInfo({paytoken: _paytoken}));
     }
 
     function readMarket(uint256[] calldata _ids) public view returns (MarketInfo[] memory) {
@@ -342,46 +338,29 @@ contract Penny4Thots is ReentrancyGuard {
 
     }
 
-    //Core Economic Logic
-    function _calculateShares( uint256 marketId, Position memory p) internal view returns (uint256 shares, bool decayed) {
-        MarketData memory m = allMarketData[marketId];
 
+    function _calculateShares(uint256 marketId, Position memory p) internal view returns (uint256 shares, bool decayed) {
+        MarketData memory m = allMarketData[marketId];
         uint256 T = m.endTime - p.timestamp;
         uint256 fullDuration = m.endTime - m.startTime;
-
         uint256 decayStart = m.endTime - (fullDuration * DECAY_WINDOW_BPS / BPS);
 
         shares = p.amount * T;
-
         if (p.timestamp >= decayStart) {
-            shares = shares * DECAY_PROFIT_BPS / BPS;
+            shares = shares * DECAY_PROFIT_BPS / BPS;  // 85% soft shimmer for late entries ✨
             decayed = true;
         }
     }
 
-    /**@dev 
-    @param _market, metric id for specific marketInfo
-    @param _signalWinner binary from consensus of decentral AI systems
-    *
-    @notice this is to permanently resolve a market.
-     **/
-    function closeMarket(uint256 _market, bool _signalWinner) external onlydAI {
+    function closeMarket(uint256 _market, bool _signalWinner, string memory _presidingJudges) external onlydAI {
         MarketData storage m = allMarketData[_market];
         require(!m.closed, "Already closed");
-        require( _market < marketCount, "Non-existent");
-       
         m.closed = true;
         m.endTime = block.timestamp;
         m.winningSide = _signalWinner ? Side.A : Side.B;
+        adjudicators[_market] = _presidingJudges;
     }
 
-    /**@dev 
-     * @param _market the market to finalize shares for
-     * @notice finalizes the shares for the given market for the given positions
-     * @dev this is called after the market is closed and the winning side is determined
-     * @dev this is called in batches to avoid gas limits
-     *
-    Gas note: to be done in batches if needed **/
     function finalizeShares(uint256 _market) external onlydAI returns (bool done, uint256 remaining, uint256 nextBatchSize) {
         MarketData storage m = allMarketData[_market];
         MarketLock storage k = allMarketLocks[_market];
@@ -390,10 +369,7 @@ contract Penny4Thots is ReentrancyGuard {
 
         uint256 start = k.finalizedUpTo;
         uint256 end = start + MAX_FINALIZE_BATCH;
-
-        if (end > m.positionCount) {
-            end = m.positionCount;
-        }
+        if (end > m.positionCount) end = m.positionCount;
 
         for (uint256 i = start; i < end; i++) {
             Position memory p = positions[_market][i];
@@ -406,6 +382,7 @@ contract Penny4Thots is ReentrancyGuard {
             } else {
                 m.totalSharesB += shares;
             }
+            m.totalWinningPrincipal += p.amount;  // Track for clean principal return
         }
 
         k.finalizedUpTo = end;
@@ -413,14 +390,10 @@ contract Penny4Thots is ReentrancyGuard {
         if (end == m.positionCount) {
             k.sharesFinalized = true;
             done = true;
-            remaining = 0;
-            nextBatchSize = 0;
         } else {
             done = false;
             remaining = m.positionCount - end;
-            nextBatchSize = remaining > MAX_FINALIZE_BATCH
-                ? MAX_FINALIZE_BATCH
-                : remaining;
+            nextBatchSize = remaining > MAX_FINALIZE_BATCH ? MAX_FINALIZE_BATCH : remaining;
         }
     }
 
@@ -534,34 +507,25 @@ contract Penny4Thots is ReentrancyGuard {
         return claimable;
     }
 
-    /**@dev
-    * @notice Claim rewards for a position
-     * @param _market The market id
-     * @param _posId The position id
-     */
+    // claim & batchClaim now return PRINCIPAL + profit-from-losing-side only
     function claim(uint256 _market, uint256 _posId) public nonReentrant {
-        require(!allMarketData[_market].blacklist, "Market closed by AI");
-            MarketData storage m = allMarketData[_market];
-            MarketLock storage k = allMarketLocks[_market];
-            require(m.closed && k.sharesFinalized, "Not closed");
+        MarketData storage m = allMarketData[_market];
+        MarketLock storage k = allMarketLocks[_market];
+        require(m.closed && k.sharesFinalized && !m.blacklist, "Not ready");
 
-            Position storage p = positions[_market][_posId];
-            require(p.user == msg.sender, "Not yours");
-            require(!p.claimed, "Claimed");
-            require(p.side == m.winningSide, "Losing side");
+        Position storage p = positions[_market][_posId];
+        require(p.user == msg.sender && !p.claimed && p.side == m.winningSide, "Invalid claim");
 
-            (uint256 shares,) = _calculateShares(_market, p);
+        (uint256 shares,) = _calculateShares(_market, p);
+        uint256 totalWinningShares = m.winningSide == Side.A ? m.totalSharesA : m.totalSharesB;
+        uint256 loserPool = m.marketBalance > m.totalWinningPrincipal ? m.marketBalance - m.totalWinningPrincipal : 0;
+        uint256 profitShare = totalWinningShares > 0 ? loserPool * shares / totalWinningShares : 0;
+        uint256 payout = p.amount + profitShare;  // Principal flies back + profit share ✨
 
-            uint256 totalWinningShares = (
-                m.winningSide == Side.A ? m.totalSharesA : m.totalSharesB
-            );
+        p.claimed = true;
+        _payout(_market, msg.sender, payout, _posId);
 
-            uint256 payout = m.marketBalance * shares / totalWinningShares;
-
-            p.claimed = true;
-
-            _payout(_market, msg.sender, payout, _posId);
-            allMarketData[_market].activity++;      
+        m.activity++;
     }
     
     function batchClaim(uint256 _market, uint256[] calldata _posIds) external nonReentrant {
@@ -580,17 +544,16 @@ contract Penny4Thots is ReentrancyGuard {
             if (p.claimed) continue;
             if (p.side != m.winningSide) continue;
 
-            (uint256 shares,) = _calculateShares(_market, p);
+        (uint256 shares,) = _calculateShares(_market, p);
+        uint256 totalWinningShares = m.winningSide == Side.A ? m.totalSharesA : m.totalSharesB;
+        uint256 loserPool = m.marketBalance > m.totalWinningPrincipal ? m.marketBalance - m.totalWinningPrincipal : 0;
+        uint256 profitShare = totalWinningShares > 0 ? loserPool * shares / totalWinningShares : 0;
+        uint256 payout = p.amount + profitShare;  
 
-            uint256 totalWinningShares =
-                m.winningSide == Side.A ? m.totalSharesA : m.totalSharesB;
+        p.claimed = true;
+        _payout(_market, msg.sender, payout, posId);
 
-            uint256 payout = m.marketBalance * shares / totalWinningShares;
-
-            p.claimed = true;
-            _payout(_market, msg.sender, payout, posId);
-
-            m.activity++;
+        m.activity++;
         }
     }
 
@@ -656,6 +619,28 @@ contract Penny4Thots is ReentrancyGuard {
         }
 
         return usermarketpositions;
+    }
+
+
+    function rescueLostCapital(uint256 _market) external onlyPennyDAO nonReentrant {
+        MarketData storage m = allMarketData[_market];
+        MarketLock storage k = allMarketLocks[_market];
+        require(m.closed && k.sharesFinalized, "Market not finalized");
+        uint256 winningShares = m.winningSide == Side.A ? m.totalSharesA : m.totalSharesB;
+        require(winningShares == 0 && m.marketBalance > 0, "No lost capital to rescue");
+
+        address token = paymentTokens[_market];
+        uint256 amount = m.marketBalance;
+        m.marketBalance = 0;
+
+        if (token == address(0)) {
+            (bool success, ) = payable(pennyDAO).call{value: amount}("");
+            require(success, "ETH rescue failed");
+        } else {
+            IERC20(token).safeTransfer(pennyDAO, amount);
+        }
+
+        emit CapitalRescued(_market, token, amount);
     }
 
     function feeTransfer(uint256 _amount, uint256 _num, uint256 _market) internal returns (uint256) {
@@ -792,5 +777,4 @@ contract Penny4Thots is ReentrancyGuard {
         AllowedAmounts = _farmingAmounts;
         AllowedFarms = _allowedFarms;
     }
-
 }

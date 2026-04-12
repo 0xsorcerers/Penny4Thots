@@ -133,7 +133,7 @@ export const wallets = [
         "email",
         "discord",
       ],
-      // mode: "popup",
+      mode: "redirect",
     },
   }),
 ];
