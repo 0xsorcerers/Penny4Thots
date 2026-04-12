@@ -82,6 +82,16 @@ const opbnb: NetworkConfig = {
   contract_address: '0x8d4a1A116Fd092D21b47Aa29a1882995af234353' as Address,
 };
 
-const chains: NetworkConfig[] = [sepolia, base, bnb, hashkey]; // , scroll, manta, opbnb
+const monad: NetworkConfig = {
+  name: 'Monad (Live)',
+  chainId: 143,
+  rpc: 'https://rpc4.monad.xyz',
+  blockExplorer: 'https://monadscan.com',
+  decimals: 18,
+  symbol: 'MON',
+  contract_address: '0x24C89D67d1C8B569fFe564b8493C0fbD1f55d7F7' as Address,
+};
+
+const chains: NetworkConfig[] = [sepolia, base, bnb, hashkey, monad]; // , scroll, manta, opbnb
 
 export { chains };

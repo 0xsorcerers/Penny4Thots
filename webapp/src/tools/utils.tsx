@@ -219,7 +219,7 @@ export function Connector(): ReactElement {
       connectButton={{ label: "Get Started" }}
       connectModal={{
         size: "wide",
-        title: "Connect to Penny4Thots",
+        title: "Socials or Wallet",
         titleIcon: "/logo-white-no-bkg.webp",
         welcomeScreen: {
           title: "Penny4Thots Prediction Markets",

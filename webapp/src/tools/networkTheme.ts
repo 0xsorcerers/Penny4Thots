@@ -7,6 +7,8 @@ import darkFlora from "../assets/images/dark-flora.webp";
 import oceanblueFlora from "../assets/images/oceanblue-flora.webp";
 import lavenderFlora from "../assets/images/lavender-flora.webp";
 import darklavenderFlora from "../assets/images/darklavender-flora.webp";
+import bluepurpleFlora from "../assets/images/bluepurple-flora.webp";
+import deeppurpleFlora from "../assets/images/deeppurple-flora.webp";
 
 type ThemeMode = "light" | "dark";
 
@@ -128,6 +130,7 @@ const SCROLL_CHAIN_ID = 534352;
 const MANTA_CHAIN_ID = 169;
 const SEPOLIA_CHAIN_ID = 11155111;
 const HASHKEY_CHAIN_ID = 177;
+const MONAD_CHAIN_ID = 143;
 
 const BASE_LIGHT_TOKENS: Record<ThemeToken, string> = {
   background: "220 20% 95%",
@@ -620,6 +623,84 @@ export const NETWORK_THEMES: Record<number, NetworkThemeConfig> = {
     },
   },
   [OPBNB_CHAIN_ID]: LEGACY_BNB_THEME,
+  [MONAD_CHAIN_ID]: {
+    light: {
+      tokens: {
+        background: "#F3F0FF",
+        foreground: "#1E1445",
+        card: "#EBE5FF",
+        "card-foreground": "#1E1445",
+        primary: "#836EF9",
+        "primary-foreground": "#FFFFFF",
+        secondary: "#E0D8FF",
+        "secondary-foreground": "#2A1F5C",
+        muted: "#E8E2FF",
+        "muted-foreground": "#5A4A8A",
+        accent: "#A48FFF",
+        "accent-foreground": "#1E1445",
+        border: "#D4CAF5",
+        input: "#DDD5FF",
+        ring: "#836EF9",
+        yes: "#7B5CF5",
+        no: "#E85D8A",
+        "sidebar-background": "#F5F2FF",
+        "sidebar-primary": "#836EF9",
+        "sidebar-primary-foreground": "#FFFFFF",
+        "sidebar-accent": "#E5DEFF",
+        "sidebar-ring": "#836EF9",
+        chalk: "#1E1445",
+        "status-urgent": "#836EF9",
+        "status-normal": "#9B7CFF",
+        "status-inactive": "#7A6AA8",
+        "modal-silver": "#A89BCF",
+        "modal-sky-blue": "#9B7CFF",
+        "modal-bright-blue": "#836EF9",
+        "surface-base": "#EBE5FF",
+        "surface-border": "#D4CAF5",
+        "surface-hover": "#DDD5FF",
+        "surface-shadow": "#1E1445",
+        "surface-highlight": "#F0ECFF",
+      },
+    },
+    dark: {
+      tokens: {
+        background: "#0F0C1A",
+        foreground: "#F5F2FF",
+        card: "#1A1625",
+        "card-foreground": "#F5F2FF",
+        primary: "#836EF9",
+        "primary-foreground": "#FFFFFF",
+        secondary: "#231F33",
+        "secondary-foreground": "#DDD5FF",
+        muted: "#1E1A2E",
+        "muted-foreground": "#9B8EC2",
+        accent: "#A48FFF",
+        "accent-foreground": "#0F0C1A",
+        border: "#2E2645",
+        input: "#252238",
+        ring: "#836EF9",
+        yes: "#836EF9",
+        no: "#F06B9A",
+        "sidebar-background": "#131020",
+        "sidebar-primary": "#836EF9",
+        "sidebar-primary-foreground": "#FFFFFF",
+        "sidebar-accent": "#2A243D",
+        "sidebar-ring": "#836EF9",
+        chalk: "#F5F2FF",
+        "status-urgent": "#A48FFF",
+        "status-normal": "#836EF9",
+        "status-inactive": "#7A6E9C",
+        "modal-silver": "#7D7299",
+        "modal-sky-blue": "#9B7CFF",
+        "modal-bright-blue": "#836EF9",
+        "surface-base": "#1A1625",
+        "surface-border": "#2E2645",
+        "surface-hover": "#231F33",
+        "surface-shadow": "#05040A",
+        "surface-highlight": "#352D52",
+      },
+    },
+  },
 };
 
 const CHAIN_COUNT = chains.length;
@@ -633,6 +714,7 @@ export const NETWORK_LIGHT_BACKGROUND_IMAGES: string[] = [
   lavenderFlora,
   // seagreenFlora,
   // lightFlora,
+  bluepurpleFlora,
 ];
 
 export const NETWORK_DARK_BACKGROUND_IMAGES: string[] = [
@@ -643,6 +725,7 @@ export const NETWORK_DARK_BACKGROUND_IMAGES: string[] = [
   darklavenderFlora,
   // oceanblueFlora,
   // darkFlora,
+  deeppurpleFlora,
 ];
 
 
