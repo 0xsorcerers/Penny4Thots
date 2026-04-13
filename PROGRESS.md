@@ -4,6 +4,15 @@ This file tracks all significant progress. Updated automatically after major cha
 
 ---
 
+## 2026-04-13
+
+### Update: Profile Dropdown Copy Address + Thirdweb Disconnect
+- Added a copy icon next to the truncated wallet address in the profile dropdown header so connected users can copy their full wallet address to clipboard quickly.
+- Added copy-success visual feedback by swapping the copy icon to a checkmark briefly after a successful copy action.
+- Added a dedicated disconnect menu action in the profile dropdown wired to Thirdweb `disconnect(activeWallet)` to let users sign out/disconnect directly from profile controls.
+
+---
+
 ## 2026-04-09
 
 ### UI Fix: Disable Kamikaze Trade Buttons When Wallet Is Not Connected

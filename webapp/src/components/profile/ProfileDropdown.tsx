@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { User, Brain, MessageCircle, History, ChevronDown } from "lucide-react";
+import { User, Brain, MessageCircle, History, ChevronDown, Copy, Check, LogOut } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import {
   DropdownMenu,
@@ -10,16 +10,45 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useActiveAccount } from "thirdweb/react";
+import { useActiveAccount, useActiveWallet, useDisconnect } from "thirdweb/react";
 import { truncateAddress } from "@/tools/utils";
 import { useLanguageStore } from "@/store/languageStore";
 import { t } from "@/tools/languages";
+import { toast } from "sonner";
 
 export function ProfileDropdown() {
   const navigate = useNavigate();
   const account = useActiveAccount();
+  const activeWallet = useActiveWallet();
+  const { disconnect } = useDisconnect();
   const selectedLanguage = useLanguageStore((state) => state.selectedLanguage);
   const [isOpen, setIsOpen] = useState(false);
+  const [didCopyAddress, setDidCopyAddress] = useState(false);
+
+  const handleCopyAddress = async () => {
+    if (!account?.address) return;
+
+    try {
+      await navigator.clipboard.writeText(account.address);
+      setDidCopyAddress(true);
+      setTimeout(() => setDidCopyAddress(false), 1500);
+    } catch (error) {
+      console.error("Failed to copy address:", error);
+      toast.error("Failed to copy address");
+    }
+  };
+
+  const handleDisconnect = async () => {
+    if (!activeWallet) return;
+
+    try {
+      await disconnect(activeWallet);
+      setIsOpen(false);
+    } catch (error) {
+      console.error("Failed to disconnect wallet:", error);
+      toast.error("Failed to disconnect wallet");
+    }
+  };
 
   const menuItems = [
     {
@@ -88,9 +117,21 @@ export function ProfileDropdown() {
                   </div>
                   <div className="flex flex-col">
                     <span className="font-syne font-bold text-foreground">{t(selectedLanguage, "profileMenu.profile")}</span>
-                    <span className="font-mono text-xs text-muted-foreground">
-                      {account ? truncateAddress(account.address) : t(selectedLanguage, "profileMenu.notConnected")}
-                    </span>
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-mono text-xs text-muted-foreground">
+                        {account ? truncateAddress(account.address) : t(selectedLanguage, "profileMenu.notConnected")}
+                      </span>
+                      {account?.address && (
+                        <button
+                          type="button"
+                          onClick={handleCopyAddress}
+                          className="inline-flex h-5 w-5 items-center justify-center rounded text-muted-foreground transition-colors hover:text-foreground"
+                          aria-label="Copy wallet address"
+                        >
+                          {didCopyAddress ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
               </DropdownMenuLabel>
@@ -124,6 +165,28 @@ export function ProfileDropdown() {
                   </DropdownMenuItem>
                 ))}
               </div>
+
+              <DropdownMenuSeparator className="bg-border/30 my-1" />
+
+              <DropdownMenuItem
+                onClick={handleDisconnect}
+                disabled={!activeWallet}
+                className="group/item cursor-pointer rounded-xl p-0 focus:bg-transparent disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <motion.div
+                  whileHover={{ x: 4 }}
+                  className="flex w-full items-center gap-3 rounded-xl px-3 py-3 transition-all hover:bg-primary/5"
+                >
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-destructive/80 to-destructive opacity-80 transition-all group-hover/item:opacity-100 group-hover/item:scale-110">
+                    <LogOut className="h-5 w-5 text-primary-foreground" />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="font-syne font-semibold text-foreground group-hover/item:text-primary transition-colors">
+                      {t(selectedLanguage, "profileMenu.disconnect")}
+                    </span>
+                  </div>
+                </motion.div>
+              </DropdownMenuItem>
             </motion.div>
           </DropdownMenuContent>
         )}
