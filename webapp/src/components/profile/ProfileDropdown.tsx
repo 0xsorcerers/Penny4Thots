@@ -30,6 +30,7 @@ export function ProfileDropdown() {
 
     try {
       await navigator.clipboard.writeText(account.address);
+      toast.success("Address copied");
       setDidCopyAddress(true);
       setTimeout(() => setDidCopyAddress(false), 1500);
     } catch (error) {
@@ -182,7 +183,7 @@ export function ProfileDropdown() {
                   </div>
                   <div className="flex flex-col">
                     <span className="font-syne font-semibold text-foreground group-hover/item:text-primary transition-colors">
-                      {t(selectedLanguage, "profileMenu.disconnect")}
+                      Sign Out
                     </span>
                   </div>
                 </motion.div>

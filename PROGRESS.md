@@ -11,6 +11,10 @@ This file tracks all significant progress. Updated automatically after major cha
 - Added copy-success visual feedback by swapping the copy icon to a checkmark briefly after a successful copy action.
 - Added a dedicated disconnect menu action in the profile dropdown wired to Thirdweb `disconnect(activeWallet)` to let users sign out/disconnect directly from profile controls.
 
+### Update: Copy Toast + Sign Out Label
+- Added a success toast message `Address copied` when users tap the wallet-address copy icon in the profile dropdown.
+- Updated the profile dropdown disconnect action label text from translated disconnect copy to `Sign Out`.
+
 ---
 
 ## 2026-04-09
