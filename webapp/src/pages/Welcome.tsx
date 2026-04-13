@@ -7,6 +7,7 @@ import { useActiveAccount } from "thirdweb/react";
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTheme } from "@/hooks/useTheme";
+import { StoreBadges } from "@/components/landing/StoreBadges";
 
 export default function Welcome() {
   const account = useActiveAccount();
@@ -328,6 +329,9 @@ export default function Welcome() {
           transition={{ duration: 0.5, delay: 1.4 }}
           className="relative"
         >
+          {/* Store badges */}
+          <StoreBadges language={selectedLanguage} />
+          
           {/* Glow behind button */}
           <div className="pointer-events-none absolute -inset-4 rounded-full bg-primary/20 blur-xl" />
           <Connector />

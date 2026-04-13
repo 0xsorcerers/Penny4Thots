@@ -9,6 +9,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useTheme } from "@/hooks/useTheme";
+import { StoreBadges } from "@/components/landing/StoreBadges";
 
 interface GetStartedPageProps {
   onGetStarted?: () => void;
@@ -216,9 +217,16 @@ export function GetStartedPage({ onGetStarted }: GetStartedPageProps) {
           transition={{ duration: 0.5, delay: 1.2 }}
           className="relative"
         >
+          {/* Store badges */}
+          <StoreBadges language={selectedLanguage} />
+          
           {/* Glow behind button */}
           <div className="pointer-events-none absolute -inset-4 rounded-full bg-primary/20 blur-xl" />
-          {!showConnectNotice && <Connector />}
+          {!showConnectNotice && (
+            <>
+              <Connector />
+            </>
+          )}
         </motion.div>
 
         {/* Bottom text */}

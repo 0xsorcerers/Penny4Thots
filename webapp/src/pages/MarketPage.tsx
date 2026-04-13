@@ -455,8 +455,19 @@ export default function MarketPage() {
     }
   };
   const getOrdinalLabel = (index: number): string => {
-    const labels = ["First", "Second", "Third", "Fourth", "Fifth", "Sixth", "Seventh", "Eighth", "Ninth", "Tenth"];
-    return labels[index] || `${index + 1}th`;
+    const labels = [
+      t(selectedLanguage, "kamikazeModal.first"),
+      t(selectedLanguage, "kamikazeModal.second"),
+      t(selectedLanguage, "kamikazeModal.third"),
+      t(selectedLanguage, "kamikazeModal.fourth"),
+      t(selectedLanguage, "kamikazeModal.fifth"),
+      t(selectedLanguage, "kamikazeModal.sixth"),
+      t(selectedLanguage, "kamikazeModal.seventh"),
+      t(selectedLanguage, "kamikazeModal.eighth"),
+      t(selectedLanguage, "kamikazeModal.ninth"),
+      t(selectedLanguage, "kamikazeModal.tenth"),
+    ];
+    return labels[index] || `${index + 1}`;
   };
   const loadKamikazePositions = async (): Promise<{ eligible: number[]; display: number[] }> => {
     if (!market || market.indexer === undefined || !account?.address) return { eligible: [], display: [] };
@@ -1121,9 +1132,9 @@ export default function MarketPage() {
       <Dialog open={isSellModalOpen} onOpenChange={setIsSellModalOpen}>
         <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-2xl">
           <DialogHeader>
-            <DialogTitle className="font-syne text-xl">Kamikaze Positions</DialogTitle>
+            <DialogTitle className="font-syne text-xl">{t(selectedLanguage, "kamikazeModal.positions")}</DialogTitle>
             <DialogDescription className="font-outfit">
-              Toggle the positions you want to kamikaze in this market.
+              {t(selectedLanguage, "kamikazeModal.toggleDescription")}
             </DialogDescription>
           </DialogHeader>
 
@@ -1155,7 +1166,7 @@ export default function MarketPage() {
               </div>
             ) : kamikazeDisplayPositionIds.length === 0 ? (
               <p className="py-4 text-center font-outfit text-sm text-muted-foreground">
-                No positions found for this market.
+                {t(selectedLanguage, "kamikazeModal.noPositionsFound")}
               </p>
             ) : (
               <div className="space-y-3">
@@ -1180,10 +1191,10 @@ export default function MarketPage() {
                       <div className="flex items-center justify-between gap-3">
                         <div className="min-w-0">
                           <p className="font-syne text-sm font-semibold">
-                            {getOrdinalLabel(idx)} position
+                            {getOrdinalLabel(idx)} {t(selectedLanguage, "kamikazeModal.position")}
                           </p>
                           <p className="font-mono text-xs text-muted-foreground">
-                            Capital: {formatTokenAmount(amount, kamikazeTokenDecimals, 6)} {kamikazeTokenSymbol}
+                            {t(selectedLanguage, "kamikazeModal.capital")} {formatTokenAmount(amount, kamikazeTokenDecimals, 6)} {kamikazeTokenSymbol}
                           </p>
                           {isKamikazed && (
                             <p className="font-mono text-xs text-muted-foreground">
@@ -1206,7 +1217,7 @@ export default function MarketPage() {
                           disabled={isKamikazed}
                           onClick={() => toggleKamikazeSelection(positionId)}
                         >
-                          {isKamikazed ? "Kamikazed" : isOn ? "On" : "Off"}
+                          {isKamikazed ? "Kamikazed" : isOn ? t(selectedLanguage, "kamikazeModal.on") : t(selectedLanguage, "kamikazeModal.off")}
                         </Button>
                       </div>
                     </div>
@@ -1223,7 +1234,7 @@ export default function MarketPage() {
               onClick={() => setIsSellModalOpen(false)}
               disabled={isSubmittingKamikaze || isBatchKamikazing}
             >
-              Cancel
+              {t(selectedLanguage, "kamikazeModal.cancel")}
             </Button>
             <Button
               type="button"
@@ -1234,10 +1245,10 @@ export default function MarketPage() {
               {isSubmittingKamikaze || isBatchKamikazing ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Processing...
+                  {t(selectedLanguage, "kamikazeModal.processing")}
                 </>
               ) : (
-                "Kamikaze Selected"
+                t(selectedLanguage, "kamikazeModal.selected")
               )}
             </Button>
           </div>
