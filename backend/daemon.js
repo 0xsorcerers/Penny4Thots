@@ -544,7 +544,7 @@ const networks = [
   },
   {
     name: 'monad',
-    rpc: 'https://rpc4.monad.xyz',
+    rpc: 'https://rpc2.monad.xyz',
     contract: '0x24C89D67d1C8B569fFe564b8493C0fbD1f55d7F7',
     chainId: 143
   }
@@ -739,6 +739,14 @@ async function monitorNetwork(networkConfig) {
     for (let j = 0; j < chunkIds.length; j++) {
       const id = chunkIds[j];
       const info = marketInfos[j];
+
+      const cached = state.markets[id];
+    
+      // 🧠 NEW: skip already-resolved markets (saves AI credits)
+      if (cached?.closed) {
+        log(`[${name}] Skipping AI adjudication for closed market ${id}`);
+        continue;
+      }
     
       // 🔒 refresh cache safely if missing
       if (!state.markets[id].optionA) {
@@ -847,7 +855,7 @@ async function monitorNetwork(networkConfig) {
     const resolvedToOptionA = result.decision === "A";
     
     const marketState = state.markets[result.indexer];
-    if (marketState.closed) {
+    if (!marketState || marketState.closed) {
        log(`[${name}] Market ${result.indexer} already closed (cached). Syncing state.`);
        continue;
     }
@@ -918,12 +926,17 @@ async function monitorNetwork(networkConfig) {
   }
 
   // ================= FINALIZATION =================
-  for (const [marketId, market] of Object.entries(state.markets)) {
-    if (market.closed && !market.finalized &&!market.blacklist && market.finalizeRetries < maxRetryAttempts) {
-      log(`[${name}] Market ${marketId} closed. Starting finalization...`);
-      await finalizeMarket(name, Number(marketId), readContract, writeContract, state);
-    }
-  }
+    log(`[${name}] Entering finalization phase`);
+    
+    const needsFinalization = Object.entries(state.markets).filter(
+      ([_, m]) =>
+        m.closed &&
+        !m.finalized &&
+        !m.blacklist
+    );
+    
+    for (const [id] of needsFinalization) {
+        await finalizeMarket(name, Number(id), readContract, writeContract, state); }
 }
 
 // ================= FINALIZE FUNCTION =================
@@ -1075,7 +1088,12 @@ async function run() {
 }
 
 run()
-  .then(() => process.exit(0))
+  .then(() => {
+    console.log("Exited very very quickly!")
+    log(`Exited Quickly.`);
+    logStream.end();
+      process.exit(0);
+  })
   .catch(err => {
     log(`Fatal Error: ${err.message}`);
     logStream.end();
