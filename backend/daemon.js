@@ -1088,12 +1088,7 @@ async function run() {
 }
 
 run()
-  .then(() => {
-    console.log("Exited very very quickly!")
-    log(`Exited Quickly.`);
-    logStream.end();
-      process.exit(0);
-  })
+  .then(() => process.exit(0))
   .catch(err => {
     log(`Fatal Error: ${err.message}`);
     logStream.end();
