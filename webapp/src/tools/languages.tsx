@@ -129,6 +129,9 @@ export interface Translations {
     noPositionsFound: string;
     allPositionsKamikazed: string;
     selectAtLeastOne: string;
+    claimingPositionsDesc: string;
+    claimSuccessDesc: string;
+    claimErrorDesc: string;
   };
   // Vote Modal
   voteModal: {
@@ -138,6 +141,7 @@ export interface Translations {
     voteFailed: string;
     walletNotConnected: string;
     insufficientBalance: string;
+    insufficientBalanceDesc: string;
     approvalRequired: string;
     approvalDesc: string;
     tokenApproved: string;
@@ -441,6 +445,9 @@ export const translations: Record<LanguageCode, Translations> = {
       noPositionsFound: "No positions found for this market",
       allPositionsKamikazed: "All listed positions are already kamikazed",
       selectAtLeastOne: "Select at least one position",
+      claimingPositionsDesc: "Claiming {count} position{plural}",
+      claimSuccessDesc: "You have successfully claimed your rewards from {count} position{plural}",
+      claimErrorDesc: "Please try again",
     },
     // Vote Modal
     voteModal: {
@@ -450,6 +457,7 @@ export const translations: Record<LanguageCode, Translations> = {
       voteFailed: "Failed to submit vote",
       walletNotConnected: "Please connect your wallet first",
       insufficientBalance: "Insufficient token balance",
+      insufficientBalanceDesc: "You have {balance} but need {required}",
       approvalRequired: "Approval required",
       approvalDesc: "Approving token spending in your wallet",
       tokenApproved: "Token approved!",
@@ -736,6 +744,9 @@ export const translations: Record<LanguageCode, Translations> = {
       noPositionsFound: "Sin posiciones",
       allPositionsKamikazed: "Todo ya kamikaze",
       selectAtLeastOne: "Selecciona uno",
+      claimingPositionsDesc: "Reclamando {count} posición{plural}",
+      claimSuccessDesc: "Has reclamado exitosamente tus recompensas de {count} posición{plural}",
+      claimErrorDesc: "Por favor intenta de nuevo",
     },
     voteModal: {
       selectOption: "Selecciona opción",
@@ -744,6 +755,7 @@ export const translations: Record<LanguageCode, Translations> = {
       voteFailed: "Error al votar",
       walletNotConnected: "Conecta wallet",
       insufficientBalance: "Saldo insuficiente",
+      insufficientBalanceDesc: "Tienes {balance} pero necesitas {required}",
       approvalRequired: "Aprobación requerida",
       approvalDesc: "Aprobando tokens",
       tokenApproved: "¡Token aprobado!",
@@ -1026,6 +1038,9 @@ export const translations: Record<LanguageCode, Translations> = {
       noPositionsFound: "Aucune position",
       allPositionsKamikazed: "Déjà fait",
       selectAtLeastOne: "Sélectionnez au moins un",
+      claimingPositionsDesc: "Réclamation de {count} position{plural}",
+      claimSuccessDesc: "Vous avez réclamé avec succès vos récompenses de {count} position{plural}",
+      claimErrorDesc: "Veuillez réessayer",
     },
     voteModal: {
       selectOption: "Choisir option",
@@ -1034,6 +1049,7 @@ export const translations: Record<LanguageCode, Translations> = {
       voteFailed: "Échec vote",
       walletNotConnected: "Connectez wallet",
       insufficientBalance: "Solde insuffisant",
+      insufficientBalanceDesc: "Vous avez {balance} mais besoin de {required}",
       approvalRequired: "Approbation requise",
       approvalDesc: "Approbation...",
       tokenApproved: "Token approuvé !",
@@ -1316,6 +1332,9 @@ export const translations: Record<LanguageCode, Translations> = {
       noPositionsFound: "Keine Positionen",
       allPositionsKamikazed: "Bereits erledigt",
       selectAtLeastOne: "Mindestens eins wählen",
+      claimingPositionsDesc: "Beanspruche {count} Position{plural}",
+      claimSuccessDesc: "Sie haben erfolgreich Belohnungen von {count} Position{plural} beansprucht",
+      claimErrorDesc: "Bitte versuchen Sie es erneut",
     },
     voteModal: {
       selectOption: "Option wählen",
@@ -1324,6 +1343,7 @@ export const translations: Record<LanguageCode, Translations> = {
       voteFailed: "Fehler",
       walletNotConnected: "Wallet verbinden",
       insufficientBalance: "Nicht genug",
+      insufficientBalanceDesc: "Sie haben {balance} brauchen aber {required}",
       approvalRequired: "Genehmigung nötig",
       approvalDesc: "Genehmigung...",
       tokenApproved: "Genehmigt!",
@@ -1606,6 +1626,9 @@ export const translations: Record<LanguageCode, Translations> = {
       noPositionsFound: "Sem posições",
       allPositionsKamikazed: "Já feito",
       selectAtLeastOne: "Selecione um",
+      claimingPositionsDesc: "Reivindicando {count} posição{plural}",
+      claimSuccessDesc: "Você reivindicou com sucesso suas recompensas de {count} posição{plural}",
+      claimErrorDesc: "Por favor, tente novamente",
     },
     voteModal: {
       selectOption: "Escolher opção",
@@ -1614,6 +1637,7 @@ export const translations: Record<LanguageCode, Translations> = {
       voteFailed: "Erro",
       walletNotConnected: "Conectar carteira",
       insufficientBalance: "Saldo insuficiente",
+      insufficientBalanceDesc: "Você tem {balance} mas precisa de {required}",
       approvalRequired: "Aprovação necessária",
       approvalDesc: "Aprovando...",
       tokenApproved: "Aprovado!",
@@ -1896,6 +1920,9 @@ export const translations: Record<LanguageCode, Translations> = {
       noPositionsFound: "无持仓",
       allPositionsKamikazed: "已全部执行",
       selectAtLeastOne: "至少选择一个",
+      claimingPositionsDesc: "正在领取 {count} 个持仓{plural}",
+      claimSuccessDesc: "您已成功从 {count} 个持仓{plural} 领取奖励",
+      claimErrorDesc: "请重试",
     },
     voteModal: {
       selectOption: "选择选项",
@@ -1904,6 +1931,7 @@ export const translations: Record<LanguageCode, Translations> = {
       voteFailed: "投票失败",
       walletNotConnected: "未连接钱包",
       insufficientBalance: "余额不足",
+      insufficientBalanceDesc: "您有 {balance} 但需要 {required}",
       approvalRequired: "需要授权",
       approvalDesc: "正在授权代币",
       tokenApproved: "授权成功！",
@@ -2185,6 +2213,9 @@ export const translations: Record<LanguageCode, Translations> = {
       noPositionsFound: "ポジションがありません",
       allPositionsKamikazed: "すべて実行済み",
       selectAtLeastOne: "少なくとも1つ選択してください",
+      claimingPositionsDesc: "{count} ポジション{plural}を請求中",
+      claimSuccessDesc: "{count} ポジション{plural}から報酬を正常に請求しました",
+      claimErrorDesc: "もう一度お試しください",
     },
     voteModal: {
       selectOption: "オプションを選択",
@@ -2193,6 +2224,7 @@ export const translations: Record<LanguageCode, Translations> = {
       voteFailed: "投票に失敗しました",
       walletNotConnected: "ウォレットが未接続です",
       insufficientBalance: "残高不足",
+      insufficientBalanceDesc: "{balance} ありますが {required} が必要です",
       approvalRequired: "承認が必要です",
       approvalDesc: "トークン承認中",
       tokenApproved: "承認成功！",
@@ -2474,6 +2506,9 @@ export const translations: Record<LanguageCode, Translations> = {
       noPositionsFound: "포지션 없음",
       allPositionsKamikazed: "모두 실행됨",
       selectAtLeastOne: "최소 1개 선택",
+      claimingPositionsDesc: "{count} 포지션{plural} 청구 중",
+      claimSuccessDesc: "{count} 포지션{plural}에서 보상을 성공적으로 청구했습니다",
+      claimErrorDesc: "다시 시도해주세요",
     },
     voteModal: {
       selectOption: "옵션 선택",
@@ -2482,6 +2517,7 @@ export const translations: Record<LanguageCode, Translations> = {
       voteFailed: "투표 실패",
       walletNotConnected: "지갑이 연결되지 않음",
       insufficientBalance: "잔액 부족",
+      insufficientBalanceDesc: "{balance} 있지만 {required} 필요합니다",
       approvalRequired: "승인 필요",
       approvalDesc: "토큰 승인 중",
       tokenApproved: "승인 성공!",
@@ -2763,6 +2799,9 @@ export const translations: Record<LanguageCode, Translations> = {
       noPositionsFound: "इस बाजार के लिए कोई पोजीशन नहीं मिली",
       allPositionsKamikazed: "सभी पहले से ही kamikazed हैं",
       selectAtLeastOne: "कम से कम एक पोजीशन चुनें",
+      claimingPositionsDesc: "{count} पोजीशन{plural} का दावा किया जा रहा है",
+      claimSuccessDesc: "आपने सफलतापूर्वक {count} पोजीशन{plural} से अपना इनाम दावा किया है",
+      claimErrorDesc: "कृपया पुनः प्रयास करें",
     },
     voteModal: {
       selectOption: "विकल्प चुनें",
@@ -2771,6 +2810,7 @@ export const translations: Record<LanguageCode, Translations> = {
       voteFailed: "वोट सबमिट करने में विफल",
       walletNotConnected: "कृपया पहले वॉलेट कनेक्ट करें",
       insufficientBalance: "अपर्याप्त टोकन बैलेंस",
+      insufficientBalanceDesc: "आपके पास {balance} है लेकिन {required} की आवश्यकता है",
       approvalRequired: "अनुमोदन आवश्यक",
       approvalDesc: "आपके वॉलेट में टोकन खर्च का अनुमोदन",
       tokenApproved: "टोकन अनुमोदित!",
@@ -3052,6 +3092,9 @@ export const translations: Record<LanguageCode, Translations> = {
       noPositionsFound: "لم يتم العثور على مراكز لهذا السوق",
       allPositionsKamikazed: "تم تنفيذ الكل بالفعل",
       selectAtLeastOne: "اختر مركزاً واحداً على الأقل",
+      claimingPositionsDesc: "جاري المطالبة بـ {count} مركز{plural}",
+      claimSuccessDesc: "لقد نجحت في المطالبة بمكافآتك من {count} مركز{plural}",
+      claimErrorDesc: "يرجى المحاولة مرة أخرى",
     },
     voteModal: {
       selectOption: "اختر خياراً",
@@ -3060,6 +3103,7 @@ export const translations: Record<LanguageCode, Translations> = {
       voteFailed: "فشل إرسال التصويت",
       walletNotConnected: "يرجى ربط المحفظة أولاً",
       insufficientBalance: "رصيد الرموز غير كافٍ",
+      insufficientBalanceDesc: "لديك {balance} لكنك تحتاج {required}",
       approvalRequired: "الموافقة مطلوبة",
       approvalDesc: "الموافقة على إنفاق الرموز في محفظتك",
       tokenApproved: "تمت الموافقة على الرمز!",
@@ -3341,6 +3385,9 @@ export const translations: Record<LanguageCode, Translations> = {
       noPositionsFound: "לא נמצאו עמדות לשוק זה",
       allPositionsKamikazed: "כולם כבר בוצעו",
       selectAtLeastOne: "בחר לפחות עמדה אחת",
+      claimingPositionsDesc: "תובע {count} עמדה{plural}",
+      claimSuccessDesc: "תבעת בהצלחה את התגמולים שלך מ-{count} עמדה{plural}",
+      claimErrorDesc: "אנא נסה שוב",
     },
     voteModal: {
       selectOption: "בחר אפשרות",
@@ -3349,6 +3396,7 @@ export const translations: Record<LanguageCode, Translations> = {
       voteFailed: "שליחת ההצבעה נכשלה",
       walletNotConnected: "אנא חבר את הארנק תחילה",
       insufficientBalance: "יתרת הטוקנים אינה מספיקה",
+      insufficientBalanceDesc: "יש לך {balance} אך נדרש {required}",
       approvalRequired: "נדרש אישור",
       approvalDesc: "מאשר הוצאת טוקנים בארנק שלך",
       tokenApproved: "הטוקן אושר!",

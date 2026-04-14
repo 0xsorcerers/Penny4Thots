@@ -330,9 +330,8 @@ export default function YourThots() {
           const balanceInToken = fromTokenSmallestUnit(userBalance, tokenDecimals);
           const requiredInToken = fromTokenSmallestUnit(voteParams.marketBalance, tokenDecimals);
           toast.error(t(selectedLanguage, "voteModal.insufficientBalance"), {
-            description: `You have ${balanceInToken} but need ${requiredInToken}`, 
+            description: t(selectedLanguage, "voteModal.insufficientBalanceDesc", { balance: balanceInToken, required: requiredInToken }),
           });
-          throw new Error(`Insufficient balance: have ${balanceInToken}, need ${requiredInToken}`);
         }
 
         const currentAllowance = await readTokenAllowance(

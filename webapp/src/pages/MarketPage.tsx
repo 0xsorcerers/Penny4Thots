@@ -342,21 +342,21 @@ export default function MarketPage() {
     }
     try {
       toast.info(t(selectedLanguage, "marketCard.claiming"), {
-        description: `Claiming ${userPositions.length} position${userPositions.length > 1 ? 's' : ''}`,
+        description: t(selectedLanguage, "market.claimingPositionsDesc", { count: userPositions.length, plural: userPositions.length > 1 ? 's' : '' }),
       });
       await batchClaim({
         marketId: market.indexer,
         positionIds: userPositions,
       });
       toast.success(t(selectedLanguage, "market.claimSuccessful"), {
-        description: `You have successfully claimed your rewards from ${userPositions.length} position${userPositions.length > 1 ? 's' : ''}`,
+        description: t(selectedLanguage, "market.claimSuccessDesc", { count: userPositions.length, plural: userPositions.length > 1 ? 's' : '' }),
       });
       // Clear positions after successful claim
       setUserPositions([]);
     } catch (err) {
       console.error("Claim failed:", err);
       toast.error(t(selectedLanguage, "market.claimFailed"), {
-        description: err instanceof Error ? err.message : "Please try again",
+        description: err instanceof Error ? err.message : t(selectedLanguage, "market.claimErrorDesc"),
       });
       // Don't clear positions on failure so user can retry
     }
@@ -381,9 +381,8 @@ export default function MarketPage() {
           const balanceFormatted = fromTokenSmallestUnit(userBalance, tokenDecimals);
           const requiredFormatted = fromTokenSmallestUnit(voteParams.marketBalance, tokenDecimals);
           toast.error(t(selectedLanguage, "voteModal.insufficientBalance"), {
-            description: `You have ${balanceFormatted} but need ${requiredFormatted}`, 
+            description: t(selectedLanguage, "voteModal.insufficientBalanceDesc", { balance: balanceFormatted, required: requiredFormatted }),
           });
-          throw new Error(`Insufficient balance: have ${balanceFormatted}, need ${requiredFormatted}`);
         }
 
         const currentAllowance = await readTokenAllowance(

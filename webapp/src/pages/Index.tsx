@@ -314,9 +314,8 @@ export default function Index() {
           const balanceFormatted = fromTokenSmallestUnit(userBalance, tokenDecimals);
           const requiredFormatted = fromTokenSmallestUnit(voteParams.marketBalance, tokenDecimals);
           toast.error(t(selectedLanguage, "voteModal.insufficientBalance"), {
-            description: `You have ${balanceFormatted} but need ${requiredFormatted}`,
+            description: t(selectedLanguage, "voteModal.insufficientBalanceDesc", { balance: balanceFormatted, required: requiredFormatted }),
           });
-          throw new Error(`Insufficient balance: have ${balanceFormatted}, need ${requiredFormatted}`);
         }
 
         // Balance is sufficient - now check allowance
@@ -397,9 +396,8 @@ export default function Index() {
           const balanceFormatted = fromTokenSmallestUnit(userBalance, tokenDecimals);
           const requiredFormatted = fromTokenSmallestUnit(marketBalanceBigInt, tokenDecimals);
           toast.error(t(selectedLanguage, "voteModal.insufficientBalance"), {
-            description: `You have ${balanceFormatted} but need ${requiredFormatted}`,
+            description: t(selectedLanguage, "voteModal.insufficientBalanceDesc", { balance: balanceFormatted, required: requiredFormatted }),
           });
-          throw new Error(`Insufficient balance: have ${balanceFormatted}, need ${requiredFormatted}`);
         }
 
         // Balance is sufficient - now check allowance
