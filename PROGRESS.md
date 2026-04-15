@@ -6,6 +6,12 @@ This file tracks all significant progress. Updated automatically after major cha
 
 ## 2026-04-13
 
+### Update: Localized Store Badges Above Get Started Buttons
+- Added a reusable `StoreBadges` component for app-download badges on onboarding screens.
+- Mapped the selected app language to the corresponding Google Play SVG badge (`1` through `11`) and rendered it beside the Apple badge fallback image.
+- Integrated these badges above the Get Started/Connect button area on both Welcome and Get Started pages.
+- Linked both badges to the signed Android build at `/app-release-signed.apk` for direct download.
+
 ### Update: Profile Dropdown Copy Address + Thirdweb Disconnect
 - Added a copy icon next to the truncated wallet address in the profile dropdown header so connected users can copy their full wallet address to clipboard quickly.
 - Added copy-success visual feedback by swapping the copy icon to a checkmark briefly after a successful copy action.
