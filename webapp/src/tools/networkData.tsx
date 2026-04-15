@@ -92,6 +92,16 @@ const monad: NetworkConfig = {
   contract_address: '0x24C89D67d1C8B569fFe564b8493C0fbD1f55d7F7' as Address,
 };
 
-const chains: NetworkConfig[] = [sepolia, base, bnb, hashkey, monad]; // , scroll, manta, opbnb
+const litvm: NetworkConfig = {
+  name: 'LitVM (Testnet)',
+  chainId: 4441,
+  rpc: 'https://liteforge.rpc.caldera.xyz/http',
+  blockExplorer: 'https://liteforge.explorer.caldera.xyz/',
+  decimals: 18,
+  symbol: 'zkLTC',
+  contract_address: '0x24C89D67d1C8B569fFe564b8493C0fbD1f55d7F7' as Address,
+};
+
+const chains: NetworkConfig[] = [sepolia, litvm, base, bnb, hashkey, monad]; // , scroll, manta, opbnb
 
 export { chains };

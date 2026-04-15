@@ -9,6 +9,7 @@ import lavenderFlora from "../assets/images/lavender-flora.webp";
 import darklavenderFlora from "../assets/images/darklavender-flora.webp";
 import bluepurpleFlora from "../assets/images/bluepurple-flora.webp";
 import deeppurpleFlora from "../assets/images/deeppurple-flora.webp";
+import deepforestFlora from "../assets/images/deepforest-flora.webp";
 
 type ThemeMode = "light" | "dark";
 
@@ -131,6 +132,7 @@ const MANTA_CHAIN_ID = 169;
 const SEPOLIA_CHAIN_ID = 11155111;
 const HASHKEY_CHAIN_ID = 177;
 const MONAD_CHAIN_ID = 143;
+const LITVM_CHAIN_ID = 4441;
 
 const BASE_LIGHT_TOKENS: Record<ThemeToken, string> = {
   background: "220 20% 95%",
@@ -701,6 +703,84 @@ export const NETWORK_THEMES: Record<number, NetworkThemeConfig> = {
       },
     },
   },
+  [LITVM_CHAIN_ID]: {
+    light: {
+      tokens: {
+        background: "#E8F8FA",
+        foreground: "#0A1A2E",
+        card: "#DFF4F7",
+        "card-foreground": "#0A1A2E",
+        primary: "#00D4E0",
+        "primary-foreground": "#FFFFFF",
+        secondary: "#D0F0F4",
+        "secondary-foreground": "#163544",
+        muted: "#E0F2F5",
+        "muted-foreground": "#3A5A6A",
+        accent: "#00B8C4",
+        "accent-foreground": "#FFFFFF",
+        border: "#B8E0E6",
+        input: "#D0EBF0",
+        ring: "#00D4E0",
+        yes: "#00BFA6",
+        no: "#E85A5A",
+        "sidebar-background": "#E5F7FA",
+        "sidebar-primary": "#00D4E0",
+        "sidebar-primary-foreground": "#FFFFFF",
+        "sidebar-accent": "#D5F1F5",
+        "sidebar-ring": "#00D4E0",
+        chalk: "#0A1A2E",
+        "status-urgent": "#00D4E0",
+        "status-normal": "#00B8C4",
+        "status-inactive": "#5A8A9A",
+        "modal-silver": "#8AAFB8",
+        "modal-sky-blue": "#00D4E0",
+        "modal-bright-blue": "#00B8C4",
+        "surface-base": "#DFF4F7",
+        "surface-border": "#B8E0E6",
+        "surface-hover": "#D0EBF0",
+        "surface-shadow": "#0A1A2E",
+        "surface-highlight": "#F0FCFE",
+      },
+    },
+    dark: {
+      tokens: {
+        background: "#0D1B2A",
+        foreground: "#E0F7FA",
+        card: "#142536",
+        "card-foreground": "#E0F7FA",
+        primary: "#00D4E0",
+        "primary-foreground": "#0D1B2A",
+        secondary: "#1A2E42",
+        "secondary-foreground": "#C0ECF2",
+        muted: "#182A3D",
+        "muted-foreground": "#8AB4C0",
+        accent: "#00F0FF",
+        "accent-foreground": "#0D1B2A",
+        border: "#203548",
+        input: "#1C3045",
+        ring: "#00D4E0",
+        yes: "#00E5CC",
+        no: "#FF6B6B",
+        "sidebar-background": "#111E2E",
+        "sidebar-primary": "#00D4E0",
+        "sidebar-primary-foreground": "#0D1B2A",
+        "sidebar-accent": "#203548",
+        "sidebar-ring": "#00D4E0",
+        chalk: "#E0F7FA",
+        "status-urgent": "#00F0FF",
+        "status-normal": "#00D4E0",
+        "status-inactive": "#6A9AA8",
+        "modal-silver": "#6A8A9A",
+        "modal-sky-blue": "#00D4E0",
+        "modal-bright-blue": "#00F0FF",
+        "surface-base": "#142536",
+        "surface-border": "#203548",
+        "surface-hover": "#1A2E42",
+        "surface-shadow": "#060F18",
+        "surface-highlight": "#2A4058",
+      },
+    },
+  },
 };
 
 const CHAIN_COUNT = chains.length;
@@ -708,6 +788,7 @@ const CHAIN_COUNT = chains.length;
 // Put your per-network floral backgrounds here, by chain index.
 export const NETWORK_LIGHT_BACKGROUND_IMAGES: string[] = [
   lightblueFlora,
+  seagreenFlora,
   lightblueFlora,
   lightFlora,
   // lightFlora,
@@ -719,6 +800,7 @@ export const NETWORK_LIGHT_BACKGROUND_IMAGES: string[] = [
 
 export const NETWORK_DARK_BACKGROUND_IMAGES: string[] = [
   blueFlora,
+  deepforestFlora,
   blueFlora,
   darkFlora,
   // darkFlora,
