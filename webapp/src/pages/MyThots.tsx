@@ -332,9 +332,9 @@ export default function MyThots() {
           const tokenDecimals = await readTokenDecimals(voteParams.paymentToken);
           const balanceInToken = fromTokenSmallestUnit(userBalance, tokenDecimals);
           const requiredInToken = fromTokenSmallestUnit(voteParams.marketBalance, tokenDecimals);
-          toast.error(t(selectedLanguage, "voteModal.insufficientBalance"), {
-            description: t(selectedLanguage, "voteModal.insufficientBalanceDesc", { balance: balanceInToken, required: requiredInToken }),
-          });
+          const title = t(selectedLanguage, "voteModal.insufficientBalance");
+          const description = t(selectedLanguage, "voteModal.insufficientBalanceDesc", { balance: balanceInToken, required: requiredInToken });
+          throw new Error(`${title}: ${description}`);
         }
 
         const currentAllowance = await readTokenAllowance(

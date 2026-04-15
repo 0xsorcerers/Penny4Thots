@@ -313,9 +313,9 @@ export default function Index() {
           const tokenDecimals = await readTokenDecimals(voteParams.paymentToken);
           const balanceFormatted = fromTokenSmallestUnit(userBalance, tokenDecimals);
           const requiredFormatted = fromTokenSmallestUnit(voteParams.marketBalance, tokenDecimals);
-          toast.error(t(selectedLanguage, "voteModal.insufficientBalance"), {
-            description: t(selectedLanguage, "voteModal.insufficientBalanceDesc", { balance: balanceFormatted, required: requiredFormatted }),
-          });
+          const title = t(selectedLanguage, "voteModal.insufficientBalance");
+          const description = t(selectedLanguage, "voteModal.insufficientBalanceDesc", { balance: balanceFormatted, required: requiredFormatted });
+          throw new Error(`${title}: ${description}`);
         }
 
         // Balance is sufficient - now check allowance
@@ -395,9 +395,9 @@ export default function Index() {
           const tokenDecimals = await readTokenDecimals(data.tokenAddress);
           const balanceFormatted = fromTokenSmallestUnit(userBalance, tokenDecimals);
           const requiredFormatted = fromTokenSmallestUnit(marketBalanceBigInt, tokenDecimals);
-          toast.error(t(selectedLanguage, "voteModal.insufficientBalance"), {
-            description: t(selectedLanguage, "voteModal.insufficientBalanceDesc", { balance: balanceFormatted, required: requiredFormatted }),
-          });
+          const title = t(selectedLanguage, "voteModal.insufficientBalance");
+          const description = t(selectedLanguage, "voteModal.insufficientBalanceDesc", { balance: balanceFormatted, required: requiredFormatted });
+          throw new Error(`${title}: ${description}`);
         }
 
         // Balance is sufficient - now check allowance
