@@ -547,6 +547,12 @@ const networks = [
     rpc: 'https://rpc2.monad.xyz',
     contract: '0x24C89D67d1C8B569fFe564b8493C0fbD1f55d7F7',
     chainId: 143
+  },
+  {
+    name: 'litvm',
+    rpc: 'https://liteforge.rpc.caldera.xyz/http',
+    contract: '0x24C89D67d1C8B569fFe564b8493C0fbD1f55d7F7',
+    chainId: 4441
   }
 //   ,
 //   {

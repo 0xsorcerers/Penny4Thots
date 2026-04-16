@@ -16,6 +16,10 @@ From those itchy sport bets with buds in front of the TV to Naruto for avid mang
 
 ✅ Creators earn market fees for their 'thots'.
 
+✅ Users bring their own liquidity. No counterparty liquidity risks. 
+
+✅ On-chain resolution. Smart contract manages all claims, rewards and disbursements.
+
 ✅ Communities vote to stake a position.
 
 ✅ Users can vote multiple times to increase their stake and vote any side they choose every time.
@@ -34,7 +38,7 @@ From those itchy sport bets with buds in front of the TV to Naruto for avid mang
 
 ✅ Multilingual dapp (11 languages supported).
 
-✅ Multimedia embedded backgrounds to enhance the fun experience.
+✅ Multimedia embedded backgrounds to enhance the fun and UI experience, easy on the eyes.
 
 Have fun engaging a prediction market that trades your very own thoughts so why not earn a penny for your thoughts? (pun intended) 😉.
 

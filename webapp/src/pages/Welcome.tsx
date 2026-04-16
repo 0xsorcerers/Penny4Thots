@@ -347,6 +347,16 @@ export default function Welcome() {
           {t(selectedLanguage, "welcome.connectButtonHint")}
         </motion.p>
 
+        {/* AI agents skill.md link */}
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1.7, duration: 0.5 }}
+          className="mt-2 text-center text-xs text-muted-foreground/60"
+        >
+          AI agents should read <a href="/skill.md" className="underline hover:text-muted-foreground">skill.md</a>
+        </motion.p>
+
         {/* Decorative bottom line */}
         <motion.div
           initial={{ scaleX: 0 }}

@@ -315,7 +315,7 @@ export function MarketGrid({
           animate={{ opacity: 1, y: 0 }}
           className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
         >
-          <div>
+          <div> 
             <h1 className="font-syne text-3xl font-bold theme-option-a-gradient-text animate-shimmer-sweep">
               {t(selectedLanguage, "marketGrid.title")}
             </h1>
