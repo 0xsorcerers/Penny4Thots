@@ -2,7 +2,7 @@
 //Penny4Thots Shares System Co-Developed with OpenAI GPT-5.0/GPT-4.0
 //Re-Designed by Grok.
 
-pragma solidity ^0.8.20;
+pragma solidity 0.8.21;
 
 import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/release-v5.0/contracts/utils/ReentrancyGuard.sol";
 import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/release-v5.0/contracts/token/ERC20/IERC20.sol";
@@ -566,7 +566,7 @@ contract Penny4Thots is ReentrancyGuard {
                 uint256 farmbal = IFarm(currentFarm).balanceOf(address(this));
                 uint256 farm = AllowedAmounts[indexFarm];
                 if (farmbal > farm && farm > 0) {        
-                    farmtoken.transfer(lastAddress, farm);
+                    farmtoken.safeTransfer(lastAddress, farm);
                     farmTokensDistributed[currentFarm] += farm;
                 }       
             }
@@ -622,7 +622,7 @@ contract Penny4Thots is ReentrancyGuard {
     }
 
 
-    function rescueLostCapital(uint256 _market) external onlyPennyDAO nonReentrant {
+    function rescueLostCapital(uint256 _market) external nonReentrant onlyPennyDAO {
         MarketData storage m = allMarketData[_market];
         MarketLock storage k = allMarketLocks[_market];
         require(m.closed && k.sharesFinalized, "Market not finalized");
