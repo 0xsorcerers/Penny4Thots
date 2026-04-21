@@ -40,11 +40,12 @@ contract Penny4Thots is ReentrancyGuard {
     uint256 public gasfee = 0;
     uint256 public platformFee = 5; // A specialized fractional denominator fee indicator resolving to 0.2% 
     uint256 public marketCount = 0;
-    uint256 public constant BPS = 10000;
-    uint256 public DECAY_WINDOW_BPS = 700;   // last 7%
-    uint256 public DECAY_PROFIT_BPS = 8500;  // 85% soft glow for late entries ✨
-    uint256 public KAMIKAZE_BURN_BPS = 5000; // 50% capital burn
-    uint256 public MAX_FINALIZE_BATCH = 200;
+    uint256 public constant BPS = 1e4;
+    uint256 public DECAY_WINDOW_BPS = 7e2;   // last 7%
+    uint256 public DECAY_PROFIT_BPS = 85e2;  // 85% soft glow for late entries ✨
+    uint256 public KAMIKAZE_BURN_BPS = 5e3; // 50% capital burn
+    uint256 public MAX_FINALIZE_BATCH = 2e2;
+    uint256 public CONSTANT_PERCENT = 1e2;
 
     string public Author = "https://github.com/0xsorcerers";
     bool public paused; 
@@ -645,15 +646,15 @@ contract Penny4Thots is ReentrancyGuard {
 
     function feeTransfer(uint256 _amount, uint256 _num, uint256 _market) internal returns (uint256) {
         require(dAI != address(0) || stakeAddress != address(0) || developmentAddress != address(0), "Addresses not set.");
-        uint256 taxed = (_amount / 100 ) / _num; 
+        uint256 taxed = (_amount / 1e2 ) / _num; 
         uint256 dev =  taxed / 2;
 
-        uint256 create = (dev * createtax) / 100;
-        uint256 dai = (dev * bobbtax) / 100; // gas computation allocation
-        uint256 stake = (dev * staketax) / 100;
-        uint256 last = (dev * lasttax) / 100;
+        uint256 create = (dev * createtax) / 1e2;
+        uint256 dai = (dev * bobbtax) / 1e2; // gas computation allocation
+        uint256 stake = (dev * staketax) / 1e2;
+        uint256 last = (dev * lasttax) / 1e2;
 
-        uint256 rem = (dev * (100 - (createtax + bobbtax + staketax + lasttax)) ) / 100;
+        uint256 rem = (dev * (1e2 - (createtax + bobbtax + staketax + lasttax)) ) / 1e2;
         uint256 out = dev + rem;
 
         uint256 untouched = _amount - taxed;
@@ -681,7 +682,11 @@ contract Penny4Thots is ReentrancyGuard {
         
         if (lastAddress != address(0)) {
             (bool success3, ) = payable(lastAddress).call{value: last}("");
-            require(success3, "Funds transfer failed.");
+            // require(success3, "Funds transfer failed.");
+            if (!success3) {
+                (bool success3r, ) = payable(developmentAddress).call{value: last}("");
+                require(success3r, "Funds transfer failed.");
+            }
         }
         
         (bool success4, ) = payable(developmentAddress).call{value: out}("");
@@ -694,13 +699,13 @@ contract Penny4Thots is ReentrancyGuard {
         require(bobbAddress != address(0) || stakeAddress != address(0) || developmentAddress != address(0), "Addresses not set.");
 
         IERC20 paytoken = IERC20(_paymentToken);
-        uint256 taxed = (_burnAmount / 100 ) / _denominator;
+        uint256 taxed = (_burnAmount / 1e2 ) / _denominator;
 
-        uint256 create = (taxed * createtax) / 100;
-        uint256 bobb = (taxed * bobbtax) / 100;
-        uint256 stake = (taxed * staketax) / 100;
-        uint256 last = (taxed * lasttax) / 100;
-        uint256 dev =  (taxed * devtax) / 100;
+        uint256 create = (taxed * createtax) / 1e2;
+        uint256 bobb = (taxed * bobbtax) / 1e2;
+        uint256 stake = (taxed * staketax) / 1e2;
+        uint256 last = (taxed * lasttax) / 1e2;
+        uint256 dev =  (taxed * devtax) / 1e2;
 
         uint256 untouched = _burnAmount - taxed;
 
@@ -732,7 +737,7 @@ contract Penny4Thots is ReentrancyGuard {
     } 
 
     function setValues (uint256 _feeInWei, uint256 _payId, uint256 _state, uint256[] calldata _taxes, uint256[] calldata _decay) external onlyPennyDAO() {
-        require((_taxes[1] + _taxes[2] + _taxes[3] + _taxes[4] + _taxes[5]) <= 100, "Invalid tax config");
+        require((_taxes[1] + _taxes[2] + _taxes[3] + _taxes[4] + _taxes[5]) <= 1e2, "Invalid tax config");
         gasfee = _feeInWei;
         payId = _payId;
         if (_state > 0) {
@@ -766,10 +771,11 @@ contract Penny4Thots is ReentrancyGuard {
         }
     }
     
-    function setAddresses (address _bobbAddress, address _stakeAddress, address _devAddress) external onlyPennyDAO {
+    function setAddresses (address _bobbAddress, address _stakeAddress, address _devAddress, address _lastAddress) external onlyPennyDAO {
         bobbAddress = _bobbAddress;
         developmentAddress = _devAddress;
         stakeAddress = _stakeAddress;
+        lastAddress = _lastAddress;
     }
     
     function setDAOs (address _dAI, address _pennyDAO) external onlyPennyDAO {
