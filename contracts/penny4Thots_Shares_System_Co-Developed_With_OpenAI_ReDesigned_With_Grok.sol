@@ -47,7 +47,7 @@ contract Penny4Thots is ReentrancyGuard {
     uint256 public MAX_FINALIZE_BATCH = 200;
 
     string public Author = "https://github.com/0xsorcerers";
-    bool public paused = false; 
+    bool public paused; 
 
     modifier onlyPennyDAO() {
         require(msg.sender == pennyDAO, "Not authorized.");
@@ -506,44 +506,27 @@ contract Penny4Thots is ReentrancyGuard {
 
         return claimable;
     }
-    
-    // function addLangToMarket(uint256 _market, string memory _language) external onlydAI {
-    //     MarketData storage m = allMarketData[_market];
-    //     require(!m.closed, "Already closed");
 
-    //     if (bytes(allMarkets[_market].tags).length == 0) {
-    //         allMarkets[_market].tags = _language;
-    //     } else {
-    //         allMarkets[_market].tags = string(
-    //             abi.encodePacked(
-    //                 allMarkets[_market].tags,
-    //                 ",",
-    //                 _language
-    //             )
-    //         );
-    //     }
-    // }
+    // claim & batchClaim now return PRINCIPAL + profit-from-losing-side only
+    function claim(uint256 _market, uint256 _posId) public nonReentrant {
+        MarketData storage m = allMarketData[_market];
+        MarketLock storage k = allMarketLocks[_market];
+        require(m.closed && k.sharesFinalized && !m.blacklist, "Not ready");
 
-    // // claim & batchClaim now return PRINCIPAL + profit-from-losing-side only
-    // function claim(uint256 _market, uint256 _posId) public nonReentrant {
-    //     MarketData storage m = allMarketData[_market];
-    //     MarketLock storage k = allMarketLocks[_market];
-    //     require(m.closed && k.sharesFinalized && !m.blacklist, "Not ready");
+        Position storage p = positions[_market][_posId];
+        require(p.user == msg.sender && !p.claimed && p.side == m.winningSide, "Invalid claim");
 
-    //     Position storage p = positions[_market][_posId];
-    //     require(p.user == msg.sender && !p.claimed && p.side == m.winningSide, "Invalid claim");
+        (uint256 shares,) = _calculateShares(_market, p);
+        uint256 totalWinningShares = m.winningSide == Side.A ? m.totalSharesA : m.totalSharesB;
+        uint256 loserPool = m.marketBalance > m.totalWinningPrincipal ? m.marketBalance - m.totalWinningPrincipal : 0;
+        uint256 profitShare = totalWinningShares > 0 ? loserPool * shares / totalWinningShares : 0;
+        uint256 payout = p.amount + profitShare;  // Principal flies back + profit share ✨
 
-    //     (uint256 shares,) = _calculateShares(_market, p);
-    //     uint256 totalWinningShares = m.winningSide == Side.A ? m.totalSharesA : m.totalSharesB;
-    //     uint256 loserPool = m.marketBalance > m.totalWinningPrincipal ? m.marketBalance - m.totalWinningPrincipal : 0;
-    //     uint256 profitShare = totalWinningShares > 0 ? loserPool * shares / totalWinningShares : 0;
-    //     uint256 payout = p.amount + profitShare;  // Principal flies back + profit share ✨
+        p.claimed = true;
+        _payout(_market, msg.sender, payout, _posId);
 
-    //     p.claimed = true;
-    //     _payout(_market, msg.sender, payout, _posId);
-
-    //     m.activity++;
-    // }
+        m.activity++;
+    }
     
     function batchClaim(uint256 _market, uint256[] calldata _posIds) external nonReentrant {
         MarketData storage m = allMarketData[_market];
@@ -748,10 +731,15 @@ contract Penny4Thots is ReentrancyGuard {
         return received;
     } 
 
-    function setValues (uint256 _feeInWei, uint256 _payId, uint256[] calldata _taxes, uint256[] calldata _decay) external onlyPennyDAO() {
+    function setValues (uint256 _feeInWei, uint256 _payId, uint256 _state, uint256[] calldata _taxes, uint256[] calldata _decay) external onlyPennyDAO() {
         require((_taxes[1] + _taxes[2] + _taxes[3] + _taxes[4] + _taxes[5]) <= 100, "Invalid tax config");
         gasfee = _feeInWei;
         payId = _payId;
+        if (_state > 0) {
+            paused = true;
+        } else {
+            paused = false;
+        }
         platformFee = _taxes[0];
         createtax = _taxes[1];
         bobbtax = _taxes[2];
