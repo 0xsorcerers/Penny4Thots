@@ -38,7 +38,7 @@ contract Penny4Thots is ReentrancyGuard {
     uint256 public lasttax = 0;
     uint256 public devtax = 0;
     uint256 public gasfee = 0;
-    uint256 public platformFee = 5; // A specialized fractional denominator fee indicator resolving to 0.2%
+    uint256 public platformFee = 5; // A specialized fractional denominator fee indicator resolving to 0.2% 
     uint256 public marketCount = 0;
     uint256 public constant BPS = 10000;
     uint256 public DECAY_WINDOW_BPS = 700;   // last 7%
@@ -47,7 +47,7 @@ contract Penny4Thots is ReentrancyGuard {
     uint256 public MAX_FINALIZE_BATCH = 200;
 
     string public Author = "https://github.com/0xsorcerers";
-    bool public paused = false; 
+    bool public paused; 
 
     modifier onlyPennyDAO() {
         require(msg.sender == pennyDAO, "Not authorized.");
@@ -621,6 +621,7 @@ contract Penny4Thots is ReentrancyGuard {
         return usermarketpositions;
     }
 
+
     function rescueLostCapital(uint256 _market) external onlyPennyDAO nonReentrant {
         MarketData storage m = allMarketData[_market];
         MarketLock storage k = allMarketLocks[_market];
@@ -730,10 +731,15 @@ contract Penny4Thots is ReentrancyGuard {
         return received;
     } 
 
-    function setValues (uint256 _feeInWei, uint256 _payId, uint256[] calldata _taxes, uint256[] calldata _decay) external onlyPennyDAO() {
+    function setValues (uint256 _feeInWei, uint256 _payId, uint256 _state, uint256[] calldata _taxes, uint256[] calldata _decay) external onlyPennyDAO() {
         require((_taxes[1] + _taxes[2] + _taxes[3] + _taxes[4] + _taxes[5]) <= 100, "Invalid tax config");
         gasfee = _feeInWei;
         payId = _payId;
+        if (_state > 0) {
+            paused = true;
+        } else {
+            paused = false;
+        }
         platformFee = _taxes[0];
         createtax = _taxes[1];
         bobbtax = _taxes[2];
