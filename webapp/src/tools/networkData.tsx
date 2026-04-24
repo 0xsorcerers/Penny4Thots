@@ -98,10 +98,10 @@ const litvm: NetworkConfig = {
   rpc: 'https://liteforge.rpc.caldera.xyz/http',
   blockExplorer: 'https://liteforge.explorer.caldera.xyz/',
   decimals: 18,
-  symbol: 'zkLTC',
+  symbol: 'LTC (zk)',
   contract_address: '0x24C89D67d1C8B569fFe564b8493C0fbD1f55d7F7' as Address,
 };
 
-const chains: NetworkConfig[] = [sepolia, litvm, base, bnb, hashkey, monad]; // , scroll, manta, opbnb
+const chains: NetworkConfig[] = [litvm, sepolia, base, bnb, hashkey, monad]; // , scroll, manta, opbnb
 
 export { chains };

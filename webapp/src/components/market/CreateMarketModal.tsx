@@ -225,11 +225,21 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
   };
 
   const handleAddTag = () => {
-    const tag = formData.tagInput.trim();
-    if (tag && formData.tags.length < 7 && !formData.tags.includes(tag)) {
+    // Split by any character that is NOT a letter (any language) or number
+    // This handles spaces, punctuation, symbols like */@#, etc.
+    const potentialTags = formData.tagInput
+      .split(/[^\p{L}\p{N}]+/u)
+      .map((t) => t.trim())
+      .filter((t) => t.length > 0);
+
+    const newTags = potentialTags
+      .filter((tag) => !formData.tags.includes(tag))
+      .slice(0, 7 - formData.tags.length);
+
+    if (newTags.length > 0) {
       setFormData({
         ...formData,
-        tags: [...formData.tags, tag],
+        tags: [...formData.tags, ...newTags],
         tagInput: "",
       });
     }
@@ -467,7 +477,7 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
                             onChange={(e) => {
                               setFormData({ ...formData, posterImage: e.target.value });
                             }}
-                            placeholder="https://example.com/image.jpg (*.gif or *.mp4 links allowed)"
+                            placeholder="https://example.com/image.jpg (*.gif or *.musep4 links allowed)"
                             className={`rounded-xl border-border/50 bg-background font-outfit ${
                               posterImageError ? "border-destructive/50" : ""
                             }`}

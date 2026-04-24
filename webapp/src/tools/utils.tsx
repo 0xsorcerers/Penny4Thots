@@ -783,10 +783,18 @@ export const useVote = () => {
 /**
  * Parse comma-delimited tags string from blockchain into array
  * Tags are stored on-chain as "tag1,tag2,tag3" and need to be split
+ * Uses special characters as delineators - they become split points
+ * Only letters/numbers from any language are kept in resulting tags
  */
 export const parseTags = (tagsString: string): string[] => {
   if (!tagsString || tagsString.trim() === '') return [];
-  return tagsString.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0);
+  // Replace all non-letter/non-number characters with commas (delineators)
+  // Then split by comma to get clean tags
+  return tagsString
+    .replace(/[^\p{L}\p{N}]/gu, ',')
+    .split(',')
+    .map(tag => tag.trim())
+    .filter(tag => tag.length > 0);
 };
 
 /**
