@@ -401,36 +401,33 @@ contract Penny4Thots is ReentrancyGuard {
     /**@dev Kamikaze one or several votes 
      * @notice This function is used to close a position by taking a 50% haircut.
      * @param _market The market ID
-     * @param _posId The position ID
+     * @param _posIds The position IDs
      */
-    function kamikaze(uint256 _market, uint256 _posId) public nonReentrant {
-        MarketData storage m = allMarketData[_market];
-        require(!allMarketData[_market].blacklist && !m.closed, "Market closed by AI.");
-
-        Position storage p = positions[_market][_posId];
-        require(p.user == msg.sender, "Not yours.");
-        require(!p.claimed, "Claimed.");
-
-        uint256 burned = p.amount * KAMIKAZE_BURN_BPS / BPS;
-        uint256 remaining = p.amount - burned;
-
-        // Burn stays in pool (zero-sum boost to others)
-        address paymentToken = paymentTokens[_market];
-        TotalKamikazeBurns[paymentToken] += burned;
-        allMarketVolume[paymentToken] += burned;
-
-        // Switch side
-        p.side = (p.side == Side.A ? Side.B : Side.A);
-        p.amount = remaining;
-        p.timestamp = block.timestamp;
-        p.kamikazed = true;
-
-        allMarketData[_market].activity++;
-    }
-
-    function batchKamikaze(uint256 _market, uint256[] calldata _posIds) external {
+    function batchKamikaze(uint256 _market, uint256[] calldata _posIds) external nonReentrant {
         for (uint256 i; i < _posIds.length; i++) {
-            kamikaze(_market, _posIds[i]);
+            uint256 _posId = _posIds[i];
+            MarketData storage m = allMarketData[_market];
+            require(!allMarketData[_market].blacklist && !m.closed, "Market closed by AI.");
+
+            Position storage p = positions[_market][_posId];
+            require(p.user == msg.sender, "Not yours.");
+            require(!p.claimed, "Claimed.");
+
+            uint256 burned = p.amount * KAMIKAZE_BURN_BPS / BPS;
+            uint256 remaining = p.amount - burned;
+
+            // Burn stays in pool (zero-sum boost to others)
+            address paymentToken = paymentTokens[_market];
+            TotalKamikazeBurns[paymentToken] += burned;
+            allMarketVolume[paymentToken] += burned;
+
+            // Switch side
+            p.side = (p.side == Side.A ? Side.B : Side.A);
+            p.amount = remaining;
+            p.timestamp = block.timestamp;
+            p.kamikazed = true;
+
+            allMarketData[_market].activity++;
         }
     }
 
@@ -508,27 +505,7 @@ contract Penny4Thots is ReentrancyGuard {
         return claimable;
     }
 
-    // claim & batchClaim now return PRINCIPAL + profit-from-losing-side only
-    function claim(uint256 _market, uint256 _posId) public nonReentrant {
-        MarketData storage m = allMarketData[_market];
-        MarketLock storage k = allMarketLocks[_market];
-        require(m.closed && k.sharesFinalized && !m.blacklist, "Not ready");
-
-        Position storage p = positions[_market][_posId];
-        require(p.user == msg.sender && !p.claimed && p.side == m.winningSide, "Invalid claim");
-
-        (uint256 shares,) = _calculateShares(_market, p);
-        uint256 totalWinningShares = m.winningSide == Side.A ? m.totalSharesA : m.totalSharesB;
-        uint256 loserPool = m.marketBalance > m.totalWinningPrincipal ? m.marketBalance - m.totalWinningPrincipal : 0;
-        uint256 profitShare = totalWinningShares > 0 ? loserPool * shares / totalWinningShares : 0;
-        uint256 payout = p.amount + profitShare;  // Principal flies back + profit share ✨
-
-        p.claimed = true;
-        _payout(_market, msg.sender, payout, _posId);
-
-        m.activity++;
-    }
-    
+    // batchClaim     
     function batchClaim(uint256 _market, uint256[] calldata _posIds) external nonReentrant {
         MarketData storage m = allMarketData[_market];
         MarketLock storage k = allMarketLocks[_market];
