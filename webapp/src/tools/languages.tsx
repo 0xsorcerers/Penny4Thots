@@ -284,6 +284,7 @@ export interface Translations {
     lateVote: string;
     vote: string;
     platformFee: string;
+    selectedIntendedCapital: string;
   };
   // Countdown
   countdown: {
@@ -598,6 +599,7 @@ export const translations: Record<LanguageCode, Translations> = {
       lateVote: "Late Vote",
       vote: "Vote",
       platformFee: "Platform fee",
+      selectedIntendedCapital: "Selected intended capital:",
     },
     countdown: {
       closing: "Closing",
@@ -893,6 +895,7 @@ export const translations: Record<LanguageCode, Translations> = {
       lateVote: "Voto tardío",
       vote: "Votar",
       platformFee: "Tarifa de plataforma",
+      selectedIntendedCapital: "Capital previsto seleccionado:",
     },
     countdown: {
       closing: "Cerrando",
@@ -1187,6 +1190,7 @@ export const translations: Record<LanguageCode, Translations> = {
       lateVote: "Vote tardif",
       vote: "Voter",
       platformFee: "Frais de plateforme",
+      selectedIntendedCapital: "Capital prévu sélectionné :",
     },
     countdown: {
       closing: "Clôture",
@@ -1481,6 +1485,7 @@ export const translations: Record<LanguageCode, Translations> = {
       lateVote: "Späte Abstimmung",
       vote: "Abstimmen",
       platformFee: "Plattformgebühr",
+      selectedIntendedCapital: "Ausgewähltes beabsichtigtes Kapital:",
     },
     countdown: {
       closing: "Schließt",
@@ -1775,6 +1780,7 @@ export const translations: Record<LanguageCode, Translations> = {
       lateVote: "Voto tardio",
       vote: "Votar",
       platformFee: "Taxa da plataforma",
+      selectedIntendedCapital: "Capital pretendido selecionado:",
     },
     countdown: {
       closing: "Encerrando",
@@ -2068,6 +2074,7 @@ export const translations: Record<LanguageCode, Translations> = {
       lateVote: "延迟投票",
       vote: "投票",
       platformFee: "平台费",
+      selectedIntendedCapital: "选定的预期资金：",
     },
     countdown: {
       closing: "即将结束",
@@ -2361,6 +2368,7 @@ export const translations: Record<LanguageCode, Translations> = {
       lateVote: "遅延投票",
       vote: "投票",
       platformFee: "プラットフォーム手数料",
+      selectedIntendedCapital: "選択された想定資本：",
     },
     countdown: {
       closing: "終了間近",
@@ -2654,6 +2662,7 @@ export const translations: Record<LanguageCode, Translations> = {
       lateVote: "지연 투표",
       vote: "투표",
       platformFee: "플랫폼 수수료",
+      selectedIntendedCapital: "선택된 예상 자본:",
     },
     countdown: {
       closing: "종료 임박",
@@ -2947,6 +2956,7 @@ export const translations: Record<LanguageCode, Translations> = {
       lateVote: "देर से वोट",
       vote: "वोट",
       platformFee: "प्लेटफॉर्म शुल्क",
+      selectedIntendedCapital: "चयनित अभिप्रेत पूंजी:",
     },
     countdown: {
       closing: "समाप्ति हो रही है",
@@ -3240,6 +3250,7 @@ export const translations: Record<LanguageCode, Translations> = {
       lateVote: "تصويت متأخر",
       vote: "تصويت",
       platformFee: "رسوم المنصة",
+      selectedIntendedCapital: "رأس المال المقصود المحدد:",
     },
     countdown: {
       closing: "يغلق",
@@ -3533,6 +3544,7 @@ export const translations: Record<LanguageCode, Translations> = {
       lateVote: "הצבעה מאוחרת",
       vote: "הצבע",
       platformFee: "עמלת פלטפורמה",
+      selectedIntendedCapital: "הון מיועד נבחר:",
     },
     countdown: {
       closing: "נסגר",

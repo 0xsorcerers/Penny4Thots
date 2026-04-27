@@ -1144,7 +1144,7 @@ export default function MarketPage() {
                 Kamikaze positions carry a 50% haircut of capital
               </div>
               <p className="mt-1 font-mono text-xs text-red-700/90 dark:text-red-200/90">
-                Selected intended capital:{" "}
+                {t(selectedLanguage, "marketPage.selectedIntendedCapital")}{" "} 
                 {kamikazePositionIds
                   .filter((id) => selectedKamikazeIds.has(id))
                   .map((id, idx) => {

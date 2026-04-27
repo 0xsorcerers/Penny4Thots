@@ -237,6 +237,19 @@
 	},
 	{
 		"inputs": [],
+		"name": "CONSTANT_PERCENT",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
 		"name": "DECAY_PROFIT_BPS",
 		"outputs": [
 			{
@@ -643,24 +656,6 @@
 				"type": "uint256"
 			},
 			{
-				"internalType": "uint256",
-				"name": "_posId",
-				"type": "uint256"
-			}
-		],
-		"name": "claim",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "uint256",
-				"name": "_market",
-				"type": "uint256"
-			},
-			{
 				"internalType": "bool",
 				"name": "_signalWinner",
 				"type": "bool"
@@ -956,24 +951,6 @@
 			}
 		],
 		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "uint256",
-				"name": "_market",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "_posId",
-				"type": "uint256"
-			}
-		],
-		"name": "kamikaze",
-		"outputs": [],
-		"stateMutability": "nonpayable",
 		"type": "function"
 	},
 	{
@@ -1364,6 +1341,11 @@
 				"internalType": "address",
 				"name": "_devAddress",
 				"type": "address"
+			},
+			{
+				"internalType": "address",
+				"name": "_lastAddress",
+				"type": "address"
 			}
 		],
 		"name": "setAddresses",
@@ -1422,6 +1404,11 @@
 			{
 				"internalType": "uint256",
 				"name": "_payId",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "_state",
 				"type": "uint256"
 			},
 			{
@@ -1830,5 +1817,5 @@
 		"stateMutability": "payable",
 		"type": "function"
 	}
-  ]
+]
 }
