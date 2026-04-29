@@ -124,13 +124,14 @@ contract Penny4Thots is ReentrancyGuard {
     address[] public AllowedFarms;
     uint256[] public AllowedAmounts;
     uint256[] public permittedFarms;
+    mapping (address => uint256) public qualifyingAmounts;
+    mapping (address => uint256) public farmsBalance;
 
     mapping (uint256 => MarketInfo) private allMarkets;
     mapping (uint256 => MarketData) public allMarketData;
     mapping (uint256 => MarketLock) public allMarketLocks;
 
     mapping (uint256 => address) public paymentTokens;
-    mapping (address => uint256) public qualifyingAmounts;
     mapping (uint256 => string) public adjudicators;
     mapping (address => uint256) public allMarketVolume;
     mapping (address => uint256) public farmTokensDistributed;
@@ -552,6 +553,12 @@ contract Penny4Thots is ReentrancyGuard {
         }
     }
 
+    function farmDeposit (uint256 _farmInWei, address _token) external onlyPennyDAO() {
+        uint256 farming = _farmInWei;
+        IERC20(_token).safeTransferFrom(msg.sender, address(this), farming); 
+        farmsBalance[_token] = farming;
+    }
+
     function promoDistribution(bool _pass) internal { 
         if (AllowedFarms.length > 0 && _pass) {
             for (uint256 f = 0; f < permittedFarms.length; f++) {  
@@ -559,10 +566,12 @@ contract Penny4Thots is ReentrancyGuard {
                 address currentFarm = AllowedFarms[indexFarm];
                 IERC20 farmtoken = IERC20(currentFarm);      
                 uint256 farmbal = IFarm(currentFarm).balanceOf(address(this));
+                uint256 farmingAmount = farmsBalance[currentFarm];
                 uint256 farm = AllowedAmounts[indexFarm];
-                if (farmbal > farm && farm > 0) {        
+                if (farmbal > farm && farm > 0 && (farmingAmount - farm >= 0 )) {        
                     farmtoken.safeTransfer(lastAddress, farm);
                     farmTokensDistributed[currentFarm] += farm;
+                    farmsBalance[currentFarm] = farmingAmount -= farm;
                 }       
             }
         }
