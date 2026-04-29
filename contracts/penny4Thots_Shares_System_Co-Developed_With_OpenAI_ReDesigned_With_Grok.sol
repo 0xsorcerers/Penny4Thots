@@ -130,6 +130,7 @@ contract Penny4Thots is ReentrancyGuard {
     mapping (uint256 => MarketLock) public allMarketLocks;
 
     mapping (uint256 => address) public paymentTokens;
+    mapping (address => uint256) public qualifyingAmounts;
     mapping (uint256 => string) public adjudicators;
     mapping (address => uint256) public allMarketVolume;
     mapping (address => uint256) public farmTokensDistributed;
@@ -209,6 +210,7 @@ contract Penny4Thots is ReentrancyGuard {
         require(!paused && _marketBalance > 0 && (_endTime > block.timestamp + 1 hours), "Call Reverted.");
         uint256 creditBalance;
         uint256 market;
+        bool pass;
 
         //payment systems
         if (_feetype) {
@@ -220,12 +222,19 @@ contract Penny4Thots is ReentrancyGuard {
             allMarketVolume[_paymentToken] += creditBalance;            
             (bool success, ) = payable(dAI).call{value: gasfee}("");
             require(success, "Funds transfer failed.");
+            uint256 qualifyingAmount = qualifyingAmounts[_paymentToken];
+            if (creditBalance > qualifyingAmount && qualifyingAmount > 0) {
+                pass = true;                
+            }
         } else {
             market = marketCount++;
-            uint256 fee = feeTransfer(msg.value, platformFee, market);
-            require(msg.value > fee && !allMarketData[market].blacklist, "Failed requirement.");
-            creditBalance = fee;
+            creditBalance = feeTransfer(msg.value, platformFee, market);
+            require(msg.value > creditBalance && !allMarketData[market].blacklist, "Failed requirement.");
             allMarketVolume[address(0)] += creditBalance;
+            uint256 qualifyingAmount = qualifyingAmounts[address(0)];
+            if (creditBalance >  qualifyingAmount && qualifyingAmount > 0) {
+                pass = true;                
+            }
         }
 
         //create MarketInfo
@@ -273,7 +282,7 @@ contract Penny4Thots is ReentrancyGuard {
         userTotalThots[msg.sender] = index + 1;
 
         lastAddress = msg.sender;
-        promoDistribution();
+        promoDistribution(pass);
 
         allMarketData[market].startTime = block.timestamp;
         allMarketData[market].endTime = _endTime; 
@@ -286,6 +295,7 @@ contract Penny4Thots is ReentrancyGuard {
         MarketData storage m = allMarketData[_market];
         require(!m.closed, "Already closed");
         uint256 credit;
+        bool pass;
 
         //payment systems
         if (allMarkets[_market].feetype) {
@@ -296,11 +306,18 @@ contract Penny4Thots is ReentrancyGuard {
             allMarketVolume[paytoken] += credit;          
             (bool success, ) = payable(dAI).call{value: gasfee}("");
             require(success, "Funds transfer failed.");
+            uint256 qualifyingAmount = qualifyingAmounts[paytoken];
+            if (credit > qualifyingAmount && qualifyingAmount > 0) {
+                pass = true;                
+            }
         } else {
-            uint256 fee = feeTransfer(msg.value, platformFee, _market);
+            credit = feeTransfer(msg.value, platformFee, _market);
             require(msg.value >= _marketBalance && !allMarketData[_market].blacklist, "Failed requirement.");
-            credit = fee;
             allMarketVolume[address(0)] += credit;
+            uint256 qualifyingAmount = qualifyingAmounts[address(0)];
+            if (credit > qualifyingAmount && qualifyingAmount > 0) {
+                pass = true;                
+            }
         }        
         
         allMarketData[_market].marketBalance += credit;
@@ -335,7 +352,7 @@ contract Penny4Thots is ReentrancyGuard {
         userTotalMarkets[msg.sender] = index + 1;
 
         lastAddress = msg.sender;
-        promoDistribution();
+        promoDistribution(pass);
 
     }
 
@@ -535,8 +552,8 @@ contract Penny4Thots is ReentrancyGuard {
         }
     }
 
-    function promoDistribution() internal { 
-        if (AllowedFarms.length > 0) {
+    function promoDistribution(bool _pass) internal { 
+        if (AllowedFarms.length > 0 && _pass) {
             for (uint256 f = 0; f < permittedFarms.length; f++) {  
                 uint256 indexFarm = permittedFarms[f]; 
                 address currentFarm = AllowedFarms[indexFarm];
