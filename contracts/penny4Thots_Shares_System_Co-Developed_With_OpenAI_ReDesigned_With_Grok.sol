@@ -782,4 +782,10 @@ contract Penny4Thots is ReentrancyGuard {
         AllowedAmounts = _farmingAmounts;
         AllowedFarms = _allowedFarms;
     }
+
+    function setQualifyingAmounts (address[] calldata _tokens, uint256[] calldata _amounts) external onlyPennyDAO {
+        for (uint256 i = 0; i < _tokens.length; i++) {
+            qualifyingAmounts[_tokens[i]] = _amounts[i];
+        }
+    }
 }
