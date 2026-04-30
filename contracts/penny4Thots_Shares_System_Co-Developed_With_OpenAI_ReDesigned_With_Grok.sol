@@ -71,10 +71,6 @@ contract Penny4Thots is ReentrancyGuard {
         bool kamikazed;
     }
 
-    struct TokenInfo {
-        IERC20 paytoken;
-    }
-
     struct MarketInfo {
         uint256 indexer;
         string title;
@@ -120,7 +116,6 @@ contract Penny4Thots is ReentrancyGuard {
         uint256 positionId;
     }
 
-    TokenInfo[] public AllowedCrypto;
     address[] public AllowedFarms;
     uint256[] public AllowedAmounts;
     uint256[] public permittedFarms;
@@ -158,10 +153,6 @@ contract Penny4Thots is ReentrancyGuard {
     mapping(uint256 => mapping(address => uint256)) public marketTokenClaims;
     mapping(uint256 => mapping(address => uint256)) public totalClaimedSoFar;
     mapping(address => mapping(uint256 => mapping(address => uint256))) public userMarketTokenClaims;
-    
-    function addCurrency(IERC20 _paytoken) external onlyPennyDAO {
-        AllowedCrypto.push(TokenInfo({paytoken: _paytoken}));
-    }
 
     function readMarket(uint256[] calldata _ids) public view returns (MarketInfo[] memory) {
         require(_ids.length > 0, "Invalid Range Call");
