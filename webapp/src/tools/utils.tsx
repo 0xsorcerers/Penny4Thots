@@ -1441,7 +1441,7 @@ export const useBatchClaim = () => {
   const batchClaim = async (params: BatchClaimParams) => {
     const transaction = prepareBatchClaim(params);
     const result = await sendTx(transaction);
-
+ 
     await waitForReceipt({
       client,
       chain: getThirdwebNetwork(),

@@ -1,4 +1,4 @@
-const LANGUAGE_TAGS_BASE_URL = "https://sonicsweethearts.art";
+const LANGUAGE_TAGS_BASE_URL = "https://daemon.penny4thots.my";
 
 export interface LanguageTagsFetchResult {
   tagsByMarketId: Record<number, string>;
