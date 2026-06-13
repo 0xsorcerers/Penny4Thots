@@ -55,7 +55,7 @@ Return STRICT JSON in this format:
 }
 
 Rules:
-- "blacklist": contains indexer values that are gibberish or not a known human language.
+- "blacklist": contains indexer values that are spam reiterations, meaningless slop, random characters, gibberish, or not a known human language.
 - "languages": contains valid markets and their detected human language (lowercase).
 - Do not include blacklisted markets in "languages".
 - Do not use language codes for languages.
@@ -1102,4 +1102,4 @@ run()
   });
   
   
-// ===============logger =========
+// ===============Cron scheduler =========
