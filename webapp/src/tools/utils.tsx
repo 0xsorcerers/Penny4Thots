@@ -2,7 +2,7 @@ import { createWallet, walletConnect, inAppWallet } from "thirdweb/wallets";
 import { createThirdwebClient, getContract, prepareContractCall, waitForReceipt } from "thirdweb";
 import { ConnectButton, darkTheme, useSendTransaction } from "thirdweb/react";
 import { defineChain, sepolia } from "thirdweb/chains";
-import { createPublicClient, http, formatEther, parseEther, type Address, type Abi } from "viem";
+import { createPublicClient, http, formatEther, parseEther, parseUnits, type Address, type Abi } from "viem";
 import { sepolia as viemSepolia } from "viem/chains";
 import { ReactElement } from "react";
 import penny4thots from "../abi/penny4thots.json";
@@ -822,29 +822,11 @@ export const toWei = (amount: string | number): bigint => {
  * @returns bigint in the token's smallest unit
  */
 export const toTokenSmallestUnit = (amount: string | number, decimals: number): bigint => {
-  const amountStr = String(amount);
-  
-  // For common decimal values, use optimized approach
-  if (decimals === 18) {
-    return parseEther(amountStr);
+  if (!Number.isInteger(decimals) || decimals < 0) {
+    throw new Error(`Invalid token decimals: ${decimals}`);
   }
-  
-  // For other decimal values, use viem's formatUnits/parseUnits logic
-  // Convert to string with proper decimal places
-  const parts = amountStr.split('.');
-  const integerPart = parts[0] || '0';
-  let fractionalPart = parts[1] || '';
-  
-  // Pad or truncate fractional part to match decimals
-  if (fractionalPart.length > decimals) {
-    fractionalPart = fractionalPart.slice(0, decimals);
-  } else {
-    fractionalPart = fractionalPart.padEnd(decimals, '0');
-  }
-  
-  // Combine and convert to bigint
-  const combined = integerPart + fractionalPart;
-  return BigInt(combined);
+
+  return parseUnits(String(amount), decimals);
 };
 
 /**
@@ -1003,17 +985,27 @@ export const readTokenBalance = async (
 /**
  * Read the token decimals
  */
+export const readTokenDecimalsStrict = async (tokenAddress: Address): Promise<number> => {
+  const result = await getPublicClient().readContract({
+    address: tokenAddress,
+    abi: erc20ABI,
+    functionName: "decimals",
+  });
+  const decimals = Number(result);
+
+  if (!Number.isInteger(decimals) || decimals < 0) {
+    throw new Error(`Invalid token decimals for ${tokenAddress}`);
+  }
+
+  return decimals;
+};
+
 export const readTokenDecimals = async (tokenAddress: Address): Promise<number> => {
   try {
-    const result = await getPublicClient().readContract({
-      address: tokenAddress,
-      abi: erc20ABI,
-      functionName: "decimals",
-    });
-    return Number(result);
+    return await readTokenDecimalsStrict(tokenAddress);
   } catch (err) {
     console.error('Error reading token decimals:', err);
-    return 18; // Default to 18 decimals if unable to read
+    return 18; // Display fallback only. Transaction paths should use readTokenDecimalsStrict.
   }
 };
 

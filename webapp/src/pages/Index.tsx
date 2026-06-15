@@ -7,7 +7,7 @@ import { VoteModal } from "@/components/market/VoteModal";
 import { useMarketStore } from "@/store/marketStore";
 import { useNetworkStore } from "@/store/networkStore";
 import { useActiveAccount } from "thirdweb/react";
-import { useWriteMarket, useVote, useTokenApprove, fetchMarketsFromBlockchain, fetchMarketDataFromBlockchain, readMarketCount, readPaymentToken, readTokenAllowance, readTokenBalance, readTokenDecimals, toWei, toTokenSmallestUnit, fromTokenSmallestUnit, isZeroAddress, getBlockchain, formatEther, MARKETS_PER_PAGE, buildVisibleMarketIdBuckets, type VoteParams } from "@/tools/utils";
+import { useWriteMarket, useVote, useTokenApprove, fetchMarketsFromBlockchain, fetchMarketDataFromBlockchain, readMarketCount, readPaymentToken, readTokenAllowance, readTokenBalance, readTokenDecimals, readTokenDecimalsStrict, toWei, toTokenSmallestUnit, fromTokenSmallestUnit, isZeroAddress, getBlockchain, formatEther, MARKETS_PER_PAGE, buildVisibleMarketIdBuckets, type VoteParams } from "@/tools/utils";
 import type { CreateMarketData, Market } from "@/types/market";
 import type { Address } from "viem";
 import { toast } from "sonner";
@@ -372,7 +372,7 @@ export default function Index() {
       let marketBalanceBigInt: bigint;
       if (data.useToken) {
         // Get token decimals for proper conversion
-        const tokenDecimals = await readTokenDecimals(data.tokenAddress);
+        const tokenDecimals = await readTokenDecimalsStrict(data.tokenAddress);
         marketBalanceBigInt = toTokenSmallestUnit(data.marketBalance, tokenDecimals);
       } else {
         // Use ETH conversion (18 decimals)

@@ -71,7 +71,7 @@ This file tracks all significant progress. Updated automatically after major cha
 ## 2026-03-25
 
 ### Feature: Language Tag Sync + Multi-Word Market Search
-- Added per-network language-tag ingestion from `https://sonicsweethearts.art/allLanguageTags_${chainId}.json` with GET + `no-store` caching so the app can detect fresh updates.
+- Added per-network language-tag ingestion from `https://deamon.penny4thots.my/allLanguageTags_${chainId}.json` with GET + `no-store` caching so the app can detect fresh updates.
 - Added immutable language-tag persistence in local storage per chain and wired automatic refresh logic that only updates local cache when remote language-tag entry count increases.
 - Merged each market’s language into its searchable tags so market search can now match by language in addition to existing marketInfo tags/title/subtitle/description.
 - Updated search behavior to narrow results for multiple words (space-separated terms now require all words to match), improving precision for users.
@@ -436,5 +436,14 @@ The AI will commit and push to BOTH GitHub and Vibecode servers automatically.
 - Replaced hardcoded English toast messages in Home, Market, My Thots, and Your Thots pages with translated keys based on the user's selected language.
 - Localized wallet, approval, vote, cancellation, and kamikaze status notifications so alerts now follow language preferences.
 - Standardized fallback toast keys to existing translated strings to avoid English-only regressions.
+
+---
+
+## 2026-06-15
+
+### Bug Fix: Token Market Amount Decimals
+- Updated token market creation and voting to require verified ERC20 decimals before converting amounts for contract calls.
+- Replaced manual token amount scaling with `parseUnits(amount, tokenDecimals)` to avoid silent truncation or fixed 18-decimal assumptions.
+- Allowed token stake inputs to use full token precision instead of a fixed `0.001` step.
 
 ---

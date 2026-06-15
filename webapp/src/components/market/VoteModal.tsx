@@ -18,7 +18,7 @@ import {
   isZeroAddress,
   ZERO_ADDRESS,
   getPublicClient,
-  readTokenDecimals,
+  readTokenDecimalsStrict,
   toTokenSmallestUnit,
   type VoteParams,
 } from "@/tools/utils";
@@ -62,7 +62,7 @@ export function VoteModal({
   const [amount, setAmount] = useState("");
   const [paymentToken, setPaymentToken] = useState<Address>(ZERO_ADDRESS);
   const [tokenSymbol, setTokenSymbol] = useState<string | null>(null);
-  const [tokenDecimals, setTokenDecimals] = useState<number>(18); // Default to 18
+  const [tokenDecimals, setTokenDecimals] = useState<number | null>(null);
   const [marketBalance, setMarketBalance] = useState<string>("0");
   const [isLoadingData, setIsLoadingData] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -84,7 +84,7 @@ export function VoteModal({
           abi: erc20ABI,
           functionName: "symbol",
         }),
-        readTokenDecimals(address)
+        readTokenDecimalsStrict(address)
       ]);
       
       setTokenSymbol(symbol as string);
@@ -92,7 +92,8 @@ export function VoteModal({
     } catch (err) {
       console.error("Failed to fetch token info:", err);
       setTokenSymbol(null);
-      setTokenDecimals(18); // Reset to default
+      setTokenDecimals(null);
+      setError("Failed to verify token decimals. Please try again.");
     }
   }, [selectedNetwork]);
 
@@ -106,7 +107,7 @@ export function VoteModal({
       setShowConnectCta(false);
       setShowProceedMessage(false);
       setTokenSymbol(null);
-      setTokenDecimals(18); // Reset to default
+      setTokenDecimals(null);
       fetchMarketPaymentData();
     }
   }, [isOpen, marketId, marketImage]);
@@ -194,13 +195,15 @@ export function VoteModal({
     setShowConnectCta(false);
     setShowProceedMessage(false);
 
-    // Convert amount using the actual decimals for the payment asset
-    const amountWei = toTokenSmallestUnit(
-      amount,
-      isZeroAddress(paymentToken) ? 18 : tokenDecimals
-    );
-
     try {
+      const decimals = isZeroAddress(paymentToken) ? 18 : tokenDecimals;
+      if (decimals === null) {
+        throw new Error("Token decimals are not verified yet. Please try again.");
+      }
+
+      // Convert amount using the actual decimals for the payment asset
+      const amountWei = toTokenSmallestUnit(amount, decimals);
+
       const voteParams: VoteParams = {
         marketId,
         signal: selectedSignal,
@@ -229,7 +232,8 @@ export function VoteModal({
     }
   };
 
-  const isValid = amount && parseFloat(amount) > 0;
+  const hasVerifiedPaymentDecimals = isZeroAddress(paymentToken) || tokenDecimals !== null;
+  const isValid = amount && parseFloat(amount) > 0 && hasVerifiedPaymentDecimals;
   const selectedOption = selectedSignal ? optionA : optionB;
   const isWalletNotConnectedError = error?.toLowerCase().includes("wallet not connected") ?? false;
 
@@ -406,7 +410,7 @@ export function VoteModal({
                         <Input
                           id="vote-amount"
                           type="number"
-                          step="0.001"
+                          step="any"
                           min="0"
                           value={amount}
                           onChange={(e) => setAmount(e.target.value)}

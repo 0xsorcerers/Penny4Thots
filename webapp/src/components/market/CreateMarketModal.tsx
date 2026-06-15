@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { getPublicClient, isZeroAddress, ZERO_ADDRESS, fetchDataConstants, calculatePlatformFeePercentage, readTokenDecimals, toTokenSmallestUnit, formatTokenAmount } from "@/tools/utils";
+import { getPublicClient, ZERO_ADDRESS, fetchDataConstants, calculatePlatformFeePercentage, readTokenDecimalsStrict } from "@/tools/utils";
 import { useNetworkStore } from "@/store/networkStore";
 import { useLanguageStore } from "@/store/languageStore";
 import { t } from "@/tools/languages";
@@ -113,7 +113,7 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
           abi: erc20ABI,
           functionName: "symbol",
         }),
-        readTokenDecimals(address as Address)
+        readTokenDecimalsStrict(address as Address)
       ]);
       
       setTokenSymbol(symbol as string);
@@ -282,6 +282,7 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
     const finalVote = voteChoice || initialVote;
     if (!marketBalance || !finalVote) return;
     if (useToken && !tokenAddress) return;
+    if (useToken && (tokenInputError || !tokenSymbol)) return;
 
     // Calculate endTime at submission time to ensure accuracy
     const finalEndTime = validateEndTime();
@@ -867,7 +868,7 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
                             <Input
                               id="balance"
                               type="number"
-                              step="0.001"
+                              step="any"
                               min="0"
                               value={marketBalance}
                               onChange={(e) => setMarketBalance(e.target.value)}
@@ -971,7 +972,7 @@ export function CreateMarketModal({ isOpen, onClose, onSubmit, isLoading = false
                         isLoading ||
                         (step === "details"
                           ? !isDetailsValid
-                          : !marketBalance || !initialVote || (useToken && !tokenAddress))
+                          : !marketBalance || !initialVote || (useToken && (!tokenAddress || tokenInputError || !tokenSymbol)))
                       }
                       className="rounded-xl bg-primary font-outfit font-semibold"
                     >
