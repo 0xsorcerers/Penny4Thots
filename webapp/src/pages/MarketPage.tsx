@@ -860,7 +860,7 @@ export default function MarketPage() {
             {/* Subtitle */}
             <p className="mb-6 font-outfit text-xl theme-text-accent">{market.subtitle}</p>
             {/* Market Balance - Volume Traded */}
-            {market.marketBalance && (
+            {market.marketBalance && (!market.feetype || paymentToken) && (
               <div className="mb-6">
                 <MarketBalance
                   marketBalance={market.marketBalance}

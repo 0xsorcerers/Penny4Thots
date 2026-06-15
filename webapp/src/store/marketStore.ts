@@ -60,7 +60,7 @@ const buildMarkets = (
       yesVotes: data?.aVotes || 0,
       noVotes: data?.bVotes || 0,
       createdAt: data?.startTime ? new Date(data.startTime * 1000).toISOString() : new Date().toISOString(),
-      marketBalance: data?.marketBalance?.toString() || "0",
+      marketBalance: data?.marketBalance ?? 0n,
       activity: data?.activity || "0",
       feetype: info.feetype,
       status: data?.status || false,

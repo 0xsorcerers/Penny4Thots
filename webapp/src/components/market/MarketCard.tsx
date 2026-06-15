@@ -39,6 +39,7 @@ export function MarketCard({ market, onVoteClick }: MarketCardProps) {
 
   const totalVotes = market.yesVotes + market.noVotes;
   const yesPercentage = totalVotes > 0 ? (market.yesVotes / totalVotes) * 100 : 50;
+  const canDisplayMarketBalance = Boolean(market.marketBalance) && (!market.feetype || paymentToken);
 
   // Fetch payment token for market balance display
   useEffect(() => {
@@ -194,7 +195,7 @@ export function MarketCard({ market, onVoteClick }: MarketCardProps) {
           {market.endTime && market.endTime > 0 && (
             <CountdownTimer endTime={market.endTime} closed={market.closed} compact />
           )}
-          {market.marketBalance && (
+          {canDisplayMarketBalance && (
             <MarketBalance marketBalance={market.marketBalance} paymentToken={paymentToken as Address} />
           )}
         </div>

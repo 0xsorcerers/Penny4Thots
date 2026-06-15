@@ -7,9 +7,13 @@ import erc20 from "@/abi/ERC20.json";
 import { Abi } from "viem";
 
 interface MarketBalanceProps {
-  marketBalance: bigint; // Raw balance in token's smallest unit
+  marketBalance: bigint | string; // Raw balance in token's smallest unit
   paymentToken?: Address;
 }
+
+const normalizeRawBalance = (balance: bigint | string): bigint => {
+  return typeof balance === "bigint" ? balance : BigInt(balance || "0");
+};
 
 export function MarketBalance({ marketBalance, paymentToken }: MarketBalanceProps) {
   const selectedNetwork = useNetworkStore((state) => state.selectedNetwork);
@@ -65,7 +69,7 @@ export function MarketBalance({ marketBalance, paymentToken }: MarketBalanceProp
 
   const displayBalance = (() => {
     try {
-      return formatBalance(marketBalance, isNativeToken ? 18 : tokenDecimals);
+      return formatBalance(normalizeRawBalance(marketBalance), isNativeToken ? 18 : tokenDecimals);
     } catch {
       return marketBalance.toString();
     }
