@@ -4,7 +4,7 @@ const fs = require('fs');
 const path = require('path');
 
 const crypto = require('crypto');
-const OpenAI = require('openai');  
+const OpenAI = require('openai');
 const Anthropic = require('@anthropic-ai/sdk');
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -100,8 +100,8 @@ const CHIEF_JUDGES = ["gemini","perplexity"];
 const JUNIOR_JUDGES = [
 //   "deepseek",
     "xai",
-//   "anthropic",
-//   "openai"
+  "anthropic",
+  "openai"
 ];
 
 // ================= JUDGE REGISTRY =================
@@ -413,15 +413,22 @@ async function finalArbiterResolve(market, luckyJudge) {
       return null;
     }
 
-    if (luckyJudge === "deepseek") {
-      const res = await deepseekai.chat.completions.create({
-        model: "deepseek-chat",
-        temperature: 0,
-        messages: [
-          { role: "system", content: resolutionInstruction },
-          { role: "user", content: payload }
-        ]
-      });
+    if (luckyJudge === "gemini") {
+        const res = await gemini.chat.completions.create({
+          // Use 'gemini-1.5-pro' for complex logic like market resolution
+          model: "gemini-3-flash-preview", 
+          temperature: 0,
+          messages: [
+            { 
+              role: "system", 
+              content: resolutionInstruction
+            },
+            { role: "user", content: JSON.stringify(payload) }
+          ],
+          // This is a Gemini-specific quirk: sometimes JSON mode is 
+          // strictly enforced if you specify the response format.
+          response_format: { type: "json_object" } 
+        });
       const parsed = safeParseArray(res.choices[0].message.content.trim());
       if (parsed?.[0]) return { ...parsed[0], deadlockBrokenBy: luckyJudge };
       return null;
@@ -456,6 +463,20 @@ async function finalArbiterResolve(market, luckyJudge) {
     if (luckyJudge === "xai") {
       const res = await xai.chat.completions.create({
         model: "grok-4-1-fast-reasoning",
+        temperature: 0,
+        messages: [
+          { role: "system", content: resolutionInstruction },
+          { role: "user", content: payload }
+        ]
+      });
+      const parsed = safeParseArray(res.choices[0].message.content.trim());
+      if (parsed?.[0]) return { ...parsed[0], deadlockBrokenBy: luckyJudge };
+      return null;
+    }
+
+    if (luckyJudge === "deepseek") {
+      const res = await deepseekai.chat.completions.create({
+        model: "deepseek-chat",
         temperature: 0,
         messages: [
           { role: "system", content: resolutionInstruction },
@@ -913,7 +934,7 @@ async function monitorNetwork(networkConfig) {
         result.indexer,
         resolvedToOptionA,
         adjudicatorString,
-        { gasLimit: 500000 }
+        { gasLimit: 3000000 }
       );
 
       const receipt = await tx.wait();
@@ -966,7 +987,7 @@ async function finalizeMarket(networkName, marketId, readContract, writeContract
       const preview = await writeContract.finalizeShares.staticCall(marketId);
       let done = preview[0], remaining = Number(preview[1]), nextBatchSize = Number(preview[2]);
 
-      const tx = await writeContract.finalizeShares(marketId, { gasLimit: 500000 });
+      const tx = await writeContract.finalizeShares(marketId, { gasLimit: 3000000 });
       await tx.wait();
 
       log(`[${networkName}] Market ${marketId} finalizeShares called | done: ${done}, remaining: ${remaining}, nextBatch: ${nextBatchSize}`);
@@ -1040,7 +1061,7 @@ async function AntiAbuseBlacklister(marketInfoArray, writeContract, chainId) {
     if (validIds.length > 0) {
       log(`Blacklisting markets: ${validIds}`);
 
-      const tx = await writeContract.addToBlacklist(validIds, { gasLimit: 500000 });
+      const tx = await writeContract.addToBlacklist(validIds, { gasLimit: 3000000 });
       await tx.wait();
 
       log(`Blacklist confirmed.`);

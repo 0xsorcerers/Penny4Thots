@@ -178,25 +178,6 @@
 				"type": "uint256"
 			}
 		],
-		"name": "AllowedCrypto",
-		"outputs": [
-			{
-				"internalType": "contract IERC20",
-				"name": "paytoken",
-				"type": "address"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
 		"name": "AllowedFarms",
 		"outputs": [
 			{
@@ -224,6 +205,19 @@
 	{
 		"inputs": [],
 		"name": "BPS",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "CONSTANT_PERCENT",
 		"outputs": [
 			{
 				"internalType": "uint256",
@@ -398,19 +392,6 @@
 			}
 		],
 		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "contract IERC20",
-				"name": "_paytoken",
-				"type": "address"
-			}
-		],
-		"name": "addCurrency",
-		"outputs": [],
-		"stateMutability": "nonpayable",
 		"type": "function"
 	},
 	{
@@ -642,24 +623,6 @@
 				"type": "uint256"
 			},
 			{
-				"internalType": "uint256",
-				"name": "_posId",
-				"type": "uint256"
-			}
-		],
-		"name": "claim",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "uint256",
-				"name": "_market",
-				"type": "uint256"
-			},
-			{
 				"internalType": "bool",
 				"name": "_signalWinner",
 				"type": "bool"
@@ -704,12 +667,49 @@
 	{
 		"inputs": [
 			{
+				"internalType": "uint256",
+				"name": "_farmInWei",
+				"type": "uint256"
+			},
+			{
+				"internalType": "address",
+				"name": "_token",
+				"type": "address"
+			}
+		],
+		"name": "farmDeposit",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
 				"internalType": "address",
 				"name": "",
 				"type": "address"
 			}
 		],
 		"name": "farmTokensDistributed",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"name": "farmsBalance",
 		"outputs": [
 			{
 				"internalType": "uint256",
@@ -958,24 +958,6 @@
 		"type": "function"
 	},
 	{
-		"inputs": [
-			{
-				"internalType": "uint256",
-				"name": "_market",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "_posId",
-				"type": "uint256"
-			}
-		],
-		"name": "kamikaze",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
 		"inputs": [],
 		"name": "lasttax",
 		"outputs": [
@@ -1159,6 +1141,25 @@
 				"internalType": "bool",
 				"name": "kamikazed",
 				"type": "bool"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"name": "qualifyingAmounts",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
 			}
 		],
 		"stateMutability": "view",
@@ -1363,6 +1364,11 @@
 				"internalType": "address",
 				"name": "_devAddress",
 				"type": "address"
+			},
+			{
+				"internalType": "address",
+				"name": "_lastAddress",
+				"type": "address"
 			}
 		],
 		"name": "setAddresses",
@@ -1414,6 +1420,24 @@
 	{
 		"inputs": [
 			{
+				"internalType": "address[]",
+				"name": "_tokens",
+				"type": "address[]"
+			},
+			{
+				"internalType": "uint256[]",
+				"name": "_amounts",
+				"type": "uint256[]"
+			}
+		],
+		"name": "setQualifyingAmounts",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
 				"internalType": "uint256",
 				"name": "_feeInWei",
 				"type": "uint256"
@@ -1421,6 +1445,11 @@
 			{
 				"internalType": "uint256",
 				"name": "_payId",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "_state",
 				"type": "uint256"
 			},
 			{
@@ -1829,4 +1858,4 @@
 		"stateMutability": "payable",
 		"type": "function"
 	}
-  ]
+]
