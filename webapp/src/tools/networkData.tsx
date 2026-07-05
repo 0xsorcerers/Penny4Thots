@@ -17,7 +17,7 @@ const sepolia: NetworkConfig = {
   blockExplorer: 'https://sepolia.etherscan.io',
   decimals: 18,
   symbol: 'sETH',
-  contract_address: '0x0f7Cf85d6760b8c7821b747B4f5035fa01a4e1e3' as Address, // 0x7DeA875A4D644aB78e0914FFF8b760bE5e8F54cb
+  contract_address: '0x569e65de26FA684DDb0b86E68BD9cEc85FeB9A96' as Address, // 0x0f7Cf85d6760b8c7821b747B4f5035fa01a4e1e3 0x7DeA875A4D644aB78e0914FFF8b760bE5e8F54cb
 };
 
 const base: NetworkConfig = {
@@ -102,6 +102,16 @@ const litvm: NetworkConfig = {
   contract_address: '0x24C89D67d1C8B569fFe564b8493C0fbD1f55d7F7' as Address,
 };
 
-const chains: NetworkConfig[] = [litvm, sepolia, base, bnb, hashkey, monad]; // , scroll, manta, opbnb
+const robinhood: NetworkConfig = {
+  name: 'Robinhood (Live)',
+  chainId: 4663,
+  rpc: 'https://rpc.mainnet.chain.robinhood.com',
+  blockExplorer: 'https://robinhoodchain.blockscout.com/',
+  decimals: 18,
+  symbol: 'ETH',
+  contract_address: '0x24C89D67d1C8B569fFe564b8493C0fbD1f55d7F7' as Address,
+};
+
+const chains: NetworkConfig[] = [robinhood, litvm]; // , scroll, manta, opbnb, sepolia, base, bnb, hashkey, monad, 
 
 export { chains };

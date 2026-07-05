@@ -110,15 +110,21 @@ const AI_JUDGES = {
   openai: {
     label: "OpenAI(gpt-4o)",
     fn: async (payload) => {
-      const res = await openai.chat.completions.create({
-        model: "gpt-4o",
-        temperature: 0,
-        messages: [
-          { role: "system", content: resolutionInstruction },
-          { role: "user", content: payload }
+      const res = await openai.responses.create({
+        model: "gpt-5",
+        tools: [{ type: "web_search_preview" }],
+        input: [
+          {
+            role: "system",
+            content: resolutionInstruction
+          },
+          {
+            role: "user",
+            content: payload
+          }
         ]
       });
-      return safeParseArray(res.choices[0].message.content.trim());
+      return safeParseArray(res.output_text);
     }
   },
 
@@ -400,15 +406,21 @@ async function finalArbiterResolve(market, luckyJudge) {
 
   try {
     if (luckyJudge === "openai") {
-      const res = await openai.chat.completions.create({
-        model: "gpt-4o",
-        temperature: 0,
-        messages: [
-          { role: "system", content: resolutionInstruction },
-          { role: "user", content: payload }
+      const res = await openai.responses.create({
+        model: "gpt-5",
+        tools: [{ type: "web_search_preview" }],
+        input: [
+          {
+            role: "system",
+            content: resolutionInstruction
+          },
+          {
+            role: "user",
+            content: payload
+          }
         ]
       });
-      const parsed = safeParseArray(res.choices[0].message.content.trim());
+      const parsed = safeParseArray(res.output_text);
       if (parsed?.[0]) return { ...parsed[0], deadlockBrokenBy: luckyJudge };
       return null;
     }
@@ -539,42 +551,49 @@ function saveLanguageFile(chainId, data) {
 }
 
 const networks = [
-  {
-    name: 'sepolia',
-    rpc: 'https://ethereum-sepolia-rpc.publicnode.com',
-    contract: '0x0f7Cf85d6760b8c7821b747B4f5035fa01a4e1e3', // 0x7DeA875A4D644aB78e0914FFF8b760bE5e8F54cb // 0x0f7Cf85d6760b8c7821b747B4f5035fa01a4e1e3
-    chainId: 11155111
-  },
-  {
-    name: 'base',
-    rpc: 'https://mainnet.base.org',
-    contract: '0x499c9bF1556aBFAb44546514F8c655Fd9b99E801', // 0xe8f5b91e8e4c49f499002745bA49dc9fEE7670C6 // 0x499c9bF1556aBFAb44546514F8c655Fd9b99E801
-    chainId: 8453
-  },
-  {
-    name: 'bnb',
-    rpc: 'https://bsc-dataseed.binance.org',
-    contract: '0x825Bb9873b9E982e3692eA69715E162206B2ecc1', // 0x13B9CD2340E8224D4c1CC86d3481c217d9078AAe // 0x825Bb9873b9E982e3692eA69715E162206B2ecc1
-    chainId: 56
-  },
-  {
-    name: 'hashkey',
-    rpc: 'https://mainnet.hsk.xyz',
-    contract: '0x24C89D67d1C8B569fFe564b8493C0fbD1f55d7F7', // 
-    chainId: 177
-  },
-  {
-    name: 'monad',
-    rpc: 'https://rpc2.monad.xyz',
-    contract: '0x24C89D67d1C8B569fFe564b8493C0fbD1f55d7F7',
-    chainId: 143
-  },
+  // {
+  //   name: 'sepolia',
+  //   rpc: 'https://ethereum-sepolia-rpc.publicnode.com',
+  //   contract: '0x0f7Cf85d6760b8c7821b747B4f5035fa01a4e1e3', // 0x7DeA875A4D644aB78e0914FFF8b760bE5e8F54cb // 0x0f7Cf85d6760b8c7821b747B4f5035fa01a4e1e3
+  //   chainId: 11155111
+  // },
+  // {
+  //   name: 'base',
+  //   rpc: 'https://mainnet.base.org',
+  //   contract: '0x499c9bF1556aBFAb44546514F8c655Fd9b99E801', // 0xe8f5b91e8e4c49f499002745bA49dc9fEE7670C6 // 0x499c9bF1556aBFAb44546514F8c655Fd9b99E801
+  //   chainId: 8453
+  // },
+  // {
+  //   name: 'bnb',
+  //   rpc: 'https://bsc-dataseed.binance.org',
+  //   contract: '0x825Bb9873b9E982e3692eA69715E162206B2ecc1', // 0x13B9CD2340E8224D4c1CC86d3481c217d9078AAe // 0x825Bb9873b9E982e3692eA69715E162206B2ecc1
+  //   chainId: 56
+  // },
+  // {
+  //   name: 'hashkey',
+  //   rpc: 'https://mainnet.hsk.xyz',
+  //   contract: '0x24C89D67d1C8B569fFe564b8493C0fbD1f55d7F7', // 
+  //   chainId: 177
+  // },
+  // {
+  //   name: 'monad',
+  //   rpc: 'https://rpc2.monad.xyz',
+  //   contract: '0x24C89D67d1C8B569fFe564b8493C0fbD1f55d7F7',
+  //   chainId: 143
+  // },
   {
     name: 'litvm',
     rpc: 'https://liteforge.rpc.caldera.xyz/http',
     contract: '0x24C89D67d1C8B569fFe564b8493C0fbD1f55d7F7',
     chainId: 4441
   }
+  ,
+  {
+    name: 'robinhood',
+    rpc: 'https://rpc.mainnet.chain.robinhood.com',
+    contract: '0x24C89D67d1C8B569fFe564b8493C0fbD1f55d7F7', // 0x06F94c107808bC4d9c27fA8476C3E2f5F83A9c3C // 0x554C2ca099DC9676470f92Df3083040B7f4DdeF5
+    chainId: 4663
+  },
 //   ,
 //   {
 //     name: 'scroll',

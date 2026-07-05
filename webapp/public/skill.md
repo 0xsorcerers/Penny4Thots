@@ -35,67 +35,15 @@ Penny4Thots is deployed across multiple EVM-compatible networks. Below are the c
 
 ### Active Networks
 
-#### Sepolia Testnet
+#### Robinhood (Live)
 ```typescript
-const sepolia = {
-  name: 'Sepolia (Testnet)',
-  chainId: 11155111,
-  rpc: 'https://0xrpc.io/sep',
-  blockExplorer: 'https://sepolia.etherscan.io',
-  decimals: 18,
-  symbol: 'sETH',
-  contract_address: '0x0f7Cf85d6760b8c7821b747B4f5035fa01a4e1e3'
-};
-```
-
-#### Base Network (Live)
-```typescript
-const base = {
-  name: 'Base Network (Live)',
-  chainId: 8453,
-  rpc: 'https://gateway.tenderly.co/public/base',
-  blockExplorer: 'https://basescan.org',
+const robinhood = {
+  name: 'Robinhood (Live)',
+  chainId: 4663,
+  rpc: 'https://rpc.mainnet.chain.robinhood.com',
+  blockExplorer: 'https://robinhoodchain.blockscout.com/',
   decimals: 18,
   symbol: 'ETH',
-  contract_address: '0x499c9bF1556aBFAb44546514F8c655Fd9b99E801'
-};
-```
-
-#### BNB Network (Live)
-```typescript
-const bnb = {
-  name: 'BNB Network (Live)',
-  chainId: 56,
-  rpc: 'https://bsc-dataseed.binance.org',
-  blockExplorer: 'https://bscscan.com',
-  decimals: 18,
-  symbol: 'BNB',
-  contract_address: '0x825Bb9873b9E982e3692eA69715E162206B2ecc1'
-};
-```
-
-#### HashKey Chain (Live)
-```typescript
-const hashkey = {
-  name: 'HashKey Chain (Live)',
-  chainId: 177,
-  rpc: 'https://mainnet.hsk.xyz',
-  blockExplorer: 'https://hashkey.blockscout.com',
-  decimals: 18,
-  symbol: 'HSK',
-  contract_address: '0x24C89D67d1C8B569fFe564b8493C0fbD1f55d7F7'
-};
-```
-
-#### Monad (Live)
-```typescript
-const monad = {
-  name: 'Monad (Live)',
-  chainId: 143,
-  rpc: 'https://rpc4.monad.xyz',
-  blockExplorer: 'https://monadscan.com',
-  decimals: 18,
-  symbol: 'MON',
   contract_address: '0x24C89D67d1C8B569fFe564b8493C0fbD1f55d7F7'
 };
 ```
@@ -108,9 +56,78 @@ const litvm = {
   rpc: 'https://liteforge.rpc.caldera.xyz/http',
   blockExplorer: 'https://liteforge.explorer.caldera.xyz/',
   decimals: 18,
-  symbol: 'zkLTC',
+  symbol: 'LTC (zk)',
   contract_address: '0x24C89D67d1C8B569fFe564b8493C0fbD1f55d7F7'
 };
+```
+
+### Suspended Networks (Resource Reallocation)
+
+The following networks are temporarily suspended as we focus resources on high-growth ecosystems:
+
+#### Sepolia Testnet (Suspended)
+```typescript
+// const sepolia = {
+//   name: 'Sepolia (Testnet)',
+//   chainId: 11155111,
+//   rpc: 'https://0xrpc.io/sep',
+//   blockExplorer: 'https://sepolia.etherscan.io',
+//   decimals: 18,
+//   symbol: 'sETH',
+//   contract_address: '0x0f7Cf85d6760b8c7821b747B4f5035fa01a4e1e3'
+// };
+```
+
+#### Base Network (Suspended)
+```typescript
+// const base = {
+//   name: 'Base Network (Live)',
+//   chainId: 8453,
+//   rpc: 'https://gateway.tenderly.co/public/base',
+//   blockExplorer: 'https://basescan.org',
+//   decimals: 18,
+//   symbol: 'ETH',
+//   contract_address: '0x499c9bF1556aBFAb44546514F8c655Fd9b99E801'
+// };
+```
+
+#### BNB Network (Suspended)
+```typescript
+// const bnb = {
+//   name: 'BNB Network (Live)',
+//   chainId: 56,
+//   rpc: 'https://bsc-dataseed.binance.org',
+//   blockExplorer: 'https://bscscan.com',
+//   decimals: 18,
+//   symbol: 'BNB',
+//   contract_address: '0x825Bb9873b9E982e3692eA69715E162206B2ecc1'
+// };
+```
+
+#### HashKey Chain (Suspended)
+```typescript
+// const hashkey = {
+//   name: 'HashKey Chain (Live)',
+//   chainId: 177,
+//   rpc: 'https://mainnet.hsk.xyz',
+//   blockExplorer: 'https://hashkey.blockscout.com',
+//   decimals: 18,
+//   symbol: 'HSK',
+//   contract_address: '0x24C89D67d1C8B569fFe564b8493C0fbD1f55d7F7'
+// };
+```
+
+#### Monad (Suspended)
+```typescript
+// const monad = {
+//   name: 'Monad (Live)',
+//   chainId: 143,
+//   rpc: 'https://rpc4.monad.xyz',
+//   blockExplorer: 'https://monadscan.com',
+//   decimals: 18,
+//   symbol: 'MON',
+//   contract_address: '0x24C89D67d1C8B569fFe564b8493C0fbD1f55d7F7'
+// };
 ```
 
 ### Connection Examples
@@ -119,9 +136,9 @@ const litvm = {
 ```typescript
 import { ethers } from 'ethers';
 
-const provider = new ethers.JsonRpcProvider(sepolia.rpc);
+const provider = new ethers.JsonRpcProvider(robinhood.rpc);
 const contract = new ethers.Contract(
-  sepolia.contract_address,
+  robinhood.contract_address,
   CONTRACT_ABI,
   provider  // or signer for write operations
 );
@@ -130,11 +147,18 @@ const contract = new ethers.Contract(
 #### Using viem
 ```typescript
 import { createPublicClient, http } from 'viem';
-import { sepolia as sepoliaChain } from 'viem/chains';
+
+const robinhoodChain = {
+  id: 4663,
+  name: 'Robinhood',
+  nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
+  rpcUrls: { default: { http: ['https://rpc.mainnet.chain.robinhood.com'] } },
+  blockExplorers: { default: { name: 'Robinhood Explorer', url: 'https://robinhoodchain.blockscout.com' } }
+};
 
 const client = createPublicClient({
-  chain: sepoliaChain,
-  transport: http(sepolia.rpc)
+  chain: robinhoodChain,
+  transport: http(robinhood.rpc)
 });
 ```
 
@@ -142,8 +166,8 @@ const client = createPublicClient({
 ```javascript
 import Web3 from 'web3';
 
-const web3 = new Web3(sepolia.rpc);
-const contract = new web3.eth.Contract(CONTRACT_ABI, sepolia.contract_address);
+const web3 = new Web3(robinhood.rpc);
+const contract = new web3.eth.Contract(CONTRACT_ABI, robinhood.contract_address);
 ```
 
 ---
@@ -174,12 +198,12 @@ async function batchProcess<T>(
   processFn: (batch: T[]) => Promise<void>
 ): Promise<void> {
   for (let i = 0; i < items.length; i += MAX_BATCH_SIZE) {
-    const batch = items.slice(i, i + MAX_BATCH_SIZE);
-    await processFn(batch);
-    // Optional: Add delay between batches to be RPC-friendly
-    if (i + MAX_BATCH_SIZE < items.length) {
-      await new Promise(resolve => setTimeout(resolve, 100));
-    }
+	const batch = items.slice(i, i + MAX_BATCH_SIZE);
+	await processFn(batch);
+	// Optional: Add delay between batches to be RPC-friendly
+	if (i + MAX_BATCH_SIZE < items.length) {
+	  await new Promise(resolve => setTimeout(resolve, 100));
+	}
   }
 }
 ```
@@ -204,15 +228,15 @@ function readMarket(uint256[] calldata _ids) public view returns (MarketInfo[] m
 **MarketInfo Struct:**
 ```solidity
 struct MarketInfo {
-    uint256 indexer;      // Unique market ID
-    string title;         // The prediction question
-    string subtitle;      // Succinct appendage to title
-    string description;   // Context about the market
-    string image;         // Media URL (image/gif/video < 5MB)
-    string tags;          // Up to 7 descriptive tags
-    string optionA;       // First choice string
-    string optionB;       // Second choice string
-    bool feetype;         // true = native coin, false = token
+	uint256 indexer;      // Unique market ID
+	string title;         // The prediction question
+	string subtitle;      // Succinct appendage to title
+	string description;   // Context about the market
+	string image;         // Media URL (image/gif/video < 5MB)
+	string tags;          // Up to 7 descriptive tags
+	string optionA;       // First choice string
+	string optionB;       // Second choice string
+	bool feetype;         // true = native coin, false = token
 }
 ```
 
@@ -242,8 +266,8 @@ async function fetchAllMarkets(contract: ethers.Contract): Promise<MarketInfo[]>
   const ids = Array.from({ length: marketCount }, (_, i) => i);
   
   await batchProcess(ids, async (batch) => {
-    const batchMarkets = await contract.readMarket(batch);
-    allMarkets.push(...batchMarkets);
+	const batchMarkets = await contract.readMarket(batch);
+	allMarkets.push(...batchMarkets);
   });
   
   return allMarkets;
@@ -264,20 +288,20 @@ function readMarketData(uint256[] calldata _ids) public view returns (MarketData
 **MarketData Struct:**
 ```solidity
 struct MarketData {
-    address creator;              // Market creator address
-    uint256 marketBalance;      // Total funds in market
-    uint256 activity;           // Activity counter
-    uint256 aVotes;             // Count of Option A votes
-    uint256 bVotes;             // Count of Option B votes
-    uint256 startTime;          // Creation timestamp
-    uint256 endTime;            // Expiration timestamp
-    bool closed;                // Whether market is closed
-    Side winningSide;           // 0=None, 1=A, 2=B
-    uint256 totalSharesA;       // Total shares for Option A
-    uint256 totalSharesB;       // Total shares for Option B
-    uint256 totalWinningPrincipal;  // Sum of winning positions
-    uint256 positionCount;      // Total positions created
-    bool blacklist;             // BLACKLIST FLAG - Check this!
+	address creator;              // Market creator address
+	uint256 marketBalance;      // Total funds in market
+	uint256 activity;           // Activity counter
+	uint256 aVotes;             // Count of Option A votes
+	uint256 bVotes;             // Count of Option B votes
+	uint256 startTime;          // Creation timestamp
+	uint256 endTime;            // Expiration timestamp
+	bool closed;                // Whether market is closed
+	Side winningSide;           // 0=None, 1=A, 2=B
+	uint256 totalSharesA;       // Total shares for Option A
+	uint256 totalSharesB;       // Total shares for Option B
+	uint256 totalWinningPrincipal;  // Sum of winning positions
+	uint256 positionCount;      // Total positions created
+	bool blacklist;             // BLACKLIST FLAG - Check this!
 }
 ```
 
@@ -294,8 +318,8 @@ marketData.forEach((data, index) => {
   
   // CRITICAL: Check blacklist status
   if (data.blacklist) {
-    console.warn(`Market ${marketId} is blacklisted - skipping`);
-    return;
+	console.warn(`Market ${marketId} is blacklisted - skipping`);
+	return;
   }
   
   console.log(`Market ${marketId}:`);
@@ -350,12 +374,12 @@ async function getPlatformConstants(contract: ethers.Contract) {
   const [result, result2] = await contract.fetchDataConstants();
   
   return {
-    marketCount: Number(result[0]),      // Use this to iterate all markets
-    payId: Number(result[1]),
-    platformFee: Number(result[2]),
-    gasfee: result[8],                  // Critical for write operations
-    isPaused: result2[0],
-    maxBatchSize: Number(result[13])    // 200
+	marketCount: Number(result[0]),      // Use this to iterate all markets
+	payId: Number(result[1]),
+	platformFee: Number(result[2]),
+	gasfee: result[8],                  // Critical for write operations
+	isPaused: result2[0],
+	maxBatchSize: Number(result[13])    // 200
   };
 }
 
@@ -378,12 +402,12 @@ The `writeMarket` function creates a new prediction market. This is a write oper
 **Function Signature:**
 ```solidity
 function writeMarket(
-    string[] calldata _info,      // [title, subtitle, description, image, tags, optionA, optionB]
-    uint256 _marketBalance,       // Amount in wei
-    bool _signal,                 // true = Option A, false = Option B
-    bool _feetype,                // true = native coin, false = ERC20 token
-    address _paymentToken,        // 0x0 for native, token address for ERC20
-    uint256 _endTime              // Unix timestamp for market expiration
+	string[] calldata _info,      // [title, subtitle, description, image, tags, optionA, optionB]
+	uint256 _marketBalance,       // Amount in wei
+	bool _signal,                 // true = Option A, false = Option B
+	bool _feetype,                // true = native coin, false = ERC20 token
+	address _paymentToken,        // 0x0 for native, token address for ERC20
+	uint256 _endTime              // Unix timestamp for market expiration
 ) external payable nonReentrant
 ```
 
@@ -433,15 +457,15 @@ async function validateToken(
   tokenAddress: string
 ): Promise<boolean> {
   try {
-    const tokenContract = new ethers.Contract(
-      tokenAddress,
-      ['function symbol() view returns (string)'],
-      provider
-    );
-    const symbol = await tokenContract.symbol();
-    return symbol.length > 0; // Valid if returns non-empty string
+	const tokenContract = new ethers.Contract(
+	  tokenAddress,
+	  ['function symbol() view returns (string)'],
+	  provider
+	);
+	const symbol = await tokenContract.symbol();
+	return symbol.length > 0; // Valid if returns non-empty string
   } catch {
-    return false;
+	return false;
   }
 }
 
@@ -449,7 +473,7 @@ async function validateToken(
 if (!feetype) {
   const isValid = await validateToken(provider, paymentToken);
   if (!isValid) {
-    throw new Error('Invalid token address - market creation would fail');
+	throw new Error('Invalid token address - market creation would fail');
   }
 }
 ```
@@ -463,23 +487,23 @@ async function createNativeMarket(
   const marketBalance = ethers.parseEther('0.1'); // 0.1 ETH
   
   const info = [
-    "Will ETH reach $10,000 by 2025?",     // title
-    "Ethereum Price Prediction",           // subtitle
-    "This market predicts whether Ethereum will reach $10,000 USD by end of 2025.", // description
-    "https://example.com/image.png",       // image
-    "crypto,ethereum,price,prediction,2025", // tags
-    "Yes, it will",                       // optionA
-    "No, it won't"                        // optionB
+	"Will ETH reach $10,000 by 2025?",     // title
+	"Ethereum Price Prediction",           // subtitle
+	"This market predicts whether Ethereum will reach $10,000 USD by end of 2025.", // description
+	"https://example.com/image.png",       // image
+	"crypto,ethereum,price,prediction,2025", // tags
+	"Yes, it will",                       // optionA
+	"No, it won't"                        // optionB
   ];
   
   const tx = await contract.writeMarket(
-    info,
-    marketBalance,
-    true,                    // signal: vote for Option A
-    false,                   // feetype: false = NATIVE COIN market
-    '0x0000000000000000000000000000000000000000', // paymentToken (ignored for native)
-    Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60, // 30 days from now
-    { value: marketBalance } // Full payment in native coin
+	info,
+	marketBalance,
+	true,                    // signal: vote for Option A
+	false,                   // feetype: false = NATIVE COIN market
+	'0x0000000000000000000000000000000000000000', // paymentToken (ignored for native)
+	Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60, // 30 days from now
+	{ value: marketBalance } // Full payment in native coin
   );
   
   await tx.wait();
@@ -506,30 +530,30 @@ async function createTokenMarket(
   
   // Approve token spending first
   const tokenContract = new ethers.Contract(
-    tokenAddress,
-    ['function approve(address,uint256) returns (bool)'],
-    signer
+	tokenAddress,
+	['function approve(address,uint256) returns (bool)'],
+	signer
   );
   await (await tokenContract.approve(await contract.getAddress(), marketBalance)).wait();
   
   const info = [
-    "Will DAI maintain its peg in 2025?",
-    "Stablecoin Stability Prediction",
-    "This market predicts whether DAI will maintain its $1.00 peg throughout 2025.",
-    "https://example.com/dai.png",
-    "defi,stablecoin,dai,prediction,2025",
-    "Yes, maintains peg",
-    "No, loses peg"
+	"Will DAI maintain its peg in 2025?",
+	"Stablecoin Stability Prediction",
+	"This market predicts whether DAI will maintain its $1.00 peg throughout 2025.",
+	"https://example.com/dai.png",
+	"defi,stablecoin,dai,prediction,2025",
+	"Yes, maintains peg",
+	"No, loses peg"
   ];
   
   const tx = await contract.writeMarket(
-    info,
-    marketBalance,
-    false,                   // signal: vote for Option B
-    true,                    // feetype: true = TOKEN market
-    tokenAddress,            // paymentToken: actual token address
-    Math.floor(Date.now() / 1000) + 60 * 24 * 60 * 60, // 60 days
-    { value: gasfee }        // Only gas fee in native coin
+	info,
+	marketBalance,
+	false,                   // signal: vote for Option B
+	true,                    // feetype: true = TOKEN market
+	tokenAddress,            // paymentToken: actual token address
+	Math.floor(Date.now() / 1000) + 60 * 24 * 60 * 60, // 60 days
+	{ value: gasfee }        // Only gas fee in native coin
   );
   
   await tx.wait();
@@ -546,9 +570,9 @@ The `vote` function allows users to participate in an existing market by voting 
 **Function Signature:**
 ```solidity
 function vote(
-    bool _signal,         // true = Option A, false = Option B
-    uint256 _market,      // Market ID from marketInfo.indexer
-    uint256 _marketBalance // Amount in wei
+	bool _signal,         // true = Option A, false = Option B
+	uint256 _market,      // Market ID from marketInfo.indexer
+	uint256 _marketBalance // Amount in wei
 ) external payable nonReentrant
 ```
 
@@ -564,18 +588,18 @@ async function validateVote(
   const [constants] = await contract.fetchDataConstants();
   const marketCount = constants[0];
   if (marketId >= marketCount) {
-    return { isValid: false, isNative: false, gasfee: 0n };
+	return { isValid: false, isNative: false, gasfee: 0n };
   }
   
   // 2. Check not blacklisted
   const marketData = await contract.allMarketData(marketId);
   if (marketData.blacklist) {
-    return { isValid: false, isNative: false, gasfee: 0n };
+	return { isValid: false, isNative: false, gasfee: 0n };
   }
   
   // 3. Check market not closed
   if (marketData.closed) {
-    return { isValid: false, isNative: false, gasfee: 0n };
+	return { isValid: false, isNative: false, gasfee: 0n };
   }
   
   // 4. Determine payment type via paymentTokens mapping
@@ -613,45 +637,45 @@ async function castVote(
 ) {
   // Validate market first
   const validation = await validateVote(
-    contract,
-    marketId,
-    contract.runner?.provider!
+	contract,
+	marketId,
+	contract.runner?.provider!
   );
   
   if (!validation.isValid) {
-    throw new Error('Market validation failed - cannot vote');
+	throw new Error('Market validation failed - cannot vote');
   }
   
   if (validation.isNative) {
-    // NATIVE COIN VOTE (feetype = false)
-    const tx = await contract.vote(
-      voteForOptionA,    // true = Option A, false = Option B
-      marketId,
-      amount,
-      { value: amount }  // Full amount in native coin
-    );
-    await tx.wait();
-    
+	// NATIVE COIN VOTE (feetype = false)
+	const tx = await contract.vote(
+	  voteForOptionA,    // true = Option A, false = Option B
+	  marketId,
+	  amount,
+	  { value: amount }  // Full amount in native coin
+	);
+	await tx.wait();
+	
   } else {
-    // ERC20 TOKEN VOTE (feetype = true)
-    const paymentToken = await contract.paymentTokens(marketId);
-    
-    // Approve token spending first
-    const tokenContract = new ethers.Contract(
-      paymentToken,
-      ['function approve(address,uint256) returns (bool)'],
-      signer
-    );
-    await (await tokenContract.approve(await contract.getAddress(), amount)).wait();
-    
-    // Cast vote with gas fee in native coin
-    const tx = await contract.vote(
-      voteForOptionA,
-      marketId,
-      amount,
-      { value: validation.gasfee }  // Only gas fee in native coin
-    );
-    await tx.wait();
+	// ERC20 TOKEN VOTE (feetype = true)
+	const paymentToken = await contract.paymentTokens(marketId);
+	
+	// Approve token spending first
+	const tokenContract = new ethers.Contract(
+	  paymentToken,
+	  ['function approve(address,uint256) returns (bool)'],
+	  signer
+	);
+	await (await tokenContract.approve(await contract.getAddress(), amount)).wait();
+	
+	// Cast vote with gas fee in native coin
+	const tx = await contract.vote(
+	  voteForOptionA,
+	  marketId,
+	  amount,
+	  { value: validation.gasfee }  // Only gas fee in native coin
+	);
+	await tx.wait();
   }
   
   console.log(`Vote cast for Option ${voteForOptionA ? 'A' : 'B'} in market ${marketId}`);
@@ -689,10 +713,10 @@ async function getUserPositionCount(
 **Step 2: Get User Positions**
 ```solidity
 function getUserPositions(
-    uint256 _market,      // Market ID
-    address _user,        // User address
-    uint256 _start,       // Start index (0-based)
-    uint256 _finish       // Number of items to return (count/size)
+	uint256 _market,      // Market ID
+	address _user,        // User address
+	uint256 _start,       // Start index (0-based)
+	uint256 _finish       // Number of items to return (count/size)
 ) external view returns (uint256[] memory)
 ```
 
@@ -714,18 +738,18 @@ async function getAllUserPositions(
   const allPositions: number[] = [];
   
   for (let start = 0; start < totalPositions; start += MAX_BATCH) {
-    const finish = Math.min(start + MAX_BATCH, totalPositions);
-    // Note: _finish is the absolute index boundary (count up to this number)
-    // The contract returns items from _start to _finish (inclusive concept)
-    
-    const positions = await contract.getUserPositions(
-      marketId,
-      userAddress,
-      start,
-      finish  // This is _finish - the boundary index (returns items up to this)
-    );
-    
-    allPositions.push(...positions.map(p => Number(p)));
+	const finish = Math.min(start + MAX_BATCH, totalPositions);
+	// Note: _finish is the absolute index boundary (count up to this number)
+	// The contract returns items from _start to _finish (inclusive concept)
+	
+	const positions = await contract.getUserPositions(
+	  marketId,
+	  userAddress,
+	  start,
+	  finish  // This is _finish - the boundary index (returns items up to this)
+	);
+	
+	allPositions.push(...positions.map(p => Number(p)));
   }
   
   return allPositions;
@@ -741,9 +765,9 @@ The `isClaimable` function filters a user's positions to return only those that 
 **Function Signature:**
 ```solidity
 function isClaimable(
-    address _user,              // User address
-    uint256 _market,            // Market ID
-    uint256[] calldata _posIds  // Position IDs to check
+	address _user,              // User address
+	uint256 _market,            // Market ID
+	uint256[] calldata _posIds  // Position IDs to check
 ) public view returns (uint256[] memory)
 ```
 
@@ -769,8 +793,8 @@ async function getClaimablePositions(
   const claimablePositions: number[] = [];
   
   await batchProcess(allPositions, async (batch) => {
-    const claimable = await contract.isClaimable(userAddress, marketId, batch);
-    claimablePositions.push(...claimable.map(p => Number(p)));
+	const claimable = await contract.isClaimable(userAddress, marketId, batch);
+	claimablePositions.push(...claimable.map(p => Number(p)));
   });
   
   return claimablePositions;
@@ -786,8 +810,8 @@ The `batchClaim` function processes claims for multiple positions in a single tr
 **Function Signature:**
 ```solidity
 function batchClaim(
-    uint256 _market,            // Market ID
-    uint256[] calldata _posIds  // Valid position IDs to claim
+	uint256 _market,            // Market ID
+	uint256[] calldata _posIds  // Valid position IDs to claim
 ) external nonReentrant
 ```
 
@@ -817,34 +841,34 @@ async function claimRewards(
   const marketData = await contract.allMarketData(marketId);
   
   if (marketData.blacklist) {
-    throw new Error('Market is blacklisted');
+	throw new Error('Market is blacklisted');
   }
   
   if (!marketData.closed) {
-    throw new Error('Market is not yet closed');
+	throw new Error('Market is not yet closed');
   }
   
   // Step 2: Check market lock for finalization status
   const marketLock = await contract.allMarketLocks(marketId);
   if (!marketLock.sharesFinalized) {
-    throw new Error('Market shares not yet finalized');
+	throw new Error('Market shares not yet finalized');
   }
   
   // Step 3: Get claimable positions via isClaimable helper
   const claimablePositions = await getClaimablePositions(contract, marketId, userAddress);
   
   if (claimablePositions.length === 0) {
-    console.log('No claimable positions found');
-    return;
+	console.log('No claimable positions found');
+	return;
   }
   
   console.log(`Found ${claimablePositions.length} claimable positions`);
   
   // Step 4: Execute batch claim (respect 200 limit)
   await batchProcess(claimablePositions, async (batch) => {
-    const tx = await contract.connect(signer).batchClaim(marketId, batch);
-    await tx.wait();
-    console.log(`Claimed batch of ${batch.length} positions`);
+	const tx = await contract.connect(signer).batchClaim(marketId, batch);
+	await tx.wait();
+	console.log(`Claimed batch of ${batch.length} positions`);
   });
   
   console.log('All rewards claimed successfully!');
@@ -873,8 +897,8 @@ Kamikaze is an emergency mechanism allowing users to switch their position to th
 **Function Signature:**
 ```solidity
 function kamikaze(
-    uint256 _market,    // Market ID
-    uint256 _posId      // Position ID to kamikaze
+	uint256 _market,    // Market ID
+	uint256 _posId      // Position ID to kamikaze
 ) public nonReentrant
 ```
 
@@ -902,11 +926,11 @@ async function executeKamikaze(
   const marketData = await contract.allMarketData(marketId);
   
   if (marketData.blacklist) {
-    throw new Error('Market is blacklisted');
+	throw new Error('Market is blacklisted');
   }
   
   if (marketData.closed) {
-    throw new Error('Market is already closed');
+	throw new Error('Market is already closed');
   }
   
   // Verify position ownership
@@ -914,11 +938,11 @@ async function executeKamikaze(
   const userAddress = await signer.getAddress();
   
   if (position.user.toLowerCase() !== userAddress.toLowerCase()) {
-    throw new Error('Not your position');
+	throw new Error('Not your position');
   }
   
   if (position.claimed) {
-    throw new Error('Position already claimed');
+	throw new Error('Position already claimed');
   }
   
   // Execute kamikaze
@@ -934,8 +958,8 @@ async function executeKamikaze(
 **Function Signature:**
 ```solidity
 function batchKamikaze(
-    uint256 _market,              // Market ID
-    uint256[] calldata _posIds    // Array of position IDs
+	uint256 _market,              // Market ID
+	uint256[] calldata _posIds    // Array of position IDs
 ) external
 ```
 
@@ -952,9 +976,9 @@ async function batchExecuteKamikaze(
   
   // Respect 200 entry limit
   await batchProcess(positionIds, async (batch) => {
-    const tx = await contract.connect(signer).batchKamikaze(marketId, batch);
-    await tx.wait();
-    console.log(`Kamikazed batch of ${batch.length} positions`);
+	const tx = await contract.connect(signer).batchKamikaze(marketId, batch);
+	await tx.wait();
+	console.log(`Kamikazed batch of ${batch.length} positions`);
   });
 }
 ```
@@ -975,9 +999,9 @@ Returns the list of market IDs created by a user.
 ```solidity
 mapping(address => uint256) public userTotalThots;
 function getUserThots(
-    address _user,        // User address
-    uint256 _start,       // Start index
-    uint256 _finish       // Count to return
+	address _user,        // User address
+	uint256 _start,       // Start index
+	uint256 _finish       // Count to return
 ) external view returns (uint256[] memory)
 ```
 
@@ -996,9 +1020,9 @@ async function getMarketsCreatedByUser(
   const total = Number(totalThots);
   
   for (let start = 0; start < total; start += 200) {
-    const batchSize = Math.min(200, total - start);
-    const thots = await contract.getUserThots(userAddress, start, batchSize);
-    allThots.push(...thots.map(t => Number(t)));
+	const batchSize = Math.min(200, total - start);
+	const thots = await contract.getUserThots(userAddress, start, batchSize);
+	allThots.push(...thots.map(t => Number(t)));
   }
   
   return allThots.filter(id => id !== 0); // Filter out invalid entries
@@ -1013,9 +1037,9 @@ Returns the list of market IDs where the user has voted (participated).
 ```solidity
 mapping(address => uint256) public userTotalMarkets;
 function getUserMarkets(
-    address _user,        // User address
-    uint256 _start,       // Start index
-    uint256 _finish       // Count to return
+	address _user,        // User address
+	uint256 _start,       // Start index
+	uint256 _finish       // Count to return
 ) external view returns (uint256[] memory)
 ```
 
@@ -1032,9 +1056,9 @@ async function getMarketsVotedByUser(
   const total = Number(totalMarkets);
   
   for (let start = 0; start < total; start += 200) {
-    const batchSize = Math.min(200, total - start);
-    const markets = await contract.getUserMarkets(userAddress, start, batchSize);
-    allMarkets.push(...markets.map(m => Number(m)));
+	const batchSize = Math.min(200, total - start);
+	const markets = await contract.getUserMarkets(userAddress, start, batchSize);
+	allMarkets.push(...markets.map(m => Number(m)));
   }
   
   return allMarkets.filter(id => id !== 0);
@@ -1048,18 +1072,18 @@ Returns detailed claim history for a user.
 **Structs and Mappings:**
 ```solidity
 struct ClaimRecord {
-    uint256 marketId;
-    address token;
-    uint256 amount;
-    uint256 timestamp;
-    uint256 positionId;
+	uint256 marketId;
+	address token;
+	uint256 amount;
+	uint256 timestamp;
+	uint256 positionId;
 }
 
 mapping(address => uint256) public userTotalClaimHistory;
 function getUserClaims(
-    address _user,        // User address
-    uint256 _start,       // Start index
-    uint256 _finish       // Count to return
+	address _user,        // User address
+	uint256 _start,       // Start index
+	uint256 _finish       // Count to return
 ) external view returns (ClaimRecord[] memory)
 ```
 
@@ -1084,16 +1108,16 @@ async function getUserClaimHistory(
   const total = Number(totalClaims);
   
   for (let start = 0; start < total; start += 200) {
-    const batchSize = Math.min(200, total - start);
-    const claims = await contract.getUserClaims(userAddress, start, batchSize);
-    
-    allClaims.push(...claims.map(c => ({
-      marketId: Number(c.marketId),
-      token: c.token,
-      amount: c.amount,
-      timestamp: Number(c.timestamp),
-      positionId: Number(c.positionId)
-    })));
+	const batchSize = Math.min(200, total - start);
+	const claims = await contract.getUserClaims(userAddress, start, batchSize);
+	
+	allClaims.push(...claims.map(c => ({
+	  marketId: Number(c.marketId),
+	  token: c.token,
+	  amount: c.amount,
+	  timestamp: Number(c.timestamp),
+	  positionId: Number(c.positionId)
+	})));
   }
   
   return allClaims;

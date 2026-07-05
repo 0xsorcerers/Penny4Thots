@@ -544,10 +544,11 @@ contract Penny4Thots is ReentrancyGuard {
         }
     }
 
+    //Manually Add to Farms
     function farmDeposit (uint256 _farmInWei, address _token) external onlyPennyDAO() {
         uint256 farming = _farmInWei;
         IERC20(_token).safeTransferFrom(msg.sender, address(this), farming); 
-        farmsBalance[_token] = farming;
+        farmsBalance[_token] += farming;
     }
 
     function promoDistribution(bool _pass) internal { 
@@ -559,7 +560,7 @@ contract Penny4Thots is ReentrancyGuard {
                 uint256 farmbal = IFarm(currentFarm).balanceOf(address(this));
                 uint256 farmingAmount = farmsBalance[currentFarm];
                 uint256 farm = AllowedAmounts[indexFarm];
-                if (farmbal > farm && farm > 0 && (farmingAmount - farm >= 0 )) {        
+                if (farm > 0 && farmbal >= farm && farmingAmount >= farm) {        
                     farmtoken.safeTransfer(lastAddress, farm);
                     farmTokensDistributed[currentFarm] += farm;
                     farmsBalance[currentFarm] = farmingAmount -= farm;
