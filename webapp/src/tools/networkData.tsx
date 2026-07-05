@@ -109,7 +109,7 @@ const robinhood: NetworkConfig = {
   blockExplorer: 'https://robinhoodchain.blockscout.com/',
   decimals: 18,
   symbol: 'ETH',
-  contract_address: '0x24C89D67d1C8B569fFe564b8493C0fbD1f55d7F7' as Address,
+  contract_address: '0x5081f537929bAD504b7813B40Cc215344078451A' as Address,
 };
 
 const chains: NetworkConfig[] = [robinhood, litvm]; // , scroll, manta, opbnb, sepolia, base, bnb, hashkey, monad, 
