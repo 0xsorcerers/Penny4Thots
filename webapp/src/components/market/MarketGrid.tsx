@@ -20,6 +20,7 @@ type MarketFilter = "all" | "trending" | "symbol" | "token" | "tags";
 interface MarketGridProps {
   markets: Market[];
   allMarkets: Market[];
+  visibleMarketIds: number[];
   marketCount: number;
   currentPage: number;
   pageSize: number;
@@ -37,6 +38,7 @@ interface MarketGridProps {
 export function MarketGrid({
   markets,
   allMarkets,
+  visibleMarketIds,
   marketCount,
   currentPage,
   pageSize,
@@ -138,21 +140,16 @@ export function MarketGrid({
   }, [allMarkets]);
 
   const availableLanguages = useMemo(() => {
-    const currentMarketIds = new Set(
-      allMarkets
-        .map((market) => market.indexer)
-        .filter((id): id is number => typeof id === "number")
-    );
-
+    const visibleMarketIdSet = new Set(visibleMarketIds);
     return Array.from(
       new Set(
         Object.entries(languageTagsByMarketId)
-          .filter(([marketId]) => currentMarketIds.has(Number(marketId)))
+          .filter(([marketId]) => visibleMarketIdSet.has(Number(marketId)))
           .map(([, tag]) => tag.trim())
           .filter(Boolean)
       )
     ).sort((a, b) => a.localeCompare(b));
-  }, [allMarkets, languageTagsByMarketId]);
+  }, [visibleMarketIds, languageTagsByMarketId]);
 
   const isUsingDerivedPagination = debouncedQuery.length > 0 || selectedFilter !== "all";
   const effectiveMarketCount = isUsingDerivedPagination ? filteredMarkets.length : marketCount;

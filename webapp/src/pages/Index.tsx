@@ -481,6 +481,7 @@ export default function Index() {
         <MarketGrid
           markets={marketsForCurrentPage}
           allMarkets={visibleMarkets}
+          visibleMarketIds={visibleMarketIds}
           marketCount={marketCount}
           currentPage={currentPage}
           pageSize={MARKETS_PER_PAGE}
