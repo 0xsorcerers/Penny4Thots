@@ -494,6 +494,7 @@ export default function Index() {
           onToggleClosedMarkets={() => setShowClosedMarkets((prev) => !prev)}
           isLoading={isLoadingFromBlockchain}
           networkSymbol={selectedNetwork.symbol}
+          pennyAddress={selectedNetwork.penny_address}
         />
       </div>
       <CreateMarketModal

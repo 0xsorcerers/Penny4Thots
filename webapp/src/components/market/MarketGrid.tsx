@@ -33,6 +33,7 @@ interface MarketGridProps {
   onToggleClosedMarkets?: () => void;
   isLoading?: boolean;
   networkSymbol?: string;
+  pennyAddress?: string;
 }
 
 export function MarketGrid({
@@ -51,6 +52,7 @@ export function MarketGrid({
   onToggleClosedMarkets,
   isLoading = false,
   networkSymbol = "Native",
+  pennyAddress = "",
 }: MarketGridProps) {
   const [selectedFilter, setSelectedFilter] = useState<MarketFilter>("all");
   const [searchQuery, setSearchQuery] = useState("");
@@ -329,6 +331,12 @@ export function MarketGrid({
                     end: visibleStart,
                   })}
             </p>
+            {pennyAddress && (
+              <div className="mt-2 flex items-center gap-2 rounded-lg border border-border/40 bg-card/35 px-3 py-2 backdrop-blur-sm">
+                <span className="font-outfit text-xs font-semibold theme-text-accent">PENNY:</span>
+                <span className="font-mono text-xs theme-text-support break-all">{pennyAddress}</span>
+              </div>
+            )}
           </div>
 
           <div className="flex items-center gap-3">
