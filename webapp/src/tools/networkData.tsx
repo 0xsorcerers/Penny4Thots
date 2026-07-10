@@ -119,7 +119,7 @@ const robinhood: NetworkConfig = {
   blockExplorer: 'https://robinhoodchain.blockscout.com/',
   decimals: 18,
   symbol: 'ETH',
-  contract_address: '0x5081f537929bAD504b7813B40Cc215344078451A' as Address,
+  contract_address: '0x5081f537929bAD504b7813B40Cc215344078451A' as Address, //0x24C89D67d1C8B569fFe564b8493C0fbD1f55d7F7
   penny_address: '0x6924315c4bf46e4b43c980fbd98c87914eca787e'
 };
 
