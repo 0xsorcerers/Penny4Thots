@@ -9,6 +9,7 @@ import penny4thots from "../abi/penny4thots.json";
 import erc20 from "../abi/ERC20.json";
 import { chains } from "./networkData";
 import { getCurrentNetwork } from "../store/networkStore";
+import { NETWORK_THEMES } from "./networkTheme";
 
 const contractABI = penny4thots.abi as Abi;
 const erc20ABI = erc20.abi as Abi;
@@ -201,6 +202,11 @@ export const penny4thotsContract = getPenny4ThotsContract();
 // ============================================================================
 
 export function Connector(): ReactElement {
+  const currentNetwork = getCurrentNetwork();
+  const networkTheme = NETWORK_THEMES[currentNetwork.chainId];
+  const modalBgChannels = networkTheme?.dark?.tokens?.["modal-bg"] || "120 62% 4%";
+  const modalBg = `hsl(${modalBgChannels})`;
+
   return (
     <ConnectButton
       client={client}
@@ -208,6 +214,7 @@ export function Connector(): ReactElement {
       wallets={wallets}
       theme={darkTheme({
         colors: {
+          modalBg,
           primaryText: "#7FFF00",
           secondaryText: "#FFF8DC",
           connectedButtonBg: "#252525",

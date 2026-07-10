@@ -98,7 +98,7 @@ export function MarketBalance({ marketBalance, paymentToken }: MarketBalanceProp
       return (
         <Tooltip>
           <TooltipTrigger asChild>
-            <Bitcoin className="h-3 w-3 theme-text-accent transition-transform hover:scale-125 cursor-help" />
+            <Bitcoin className="h-3 w-3 theme-icon-crypto transition-transform hover:scale-125 cursor-help" />
           </TooltipTrigger>
           <TooltipContent>
             <p>Crypto asset</p>
@@ -106,12 +106,12 @@ export function MarketBalance({ marketBalance, paymentToken }: MarketBalanceProp
         </Tooltip>
       );
     }
-    
+
     if (tokenType === "stock") {
       return (
         <Tooltip>
           <TooltipTrigger asChild>
-            <Blocks className="h-3 w-3 theme-text-accent transition-transform hover:scale-125 cursor-help" />
+            <Blocks className="h-3 w-3 theme-icon-stock transition-transform hover:scale-125 cursor-help" />
           </TooltipTrigger>
           <TooltipContent>
             <p>Stock asset</p>
@@ -119,12 +119,12 @@ export function MarketBalance({ marketBalance, paymentToken }: MarketBalanceProp
         </Tooltip>
       );
     }
-    
+
     if (tokenType === "etf") {
       return (
         <Tooltip>
           <TooltipTrigger asChild>
-            <ChartNetwork className="h-3 w-3 theme-text-accent transition-transform hover:scale-125 cursor-help" />
+            <ChartNetwork className="h-3 w-3 theme-icon-etf transition-transform hover:scale-125 cursor-help" />
           </TooltipTrigger>
           <TooltipContent>
             <p>ETF asset</p>
@@ -146,7 +146,7 @@ export function MarketBalance({ marketBalance, paymentToken }: MarketBalanceProp
           <div className="flex items-center gap-0.5">
             <Tooltip>
               <TooltipTrigger asChild>
-                <BadgeCheck className="h-3 w-3 theme-text-accent transition-transform hover:scale-125 cursor-help" />
+                <BadgeCheck className="h-3 w-3 theme-icon-verified transition-transform hover:scale-125 cursor-help" />
               </TooltipTrigger>
               <TooltipContent>
                 <p>{tokenName ? `${tokenName} Verified` : "Verified"}</p>
@@ -154,7 +154,7 @@ export function MarketBalance({ marketBalance, paymentToken }: MarketBalanceProp
             </Tooltip>
             <Tooltip>
               <TooltipTrigger asChild>
-                <Droplets  className="h-3 w-3 theme-text-accent transition-transform hover:scale-125 cursor-help" />
+                <Droplets  className="h-3 w-3 theme-icon-autodrop transition-transform hover:scale-125 cursor-help" />
               </TooltipTrigger>
               <TooltipContent>
                 <p>Eligible for Autodrops</p>

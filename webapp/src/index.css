@@ -580,4 +580,45 @@ html {
   .theme-text-negative {
     color: hsl(var(--no));
   }
+
+  /* Icon type colors - darker for light mode, lighter for dark mode */
+  .theme-icon-crypto {
+    color: #d97706; /* Darker orange for light mode */
+  }
+
+  .dark .theme-icon-crypto {
+    color: #fbbf24; /* Lighter orange for dark mode */
+  }
+
+  .theme-icon-stock {
+    color: #2563eb; /* Darker blue for light mode */
+  }
+
+  .dark .theme-icon-stock {
+    color: #60a5fa; /* Lighter blue for dark mode */
+  }
+
+  .theme-icon-etf {
+    color: #7c3aed; /* Darker purple for light mode */
+  }
+
+  .dark .theme-icon-etf {
+    color: #a78bfa; /* Lighter purple for dark mode */
+  }
+
+  .theme-icon-verified {
+    color: #059669; /* Darker green for light mode */
+  }
+
+  .dark .theme-icon-verified {
+    color: #34d399; /* Lighter green for dark mode */
+  }
+
+  .theme-icon-autodrop {
+    color: #0891b2; /* Darker cyan for light mode */
+  }
+
+  .dark .theme-icon-autodrop {
+    color: #22d3ee; /* Lighter cyan for dark mode */
+  }
 }

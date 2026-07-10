@@ -11,7 +11,7 @@ const robinhoodWhitelist: WhitelistConfig = {
   chainId: 4663,
   token: [
     //cryptocurrencies
-    "Ethereum", "USD Global", "Virtual", 
+    "Ethereum", "USD Global", "Virtual", "Cashcat meme", "Kitsu meme", "Penny4Thots",
     
     //Stocks
     "Apple", "Nvidia", "Telsa", "SpaceX", "Circle Internet Group",
@@ -30,6 +30,9 @@ const robinhoodWhitelist: WhitelistConfig = {
     "0x0000000000000000000000000000000000000000" as Address, //ETH
     "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168" as Address, //USG
     "0xc6911796042b15d7Fa4F6CDe69e245DdCd3d9c31" as Address, //VIRTUAL
+    "0x020bfC650A365f8BB26819deAAbF3E21291018b4" as Address, //CASHCAT
+    "0x8d4dFaaA4198b6486E0293Fec914C2B6a821D4DC" as Address, //KITSU
+    "0x6924315c4bf46e4b43c980fbd98c87914eca787e" as Address, //PENNY
 
 
     //stocks
@@ -74,10 +77,10 @@ const robinhoodWhitelist: WhitelistConfig = {
     "0xa30FA36Db767ad9eD3f7a60fC79526fB4d56D344" as Address, //CUSO
 
     //commodities
-    
+
   ],
   type: [
-    "crypto", "crypto", "crypto", 
+    "crypto", "crypto", "crypto", "crypto", "crypto", "crypto",
 
     "stock", "stock", "stock", "stock", "stock", "stock", "stock", "stock", "stock", "stock", 
     "stock", "stock", "stock", "stock", "stock", "stock", "stock", "stock", "stock", "stock",
