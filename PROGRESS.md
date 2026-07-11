@@ -447,3 +447,6 @@ The AI will commit and push to BOTH GitHub and Vibecode servers automatically.
 - Allowed token stake inputs to use full token precision instead of a fixed `0.001` step.
 
 ---
+
+## 2026-07-11 - Multi-pay-token Harvester contract
+- Added `contracts/harvester.sol`, an expanded Harvester implementation that registers reward tokens by numeric id, settles caller-supplied token ids independently, and replaces era/user-wide loops with bounded range helpers and per-token accumulator maps.
