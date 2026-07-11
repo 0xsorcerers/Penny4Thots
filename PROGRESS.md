@@ -447,3 +447,7 @@ The AI will commit and push to BOTH GitHub and Vibecode servers automatically.
 - Allowed token stake inputs to use full token precision instead of a fixed `0.001` step.
 
 ---
+## 2026-07-11 - Penny4Thots Harvester V2
+
+- Added a multi-reward Harvester V2 staking contract inspired by the original Battledogs Harvester.
+- Preserved lazy settlement, balance-minus-owed reward accounting, timelocks, guard pause controls, treasury replenishment, and GAME-style staking entry points while expanding rewards into mapped streams.
