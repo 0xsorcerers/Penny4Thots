@@ -1,7 +1,7 @@
 # Penny4Thots
 
-Monorepo containing the frontend webapp and backend services for Penny4Thots on BNB Chain, HashKeyChain, Base, Scroll and a coming host of networks.
-From those itchy sport bets with buds in front of the TV to Naruto for avid manga fans to even the cosmic predilections of the Zodiac, demo on Sepolia to understand how to create or vote on your 'thots' as well as the thoughts of others before going live on any mainnet of choice. 
+Monorepo containing the frontend webapp and backend services for Penny4Thots on a host of networks.
+From those itchy sport bets with buds in front of the TV to Naruto for avid manga fans to even the cosmic predilections of the Zodiac, demo on a testnet to understand how to create or vote on your 'thots' as well as the thoughts of others before going live on any mainnet of choice. 
 
 <p align="center">
   <a href="https://penny4thots.netlify.app">
