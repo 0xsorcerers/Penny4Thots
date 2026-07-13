@@ -26,7 +26,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import deepforestFlora from "@/assets/images/deepforest-flora.webp";
 import { useNetworkStore } from "@/store/networkStore";
-import { canAccessFarm, hasValidProofOfAccess } from "@/tools/networkData";
+import { canAccessFarm, hasLiveProofOfAccess } from "@/tools/networkData";
 import { STAKING_TIERS, getTier, type TierId } from "@/tools/stakingTiers";
 import {
   Connector,
@@ -223,7 +223,8 @@ export default function Staking() {
   const account = useActiveAccount();
   const selectedNetwork = useNetworkStore((state) => state.selectedNetwork);
   const canAccessStaking = canAccessFarm(selectedNetwork);
-  const poaDeployed = hasValidProofOfAccess(selectedNetwork);
+  /** Live contract (not dummy stand-in) — required for mint txs */
+  const poaLive = hasLiveProofOfAccess(selectedNetwork);
   const { mintTier, isPending: isMinting } = useProofOfAccessMint();
 
   const [tierId, setTierId] = useState<TierId>(1); // default Pirate (Bronze)
@@ -283,9 +284,10 @@ export default function Staking() {
       toast.error("Connect your wallet to mint");
       return;
     }
-    if (!poaDeployed) {
+    if (!poaLive) {
       toast.error("ProofOfAccess not live yet", {
-        description: "Contract address is not set for this network. Deploy then paste proofOfAccess_address.",
+        description:
+          "Using dummy stand-in address. Deploy the contract, then replace proofOfAccess_address in networkData.",
       });
       return;
     }
@@ -305,7 +307,7 @@ export default function Staking() {
       const message = err instanceof Error ? err.message : "Mint failed";
       toast.error(message, { id: "mint-poa" });
     }
-  }, [account, poaDeployed, mintConfig?.paused, mintTier, tierId, tier]);
+  }, [account, poaLive, mintConfig?.paused, mintTier, tierId, tier]);
 
   const shortWallet = account?.address
     ? `${account.address.slice(0, 6)}…${account.address.slice(-4)}`
@@ -493,10 +495,10 @@ export default function Staking() {
                         )}
                         <div className="mt-1 border-t border-slate-200/80 pt-1 text-[10px] text-slate-500">
                           {selectedNetwork.name} ·{" "}
-                          {poaDeployed ? (
+                          {poaLive ? (
                             <span className="text-emerald-700">contract live</span>
                           ) : (
-                            <span className="text-amber-700">awaiting deploy address</span>
+                            <span className="text-amber-700">dummy stand-in · replace after deploy</span>
                           )}
                         </div>
                       </div>

@@ -7,9 +7,10 @@ This file tracks all significant progress. Updated automatically after major cha
 ## 2026-07-13
 
 ### Gate: Farm / stake only when ProofOfAccess is on the chain
-- Profile menu Farm entry and `/staking` now use `canAccessFarm()` → requires a real `proofOfAccess_address` (not just PENNY).
-- Sepolia re-enabled in the active chain list so you can paste live test deploy addresses and exercise mint/farm steadily.
-- Robinhood Farm stays hidden until `proofOfAccess_address` is set there too.
+- Profile menu Farm entry and `/staking` use `canAccessFarm()` → requires `proofOfAccess_address` (dummy or live).
+- Dummy stand-ins: `DUMMY_PROOF_OF_ACCESS_ADDRESS` (`…000F00A5`) and `DUMMY_HARVESTER_ADDRESS` (`…000FA125`) on Robinhood + Sepolia until live deploys.
+- Mint only when `hasLiveProofOfAccess()` (rejects dummy). Replace dummies with real addresses after deploy.
+- Sepolia in active chain list for steady testing.
 
 ### Feature: ProofOfAccess tier mint + epic tier art carousel
 - Left rail: swipeable NFT tier picker (bouncy chevron arrows + dots) for tiers 0–5 matching on-chain `mint(uint256 _tierLevel)`.

@@ -1,5 +1,17 @@
 import { type Address } from "viem";
 
+const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
+
+/**
+ * Stand-in addresses when contracts are not deployed yet.
+ * Unlocks Farm UI / config shape; mint & stake txs require a live deploy.
+ * Replace with real addresses after deploy (e.g. Sepolia testing).
+ */
+export const DUMMY_PROOF_OF_ACCESS_ADDRESS =
+  "0x00000000000000000000000000000000000F00A5";
+export const DUMMY_HARVESTER_ADDRESS =
+  "0x00000000000000000000000000000000000FA125";
+
 export interface NetworkConfig {
   name: string;
   chainId: number;
@@ -9,9 +21,9 @@ export interface NetworkConfig {
   symbol: string;
   contract_address: Address;
   penny_address: string;
-  /** ProofOfAccess NFT mint contract — empty until deployed on this chain */
+  /** ProofOfAccess NFT mint — use DUMMY_PROOF_OF_ACCESS_ADDRESS until live deploy */
   proofOfAccess_address: string;
-  /** Harvester V2 stake/claim contract — empty until deployed */
+  /** Harvester V2 — use DUMMY_HARVESTER_ADDRESS until live deploy */
   harvester_address: string;
 }
 
@@ -23,10 +35,10 @@ const sepolia: NetworkConfig = {
   decimals: 18,
   symbol: 'sETH',
   contract_address: '0x569e65de26FA684DDb0b86E68BD9cEc85FeB9A96' as Address, // 0x0f7Cf85d6760b8c7821b747B4f5035fa01a4e1e3 0x7DeA875A4D644aB78e0914FFF8b760bE5e8F54cb
-  // Paste live Sepolia deploy addresses below to enable Farm + mint testing
+  // Replace dummies with live Sepolia deploys when ready
   penny_address: '',
-  proofOfAccess_address: '',
-  harvester_address: '',
+  proofOfAccess_address: DUMMY_PROOF_OF_ACCESS_ADDRESS,
+  harvester_address: DUMMY_HARVESTER_ADDRESS,
 };
 
 const base: NetworkConfig = {
@@ -144,15 +156,13 @@ const robinhood: NetworkConfig = {
   symbol: 'ETH',
   contract_address: '0x5081f537929bAD504b7813B40Cc215344078451A' as Address, //0x24C89D67d1C8B569fFe564b8493C0fbD1f55d7F7
   penny_address: '0x6924315c4bf46e4b43c980fbd98c87914eca787e',
-  // Deploy ProofOfAccess + HarvesterV2 on Robinhood, then paste addresses here
-  proofOfAccess_address: '',
-  harvester_address: '',
+  // Replace dummies with live Robinhood deploys when ready
+  proofOfAccess_address: DUMMY_PROOF_OF_ACCESS_ADDRESS,
+  harvester_address: DUMMY_HARVESTER_ADDRESS,
 };
 
 // Sepolia included for steady ProofOfAccess / Harvester testing once addresses are set
 const chains: NetworkConfig[] = [robinhood, litvm, sepolia]; // , scroll, manta, opbnb, base, bnb, hashkey, monad, 
-
-const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 
 function isValidAddress(addr: string | null | undefined): boolean {
   if (!addr) return false;
@@ -160,19 +170,44 @@ function isValidAddress(addr: string | null | undefined): boolean {
   return a.startsWith("0x") && a.length === 42 && a !== ZERO_ADDRESS;
 }
 
+function normalizeAddr(addr: string): string {
+  return addr.trim().toLowerCase();
+}
+
+/** True when address is our undeployed stand-in (not a live contract). */
+export function isDummyProofOfAccess(addr: string | null | undefined): boolean {
+  if (!addr) return false;
+  return normalizeAddr(addr) === normalizeAddr(DUMMY_PROOF_OF_ACCESS_ADDRESS);
+}
+
+export function isDummyHarvester(addr: string | null | undefined): boolean {
+  if (!addr) return false;
+  return normalizeAddr(addr) === normalizeAddr(DUMMY_HARVESTER_ADDRESS);
+}
+
 /** True when the chain has a real PENNY token address. */
 export function hasValidPennyEntry(network: Pick<NetworkConfig, "penny_address"> | null | undefined): boolean {
   return isValidAddress(network?.penny_address);
 }
 
-/** True when ProofOfAccess is configured for minting. */
+/**
+ * True when ProofOfAccess is set (dummy or live) — used for Farm UI presence.
+ */
 export function hasValidProofOfAccess(network: Pick<NetworkConfig, "proofOfAccess_address"> | null | undefined): boolean {
   return isValidAddress(network?.proofOfAccess_address);
 }
 
 /**
- * Farm / stake UI (profile menu + /staking) only when ProofOfAccess is live on this chain.
- * Paste `proofOfAccess_address` after deploy — e.g. on Sepolia for testing.
+ * True when ProofOfAccess is a real deploy (not empty, not dummy stand-in).
+ * Required for wallet mint txs.
+ */
+export function hasLiveProofOfAccess(network: Pick<NetworkConfig, "proofOfAccess_address"> | null | undefined): boolean {
+  return hasValidProofOfAccess(network) && !isDummyProofOfAccess(network?.proofOfAccess_address);
+}
+
+/**
+ * Farm / stake UI (profile menu + /staking) when ProofOfAccess is configured
+ * (dummy stand-in unlocks UI; live address unlocks mint).
  */
 export function canAccessFarm(
   network: Pick<NetworkConfig, "proofOfAccess_address"> | null | undefined,
