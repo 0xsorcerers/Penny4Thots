@@ -96,6 +96,10 @@ export default {
         syne: ["Syne", "sans-serif"],
         mono: ["Space Mono", "monospace"],
         outfit: ["Outfit", "sans-serif"],
+        cinzel: ["Cinzel", "Georgia", "serif"],
+        sora: ["Sora", "system-ui", "sans-serif"],
+        jetbrains: ["JetBrains Mono", "Space Mono", "monospace"],
+        orbitron: ["Orbitron", "Syne", "sans-serif"],
       },
       keyframes: {
         "accordion-down": {

@@ -125,4 +125,13 @@ const robinhood: NetworkConfig = {
 
 const chains: NetworkConfig[] = [robinhood, litvm]; // , scroll, manta, opbnb, sepolia, base, bnb, hashkey, monad, 
 
+const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
+
+/** True when the chain has a real PENNY token address (enables Farm / Harvester UI). */
+export function hasValidPennyEntry(network: Pick<NetworkConfig, "penny_address"> | null | undefined): boolean {
+  if (!network?.penny_address) return false;
+  const addr = network.penny_address.trim().toLowerCase();
+  return addr.startsWith("0x") && addr.length === 42 && addr !== ZERO_ADDRESS;
+}
+
 export { chains };

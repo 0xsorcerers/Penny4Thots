@@ -13,6 +13,8 @@ import {
 import { useActiveAccount, useActiveWallet, useDisconnect } from "thirdweb/react";
 import { truncateAddress } from "@/tools/utils";
 import { useLanguageStore } from "@/store/languageStore";
+import { useNetworkStore } from "@/store/networkStore";
+import { hasValidPennyEntry } from "@/tools/networkData";
 import { t } from "@/tools/languages";
 import { toast } from "sonner";
 
@@ -22,6 +24,8 @@ export function ProfileDropdown() {
   const activeWallet = useActiveWallet();
   const { disconnect } = useDisconnect();
   const selectedLanguage = useLanguageStore((state) => state.selectedLanguage);
+  const selectedNetwork = useNetworkStore((state) => state.selectedNetwork);
+  const canAccessStaking = hasValidPennyEntry(selectedNetwork);
   const [isOpen, setIsOpen] = useState(false);
   const [didCopyAddress, setDidCopyAddress] = useState(false);
 
@@ -73,13 +77,17 @@ export function ProfileDropdown() {
       path: "/history",
       gradient: "from-accent to-primary",
     },
-    {
-      label: t(selectedLanguage, "staking.title"),
-      description: t(selectedLanguage, "staking.subtitle"),
-      icon: Sprout,
-      path: "/staking",
-      gradient: "from-emerald-500 to-teal-600",
-    },
+    ...(canAccessStaking
+      ? [
+          {
+            label: t(selectedLanguage, "staking.title"),
+            description: t(selectedLanguage, "staking.subtitle"),
+            icon: Sprout,
+            path: "/staking",
+            gradient: "from-emerald-500 to-teal-600",
+          },
+        ]
+      : []),
   ];
 
   return (

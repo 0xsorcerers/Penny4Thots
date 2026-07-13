@@ -13,6 +13,8 @@ This file tracks all significant progress. Updated automatically after major cha
 - Three full-bleed action columns with unique character art: Farm Now, Withdraw Now, Harvest Now.
 - Multi-token harvest picker (USDC / ETH / PENNY mock data) for Harvester V2 streams.
 - Character backgrounds in `webapp/public/staking/`. Contract wiring not connected yet.
+- Farm access gated by `hasValidPennyEntry()` — Profile menu + `/staking` only when chain has a real `penny_address` (currently Robinhood).
+- Premium GameFi fonts on staking page: Cinzel, Sora, Orbitron, JetBrains Mono.
 
 ### Security: SafeERC20 on ProofOfAccess + Harvester
 - Added OpenZeppelin `SafeERC20` to `ProofOfAccess.sol` and `HarvesterV2.sol`.
