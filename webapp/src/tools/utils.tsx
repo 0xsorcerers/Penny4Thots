@@ -1533,7 +1533,7 @@ export function getProofOfAccessAddress(): Address | null {
   const network = getCurrentNetwork();
   // Dummy stand-in unlocks UI only — never return it for live contract calls
   if (!hasLiveProofOfAccess(network)) return null;
-  return network.proofOfAccess_address as Address;
+  return network.proof_of_access;
 }
 
 export const getProofOfAccessContract = () => {

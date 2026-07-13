@@ -8,8 +8,8 @@ This file tracks all significant progress. Updated automatically after major cha
 
 ### Gate: Farm / stake only when ProofOfAccess is on the chain
 - Profile menu Farm entry and `/staking` use `canAccessFarm()` → requires `proofOfAccess_address` (dummy or live).
-- Dummy stand-ins: `DUMMY_PROOF_OF_ACCESS_ADDRESS` (`…000F00A5`) and `DUMMY_HARVESTER_ADDRESS` (`…000FA125`) on Robinhood + Sepolia until live deploys.
-- Mint only when `hasLiveProofOfAccess()` (rejects dummy). Replace dummies with real addresses after deploy.
+- Network fields: `proof_of_access` + `harvester` as `Address`; zero `0x0…0` stand-in until live deploy.
+- Mint only when `hasLiveProofOfAccess()` (non-zero). Paste real addresses after deploy.
 - Sepolia in active chain list for steady testing.
 
 ### Feature: ProofOfAccess tier mint + epic tier art carousel

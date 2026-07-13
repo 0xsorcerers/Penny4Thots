@@ -287,7 +287,7 @@ export default function Staking() {
     if (!poaLive) {
       toast.error("ProofOfAccess not live yet", {
         description:
-          "Using dummy stand-in address. Deploy the contract, then replace proofOfAccess_address in networkData.",
+          "Using zero stand-in address. Deploy the contract, then set proof_of_access in networkData.",
       });
       return;
     }
@@ -498,7 +498,7 @@ export default function Staking() {
                           {poaLive ? (
                             <span className="text-emerald-700">contract live</span>
                           ) : (
-                            <span className="text-amber-700">dummy stand-in · replace after deploy</span>
+                            <span className="text-amber-700">zero stand-in · set proof_of_access after deploy</span>
                           )}
                         </div>
                       </div>

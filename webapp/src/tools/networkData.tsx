@@ -1,16 +1,13 @@
 import { type Address } from "viem";
 
-const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
+const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000" as Address;
 
 /**
- * Stand-in addresses when contracts are not deployed yet.
- * Unlocks Farm UI / config shape; mint & stake txs require a live deploy.
- * Replace with real addresses after deploy (e.g. Sepolia testing).
+ * Stand-in when ProofOfAccess / Harvester are not deployed yet.
+ * Zero address unlocks Farm UI only; mint/stake need a non-zero live deploy.
  */
-export const DUMMY_PROOF_OF_ACCESS_ADDRESS =
-  "0x00000000000000000000000000000000000F00A5";
-export const DUMMY_HARVESTER_ADDRESS =
-  "0x00000000000000000000000000000000000FA125";
+export const DUMMY_PROOF_OF_ACCESS = ZERO_ADDRESS;
+export const DUMMY_HARVESTER = ZERO_ADDRESS;
 
 export interface NetworkConfig {
   name: string;
@@ -21,10 +18,10 @@ export interface NetworkConfig {
   symbol: string;
   contract_address: Address;
   penny_address: string;
-  /** ProofOfAccess NFT mint — use DUMMY_PROOF_OF_ACCESS_ADDRESS until live deploy */
-  proofOfAccess_address: string;
-  /** Harvester V2 — use DUMMY_HARVESTER_ADDRESS until live deploy */
-  harvester_address: string;
+  /** ProofOfAccess NFT mint — zero until live deploy */
+  proof_of_access: Address;
+  /** Harvester V2 — zero until live deploy */
+  harvester: Address;
 }
 
 const sepolia: NetworkConfig = {
@@ -35,10 +32,9 @@ const sepolia: NetworkConfig = {
   decimals: 18,
   symbol: 'sETH',
   contract_address: '0x569e65de26FA684DDb0b86E68BD9cEc85FeB9A96' as Address, // 0x0f7Cf85d6760b8c7821b747B4f5035fa01a4e1e3 0x7DeA875A4D644aB78e0914FFF8b760bE5e8F54cb
-  // Replace dummies with live Sepolia deploys when ready
   penny_address: '',
-  proofOfAccess_address: DUMMY_PROOF_OF_ACCESS_ADDRESS,
-  harvester_address: DUMMY_HARVESTER_ADDRESS,
+  proof_of_access: '0x0000000000000000000000000000000000000000' as Address,
+  harvester: '0x0000000000000000000000000000000000000000' as Address,
 };
 
 const base: NetworkConfig = {
@@ -50,8 +46,8 @@ const base: NetworkConfig = {
   symbol: 'ETH',
   contract_address: '0x499c9bF1556aBFAb44546514F8c655Fd9b99E801' as Address, // 0xe8f5b91e8e4c49f499002745bA49dc9fEE7670C6
   penny_address: '',
-  proofOfAccess_address: '',
-  harvester_address: '',
+  proof_of_access: '0x0000000000000000000000000000000000000000' as Address,
+  harvester: '0x0000000000000000000000000000000000000000' as Address,
 };
 
 const bnb: NetworkConfig = {
@@ -63,8 +59,8 @@ const bnb: NetworkConfig = {
   symbol: 'BNB',
   contract_address: '0x825Bb9873b9E982e3692eA69715E162206B2ecc1' as Address, // 0x13B9CD2340E8224D4c1CC86d3481c217d9078AAe
   penny_address: '',
-  proofOfAccess_address: '',
-  harvester_address: '',
+  proof_of_access: '0x0000000000000000000000000000000000000000' as Address,
+  harvester: '0x0000000000000000000000000000000000000000' as Address,
 };
 
 const hashkey: NetworkConfig = {
@@ -76,8 +72,8 @@ const hashkey: NetworkConfig = {
   symbol: 'HSK',
   contract_address: '0x24C89D67d1C8B569fFe564b8493C0fbD1f55d7F7' as Address,
   penny_address: '',
-  proofOfAccess_address: '',
-  harvester_address: '',
+  proof_of_access: '0x0000000000000000000000000000000000000000' as Address,
+  harvester: '0x0000000000000000000000000000000000000000' as Address,
 };
 
 
@@ -91,8 +87,8 @@ const scroll: NetworkConfig = {
   symbol: 'ETH',
   contract_address: '0x554C2ca099DC9676470f92Df3083040B7f4DdeF5' as Address, // 0x06F94c107808bC4d9c27fA8476C3E2f5F83A9c3C
   penny_address: '',
-  proofOfAccess_address: '',
-  harvester_address: '',
+  proof_of_access: '0x0000000000000000000000000000000000000000' as Address,
+  harvester: '0x0000000000000000000000000000000000000000' as Address,
 };
 
 const manta: NetworkConfig = {
@@ -104,8 +100,8 @@ const manta: NetworkConfig = {
   symbol: 'ETH',
   contract_address: '0x83D8EeeB23539CEB139DDbD00dc26eE57Bb3F2Bd' as Address,
   penny_address: '',
-  proofOfAccess_address: '',
-  harvester_address: '',
+  proof_of_access: '0x0000000000000000000000000000000000000000' as Address,
+  harvester: '0x0000000000000000000000000000000000000000' as Address,
 };
 
 const opbnb: NetworkConfig = {
@@ -117,8 +113,8 @@ const opbnb: NetworkConfig = {
   symbol: 'BNB',
   contract_address: '0x8d4a1A116Fd092D21b47Aa29a1882995af234353' as Address,
   penny_address: '',
-  proofOfAccess_address: '',
-  harvester_address: '',
+  proof_of_access: '0x0000000000000000000000000000000000000000' as Address,
+  harvester: '0x0000000000000000000000000000000000000000' as Address,
 };
 
 const monad: NetworkConfig = {
@@ -130,8 +126,8 @@ const monad: NetworkConfig = {
   symbol: 'MON',
   contract_address: '0x24C89D67d1C8B569fFe564b8493C0fbD1f55d7F7' as Address,
   penny_address: '',
-  proofOfAccess_address: '',
-  harvester_address: '',
+  proof_of_access: '0x0000000000000000000000000000000000000000' as Address,
+  harvester: '0x0000000000000000000000000000000000000000' as Address,
 };
 
 const litvm: NetworkConfig = {
@@ -143,8 +139,8 @@ const litvm: NetworkConfig = {
   symbol: 'LTC (zk)',
   contract_address: '0x24C89D67d1C8B569fFe564b8493C0fbD1f55d7F7' as Address,
   penny_address: '',
-  proofOfAccess_address: '',
-  harvester_address: '',
+  proof_of_access: '0x0000000000000000000000000000000000000000' as Address,
+  harvester: '0x0000000000000000000000000000000000000000' as Address,
 };
 
 const robinhood: NetworkConfig = {
@@ -156,63 +152,67 @@ const robinhood: NetworkConfig = {
   symbol: 'ETH',
   contract_address: '0x5081f537929bAD504b7813B40Cc215344078451A' as Address, //0x24C89D67d1C8B569fFe564b8493C0fbD1f55d7F7
   penny_address: '0x6924315c4bf46e4b43c980fbd98c87914eca787e',
-  // Replace dummies with live Robinhood deploys when ready
-  proofOfAccess_address: DUMMY_PROOF_OF_ACCESS_ADDRESS,
-  harvester_address: DUMMY_HARVESTER_ADDRESS,
+  proof_of_access: '0x0000000000000000000000000000000000000000' as Address,
+  harvester: '0x0000000000000000000000000000000000000000' as Address,
 };
 
 // Sepolia included for steady ProofOfAccess / Harvester testing once addresses are set
 const chains: NetworkConfig[] = [robinhood, litvm, sepolia]; // , scroll, manta, opbnb, base, bnb, hashkey, monad, 
 
-function isValidAddress(addr: string | null | undefined): boolean {
-  if (!addr) return false;
-  const a = addr.trim().toLowerCase();
-  return a.startsWith("0x") && a.length === 42 && a !== ZERO_ADDRESS;
-}
-
 function normalizeAddr(addr: string): string {
   return addr.trim().toLowerCase();
 }
 
-/** True when address is our undeployed stand-in (not a live contract). */
-export function isDummyProofOfAccess(addr: string | null | undefined): boolean {
+function isZeroAddress(addr: string | null | undefined): boolean {
+  if (!addr) return true;
+  return normalizeAddr(addr) === normalizeAddr(ZERO_ADDRESS);
+}
+
+function isNonZeroAddress(addr: string | null | undefined): boolean {
   if (!addr) return false;
-  return normalizeAddr(addr) === normalizeAddr(DUMMY_PROOF_OF_ACCESS_ADDRESS);
+  const a = normalizeAddr(addr);
+  return a.startsWith("0x") && a.length === 42 && a !== normalizeAddr(ZERO_ADDRESS);
+}
+
+/** True when address is the zero stand-in (not a live contract). */
+export function isDummyProofOfAccess(addr: string | null | undefined): boolean {
+  return isZeroAddress(addr);
 }
 
 export function isDummyHarvester(addr: string | null | undefined): boolean {
-  if (!addr) return false;
-  return normalizeAddr(addr) === normalizeAddr(DUMMY_HARVESTER_ADDRESS);
+  return isZeroAddress(addr);
 }
 
 /** True when the chain has a real PENNY token address. */
 export function hasValidPennyEntry(network: Pick<NetworkConfig, "penny_address"> | null | undefined): boolean {
-  return isValidAddress(network?.penny_address);
+  return isNonZeroAddress(network?.penny_address);
 }
 
 /**
- * True when ProofOfAccess is set (dummy or live) — used for Farm UI presence.
+ * True when ProofOfAccess is configured (zero stand-in or live) — Farm UI presence.
+ * Zero address counts as a configured stand-in so Farm stays available pre-deploy.
  */
-export function hasValidProofOfAccess(network: Pick<NetworkConfig, "proofOfAccess_address"> | null | undefined): boolean {
-  return isValidAddress(network?.proofOfAccess_address);
+export function hasValidProofOfAccess(network: Pick<NetworkConfig, "proof_of_access"> | null | undefined): boolean {
+  if (!network?.proof_of_access) return false;
+  const a = normalizeAddr(network.proof_of_access);
+  return a.startsWith("0x") && a.length === 42;
 }
 
 /**
- * True when ProofOfAccess is a real deploy (not empty, not dummy stand-in).
- * Required for wallet mint txs.
+ * True when ProofOfAccess is a real deploy (non-zero). Required for wallet mint txs.
  */
-export function hasLiveProofOfAccess(network: Pick<NetworkConfig, "proofOfAccess_address"> | null | undefined): boolean {
-  return hasValidProofOfAccess(network) && !isDummyProofOfAccess(network?.proofOfAccess_address);
+export function hasLiveProofOfAccess(network: Pick<NetworkConfig, "proof_of_access"> | null | undefined): boolean {
+  return isNonZeroAddress(network?.proof_of_access);
 }
 
 /**
- * Farm / stake UI (profile menu + /staking) when ProofOfAccess is configured
- * (dummy stand-in unlocks UI; live address unlocks mint).
+ * Farm / stake UI (profile menu + /staking) when proof_of_access is set
+ * (zero stand-in unlocks UI; non-zero unlocks mint).
  */
 export function canAccessFarm(
-  network: Pick<NetworkConfig, "proofOfAccess_address"> | null | undefined,
+  network: Pick<NetworkConfig, "proof_of_access"> | null | undefined,
 ): boolean {
   return hasValidProofOfAccess(network);
 }
 
-export { chains };
+export { chains, ZERO_ADDRESS };
