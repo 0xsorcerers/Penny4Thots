@@ -302,6 +302,11 @@ export interface Translations {
     secs: string;
     loadingAdjudicators: string;
   };
+  // Staking / Harvester
+  staking: {
+    title: string;
+    subtitle: string;
+  };
   // Profile Menu
   profileMenu: {
     profile: string;
@@ -616,6 +621,10 @@ export const translations: Record<LanguageCode, Translations> = {
       secs: "Secs",
       loadingAdjudicators: "Loading adjudicators...",
     },
+    staking: {
+      title: "Farm",
+      subtitle: "Stake GAME & harvest multi-token rewards",
+    },
     profileMenu: {
       profile: "Your Profile",
       notConnected: "Not connected",
@@ -912,6 +921,10 @@ export const translations: Record<LanguageCode, Translations> = {
       secs: "Seg",
       loadingAdjudicators: "Cargando adjudicadores...",
     },
+    staking: {
+      title: "Farm",
+      subtitle: "Apuesta GAME y cosecha recompensas multi-token",
+    },
     profileMenu: {
       profile: "Tu perfil",
       notConnected: "No conectado",
@@ -1206,6 +1219,10 @@ export const translations: Record<LanguageCode, Translations> = {
       mins: "Min",
       secs: "Sec",
       loadingAdjudicators: "Chargement des arbitres...",
+    },
+    staking: {
+      title: "Farm",
+      subtitle: "Stakez GAME et récoltez des récompenses multi-tokens",
     },
     profileMenu: {
       profile: "Votre profil",
@@ -1502,6 +1519,10 @@ export const translations: Record<LanguageCode, Translations> = {
       secs: "Sek",
       loadingAdjudicators: "Schiedsrichter werden geladen...",
     },
+    staking: {
+      title: "Farm",
+      subtitle: "GAME staken und Multi-Token-Belohnungen ernten",
+    },
     profileMenu: {
       profile: "Dein Profil",
       notConnected: "Nicht verbunden",
@@ -1797,6 +1818,10 @@ export const translations: Record<LanguageCode, Translations> = {
       secs: "Seg",
       loadingAdjudicators: "Carregando adjudicadores...",
     },
+    staking: {
+      title: "Farm",
+      subtitle: "Faça stake de GAME e colha recompensas multi-token",
+    },
     profileMenu: {
       profile: "Seu perfil",
       notConnected: "Não conectado",
@@ -2090,6 +2115,10 @@ export const translations: Record<LanguageCode, Translations> = {
       mins: "分",
       secs: "秒",
       loadingAdjudicators: "正在加载裁决者...",
+    },
+    staking: {
+      title: "农场",
+      subtitle: "质押 GAME，收获多代币奖励",
     },
     profileMenu: {
       profile: "你的资料",
@@ -2385,6 +2414,10 @@ export const translations: Record<LanguageCode, Translations> = {
       secs: "秒",
       loadingAdjudicators: "判定者を読み込み中...",
     },
+    staking: {
+      title: "ファーム",
+      subtitle: "GAMEをステークしてマルチトークン報酬を獲得",
+    },
     profileMenu: {
       profile: "あなたのプロフィール",
       notConnected: "未接続",
@@ -2678,6 +2711,10 @@ export const translations: Record<LanguageCode, Translations> = {
       mins: "분",
       secs: "초",
       loadingAdjudicators: "판정자 로딩 중...",
+    },
+    staking: {
+      title: "팜",
+      subtitle: "GAME 스테이킹 및 멀티 토큰 보상 수확",
     },
     profileMenu: {
       profile: "당신의 프로필",
@@ -2973,6 +3010,10 @@ export const translations: Record<LanguageCode, Translations> = {
       secs: "सेकंड",
       loadingAdjudicators: "न्यायाधीश लोड हो रहे हैं...",
     },
+    staking: {
+      title: "फार्म",
+      subtitle: "GAME स्टेक करें और मल्टी-टोकन रिवॉर्ड कमाएँ",
+    },
     profileMenu: {
       profile: "आपकी प्रोफाइल",
       notConnected: "कनेक्ट नहीं",
@@ -3267,6 +3308,10 @@ export const translations: Record<LanguageCode, Translations> = {
       secs: "ثوانٍ",
       loadingAdjudicators: "جاري تحميل المحكمين...",
     },
+    staking: {
+      title: "المزرعة",
+      subtitle: "قم بتخزين GAME واحصد مكافآت متعددة الرموز",
+    },
     profileMenu: {
       profile: "ملفك الشخصي",
       notConnected: "غير متصل",
@@ -3560,6 +3605,10 @@ export const translations: Record<LanguageCode, Translations> = {
       mins: "דקות",
       secs: "שניות",
       loadingAdjudicators: "טוען שופטים...",
+    },
+    staking: {
+      title: "חווה",
+      subtitle: "סטייקינג של GAME וקציר תגמולים מרובי-טוקנים",
     },
     profileMenu: {
       profile: "הפרופיל שלך",

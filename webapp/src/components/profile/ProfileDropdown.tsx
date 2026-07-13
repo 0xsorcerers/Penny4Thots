@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { User, Brain, MessageCircle, History, ChevronDown, Copy, Check, LogOut } from "lucide-react";
+import { User, Brain, MessageCircle, History, ChevronDown, Copy, Check, LogOut, Sprout } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import {
   DropdownMenu,
@@ -72,6 +72,13 @@ export function ProfileDropdown() {
       icon: History,
       path: "/history",
       gradient: "from-accent to-primary",
+    },
+    {
+      label: t(selectedLanguage, "staking.title"),
+      description: t(selectedLanguage, "staking.subtitle"),
+      icon: Sprout,
+      path: "/staking",
+      gradient: "from-emerald-500 to-teal-600",
     },
   ];
 
