@@ -6,6 +6,11 @@ This file tracks all significant progress. Updated automatically after major cha
 
 ## 2026-07-13
 
+### Gate: Farm / stake only when ProofOfAccess is on the chain
+- Profile menu Farm entry and `/staking` now use `canAccessFarm()` → requires a real `proofOfAccess_address` (not just PENNY).
+- Sepolia re-enabled in the active chain list so you can paste live test deploy addresses and exercise mint/farm steadily.
+- Robinhood Farm stays hidden until `proofOfAccess_address` is set there too.
+
 ### Feature: ProofOfAccess tier mint + epic tier art carousel
 - Left rail: swipeable NFT tier picker (bouncy chevron arrows + dots) for tiers 0–5 matching on-chain `mint(uint256 _tierLevel)`.
 - Fantasy titles map to contract metals: Deckhand (Marble), Pirate (Bronze), Corsair (Silver), Admiral (Gold), Dragonlord (Platinum), Emperor (Emerald).

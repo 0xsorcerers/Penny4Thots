@@ -26,7 +26,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import deepforestFlora from "@/assets/images/deepforest-flora.webp";
 import { useNetworkStore } from "@/store/networkStore";
-import { hasValidPennyEntry, hasValidProofOfAccess } from "@/tools/networkData";
+import { canAccessFarm, hasValidProofOfAccess } from "@/tools/networkData";
 import { STAKING_TIERS, getTier, type TierId } from "@/tools/stakingTiers";
 import {
   Connector,
@@ -222,7 +222,7 @@ export default function Staking() {
   const navigate = useNavigate();
   const account = useActiveAccount();
   const selectedNetwork = useNetworkStore((state) => state.selectedNetwork);
-  const canAccessStaking = hasValidPennyEntry(selectedNetwork);
+  const canAccessStaking = canAccessFarm(selectedNetwork);
   const poaDeployed = hasValidProofOfAccess(selectedNetwork);
   const { mintTier, isPending: isMinting } = useProofOfAccessMint();
 
@@ -240,7 +240,7 @@ export default function Staking() {
   useEffect(() => {
     if (!canAccessStaking) {
       toast.error("Farm unavailable on this network", {
-        description: "Switch to a chain with a valid PENNY token entry.",
+        description: "Switch to a chain with a deployed ProofOfAccess contract.",
       });
       navigate("/app", { replace: true });
     }
@@ -319,7 +319,7 @@ export default function Staking() {
           <ShieldAlert className="h-10 w-10 text-amber-400" />
           <p className="font-cinzel text-xl font-semibold">Farm locked</p>
           <p className="max-w-sm text-sm text-white/60">
-            This network has no valid PENNY entry. Redirecting to markets…
+            This network has no ProofOfAccess contract. Redirecting to markets…
           </p>
         </div>
       </div>

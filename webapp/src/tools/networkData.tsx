@@ -23,6 +23,7 @@ const sepolia: NetworkConfig = {
   decimals: 18,
   symbol: 'sETH',
   contract_address: '0x569e65de26FA684DDb0b86E68BD9cEc85FeB9A96' as Address, // 0x0f7Cf85d6760b8c7821b747B4f5035fa01a4e1e3 0x7DeA875A4D644aB78e0914FFF8b760bE5e8F54cb
+  // Paste live Sepolia deploy addresses below to enable Farm + mint testing
   penny_address: '',
   proofOfAccess_address: '',
   harvester_address: '',
@@ -148,7 +149,8 @@ const robinhood: NetworkConfig = {
   harvester_address: '',
 };
 
-const chains: NetworkConfig[] = [robinhood, litvm]; // , scroll, manta, opbnb, sepolia, base, bnb, hashkey, monad, 
+// Sepolia included for steady ProofOfAccess / Harvester testing once addresses are set
+const chains: NetworkConfig[] = [robinhood, litvm, sepolia]; // , scroll, manta, opbnb, base, bnb, hashkey, monad, 
 
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 
@@ -158,7 +160,7 @@ function isValidAddress(addr: string | null | undefined): boolean {
   return a.startsWith("0x") && a.length === 42 && a !== ZERO_ADDRESS;
 }
 
-/** True when the chain has a real PENNY token address (enables Farm / Harvester UI). */
+/** True when the chain has a real PENNY token address. */
 export function hasValidPennyEntry(network: Pick<NetworkConfig, "penny_address"> | null | undefined): boolean {
   return isValidAddress(network?.penny_address);
 }
@@ -166,6 +168,16 @@ export function hasValidPennyEntry(network: Pick<NetworkConfig, "penny_address">
 /** True when ProofOfAccess is configured for minting. */
 export function hasValidProofOfAccess(network: Pick<NetworkConfig, "proofOfAccess_address"> | null | undefined): boolean {
   return isValidAddress(network?.proofOfAccess_address);
+}
+
+/**
+ * Farm / stake UI (profile menu + /staking) only when ProofOfAccess is live on this chain.
+ * Paste `proofOfAccess_address` after deploy — e.g. on Sepolia for testing.
+ */
+export function canAccessFarm(
+  network: Pick<NetworkConfig, "proofOfAccess_address"> | null | undefined,
+): boolean {
+  return hasValidProofOfAccess(network);
 }
 
 export { chains };
