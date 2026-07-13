@@ -6,6 +6,15 @@ This file tracks all significant progress. Updated automatically after major cha
 
 ## 2026-07-13
 
+### UI: Staking page uses network light/dark theme
+- Farm/staking chrome now uses `textured-bg`, `theme-surface*`, and token colors (`primary`, `foreground`, `border`, etc.) like Markets/History.
+- Removed hardcoded deep-forest dark shell so light/dark + per-network flora match the rest of the app.
+- Tier art columns keep dark overlays for character contrast; mint/stats/sidebar follow theme toggle.
+
+### Policy: Agents leave git changes local
+- Replaced auto-commit / dual-remote push rules in `AGENTS.md` and `CLAUDE.md`.
+- Agents implement and leave uncommitted work for the user to test, then commit or discard.
+
 ### Gate: Farm / stake only when ProofOfAccess is on the chain
 - Profile menu Farm entry and `/staking` use `canAccessFarm()` → requires `proofOfAccess_address` (dummy or live).
 - Network fields: `proof_of_access` + `harvester` as `Address`; zero `0x0…0` stand-in until live deploy.
@@ -237,7 +246,7 @@ This file tracks all significant progress. Updated automatically after major cha
 - Fixed critical issue where Vibecode workspace was not synced with GitHub repo
 - Added `github` remote pointing to `github.com/0xsorcerers/Penny4Thots.git`
 - Merged 30+ missing commits from GitHub into Vibecode
-- Set up CLAUDE.md rules to always push to BOTH remotes
+- Earlier CLAUDE.md dual-remote auto-push rules (later replaced: agents leave changes local until user commits)
 
 ### UI Improvements
 - Moved market status badge after votes count in meta info section
@@ -373,15 +382,15 @@ This file tracks all significant progress. Updated automatically after major cha
 - History cache keys now include the active network chain ID, and cached entries are reused only when they already contain the new decimal-aware display metadata
 
 ---
-## How to Save Progress
+## Git / Save Progress
 
-Tell the AI any of these phrases:
-- "save progress"
-- "stable build"
-- "commit our work"
-- "push changes"
+Agents leave all work as **local uncommitted changes** so you can test first.
 
-The AI will commit and push to BOTH GitHub and Vibecode servers automatically.
+You decide what happens next:
+- **Keep / commit / push** — only when you explicitly ask (e.g. "commit", "push", "save our work")
+- **Discard** — you discard the local changes yourself if you do not want them
+
+Agents must not auto-commit or push after features.
 
 
 

@@ -157,7 +157,7 @@ const robinhood: NetworkConfig = {
 };
 
 // Sepolia included for steady ProofOfAccess / Harvester testing once addresses are set
-const chains: NetworkConfig[] = [robinhood, litvm, sepolia]; // , scroll, manta, opbnb, base, bnb, hashkey, monad, 
+const chains: NetworkConfig[] = [sepolia, robinhood, litvm]; // , scroll, manta, opbnb, base, bnb, hashkey, monad, 
 
 function normalizeAddr(addr: string): string {
   return addr.trim().toLowerCase();

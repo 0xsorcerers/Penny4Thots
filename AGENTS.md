@@ -47,35 +47,23 @@ This workspace contains a mobile app and backend server.
   Be concise and don't talk too much.
 </environment>
 
-<git_sync_rules>
-  CRITICAL: origin is required and must always be kept up to date.
-  - origin: active primary remote used for app restarts and required persistence
-  - github: optional backup remote; only sync it when a github remote is actually configured
+<git_rules>
+  CRITICAL: Do NOT commit, push, amend, or force-push unless the user explicitly asks you to.
 
-  MANDATORY ACTIONS:
-  1. When user says "save progress", "stable build", "commit", "push", or "save our work":
-     - Commit all changes with a descriptive message
-     - Always push to origin
-     - If github remote exists, push to github too
-     - Confirm which remotes were pushed successfully
+  Default workflow:
+  1. Make code changes and leave them as local uncommitted work.
+  2. After finishing a task, briefly summarize what changed so the user can test.
+  3. The user tests the app and decides whether to commit, push, or discard.
 
-  2. Before ANY major feature work or at conversation start:
-     - Always run git fetch origin to check sync status
-     - If github remote exists, run git fetch github too
-     - If configured remotes are out of sync, merge and push back to each configured remote before proceeding
+  Only when the user clearly asks to commit and/or push (e.g. "commit", "push", "save our work"):
+  - Follow their exact request for that moment only.
+  - Never treat that as ongoing permission for future work.
 
-  3. After completing significant features:
-     - Auto-commit with summary of changes
-     - Push to origin without waiting to be asked
-     - If github remote exists, push there too
-
-  4. If a push to optional github fails:
-     - Notify the user immediately
-     - Still push to origin so app restarts don't lose work
-     - Ask user to check GitHub connection in Vibecode settings if they expect GitHub backup sync
-
-  Never let configured remotes silently diverge. If github is not configured, use origin only.
-</git_sync_rules>
+  Never:
+  - Auto-commit after features
+  - Push "to keep remotes in sync" without being asked
+  - Commit or push at conversation start or after every task
+</git_rules>
 
 <progress_tracking>
   Maintain a PROGRESS.md file in the root directory:

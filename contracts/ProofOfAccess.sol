@@ -54,7 +54,7 @@ contract ProofOfAccess is ERC721Enumerable, Ownable, ReentrancyGuard {
     mapping (uint256 => Player) public players;
     
     // Arrays
-    string[] public TierByName = ["Marble", "Bronze", "Silver", "Gold", "Platinum", "Emerald"];
+    string[] public TierByName = ["Pirate", "General", "Wizard", "Lord Commander", "Queen", "Emperor"]; 
     uint256[] public TierByLadder = [2, 4, 8, 12, 15, 20]; 
     uint256[] public multipliers = [1, 2, 4, 8, 16, 32]; 
 

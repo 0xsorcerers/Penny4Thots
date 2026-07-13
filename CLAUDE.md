@@ -47,32 +47,24 @@ This workspace contains a mobile app and backend server.
   Be concise and don't talk too much.
 </environment>
 
-<git_sync_rules>
-  CRITICAL: This project has TWO git remotes that MUST stay in sync:
-  - origin: Vibecode internal server (git.vibecodeapp.com) - used for app restarts
-  - github: User's GitHub repo (github.com/0xsorcerers/Penny4Thots.git) - backup & version control
+<git_rules>
+  CRITICAL: Do NOT commit, push, amend, or force-push unless the user explicitly asks you to.
 
-  MANDATORY ACTIONS:
-  1. When user says "save progress", "stable build", "commit", "push", or "save our work":
-     - Commit all changes with a descriptive message
-     - Push to BOTH remotes: `git push origin main && git push github main`
-     - Confirm both pushes succeeded
+  Default workflow:
+  1. Make code changes and leave them as local uncommitted work.
+  2. After finishing a task, briefly summarize what changed so the user can test.
+  3. The user tests the app and decides whether to commit, push, or discard.
 
-  2. Before ANY major feature work or at conversation start:
-     - Run `git fetch github && git fetch origin` to check sync status
-     - If repos are out of sync, merge and push to both before proceeding
+  Only when the user clearly asks to commit and/or push (e.g. "commit", "push", "save our work"):
+  - Follow their exact request for that moment only.
+  - Never treat that as ongoing permission for future work.
 
-  3. After completing significant features:
-     - Auto-commit with summary of changes
-     - Push to BOTH remotes without being asked
-
-  4. If a push to github fails (auth issues):
-     - Notify the user immediately
-     - Still push to origin so Vibecode restarts don't lose work
-     - Ask user to check GitHub connection in Vibecode settings
-
-  NEVER let the two remotes diverge. Lost work = lost money.
-</git_sync_rules>
+  Never:
+  - Auto-commit after features
+  - Push "to keep remotes in sync" without being asked
+  - Commit or push at conversation start or after every task
+  - Sync or push to both remotes unless the user explicitly requests it
+</git_rules>
 
 <progress_tracking>
   Maintain a PROGRESS.md file in the root directory:

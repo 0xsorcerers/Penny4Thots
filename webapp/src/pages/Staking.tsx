@@ -24,7 +24,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import deepforestFlora from "@/assets/images/deepforest-flora.webp";
 import { useNetworkStore } from "@/store/networkStore";
 import { canAccessFarm, hasLiveProofOfAccess } from "@/tools/networkData";
 import { STAKING_TIERS, getTier, type TierId } from "@/tools/stakingTiers";
@@ -38,13 +37,12 @@ import {
 
 /** Demo / design-preview data — multi-token Harvester V2 mock */
 const DEMO = {
-  ethBalance: "0.0014",
+  nativeBalance: "0.0014",
+  pennyBalance: "30.075",
   totalFarm: "12,450.00",
   currentFarm: "8,200.50",
   preApproved: "25,000.00",
   stakeToken: "GAME",
-  payTokenBalance: "30.075",
-  payTokenSymbol: "USDC",
   rewards: [
     { symbol: "USDC", harvested: "142.50", estimated: "18.34", color: "from-emerald-400 to-teal-500" },
     { symbol: "ETH", harvested: "0.084", estimated: "0.012", color: "from-indigo-400 to-violet-500" },
@@ -57,22 +55,45 @@ const DEMO = {
   timelockHours: 24,
 };
 
+const TIER_STORAGE_KEY = "penny4thots-staking-last-tier";
+
+function readCachedTierId(): TierId {
+  if (typeof window === "undefined") return 0;
+  try {
+    const raw = localStorage.getItem(TIER_STORAGE_KEY);
+    if (raw === null) return 0; // first visit → Marble
+    const n = Number.parseInt(raw, 10);
+    if (Number.isInteger(n) && n >= 0 && n <= 5) return n as TierId;
+  } catch {
+    /* ignore */
+  }
+  return 0;
+}
+
+function writeCachedTierId(id: TierId) {
+  try {
+    localStorage.setItem(TIER_STORAGE_KEY, String(id));
+  } catch {
+    /* ignore */
+  }
+}
+
 type ActionColumnProps = {
   title: string;
   subtitle: string;
   background: string;
-  accent: string;
   children: React.ReactNode;
   delay?: number;
 };
 
-function ActionColumn({ title, subtitle, background, accent, children, delay = 0 }: ActionColumnProps) {
+/** Art columns keep a dark overlay for character readability on top of tier art */
+function ActionColumn({ title, subtitle, background, children, delay = 0 }: ActionColumnProps) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 28 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.55, delay, ease: "easeOut" }}
-      className="group relative min-h-[380px] flex-1 overflow-hidden rounded-2xl border border-white/15 shadow-2xl sm:min-h-[420px] lg:min-h-[520px]"
+      className="group relative min-h-[380px] flex-1 overflow-hidden rounded-2xl border border-border/60 shadow-xl sm:min-h-[420px] lg:min-h-[520px]"
     >
       <AnimatePresence mode="wait">
         <motion.div
@@ -88,12 +109,16 @@ function ActionColumn({ title, subtitle, background, accent, children, delay = 0
           }}
         />
       </AnimatePresence>
-      <div className={cn("absolute inset-0 bg-gradient-to-t from-black/90 via-black/45 to-black/20", accent)} />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-black/25" />
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,transparent_20%,rgba(0,0,0,0.35)_100%)]" />
 
       <div className="absolute left-4 right-4 top-4 z-10">
-        <p className="font-sora text-[10px] font-semibold uppercase tracking-[0.28em] text-white/70">{subtitle}</p>
-        <h3 className="font-cinzel text-xl font-bold tracking-wide text-white drop-shadow-lg sm:text-2xl">{title}</h3>
+        <p className="font-sora text-[10px] font-semibold uppercase tracking-[0.28em] text-white/70">
+          {subtitle}
+        </p>
+        <h3 className="font-cinzel text-xl font-bold tracking-wide text-white drop-shadow-lg sm:text-2xl">
+          {title}
+        </h3>
       </div>
 
       <div className="relative z-10 flex h-full min-h-[380px] flex-col justify-end p-4 pb-5 sm:min-h-[420px] sm:p-5 lg:min-h-[520px]">
@@ -121,11 +146,11 @@ function StatCard({
       initial={{ opacity: 0, y: -12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, delay }}
-      className="rounded-xl border border-white/10 bg-slate-900/70 px-3 py-2.5 shadow-lg backdrop-blur-md sm:px-4"
+      className="rounded-xl border border-border/50 theme-surface px-3 py-2.5 sm:px-4"
     >
       <p className={cn("font-sora text-[11px] font-medium tracking-wide sm:text-xs", accentClass)}>{label}</p>
-      <p className="mt-0.5 font-jetbrains text-base font-semibold tracking-tight text-white sm:text-lg">
-        {value} <span className="font-sora text-sm font-semibold text-white/70">{unit}</span>
+      <p className="mt-0.5 font-jetbrains text-base font-semibold tracking-tight text-foreground sm:text-lg">
+        {value} <span className="font-sora text-sm font-semibold text-muted-foreground">{unit}</span>
       </p>
     </motion.div>
   );
@@ -145,7 +170,7 @@ function TierCarousel({
   return (
     <div className="relative">
       <div
-        className="relative overflow-hidden rounded-xl border-2 border-white/40 shadow-lg"
+        className="relative overflow-hidden rounded-xl border-2 border-border/70 shadow-lg"
         style={{ boxShadow: `0 0 28px ${tier.glow}` }}
       >
         <AnimatePresence mode="wait">
@@ -170,14 +195,13 @@ function TierCarousel({
           <p className="font-sora text-[10px] leading-snug text-white/75">{tier.tagline}</p>
         </div>
 
-        {/* Bouncy nav arrows */}
         <motion.button
           type="button"
           aria-label="Previous tier"
           onClick={prev}
           animate={{ x: [0, -4, 0] }}
           transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute left-1 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-white/30 bg-black/55 text-white shadow-lg backdrop-blur-sm transition hover:bg-lime-400 hover:text-slate-900"
+          className="absolute left-1 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-white/30 bg-black/55 text-white shadow-lg backdrop-blur-sm transition hover:bg-primary hover:text-primary-foreground"
         >
           <ChevronLeft className="h-5 w-5" />
         </motion.button>
@@ -187,13 +211,12 @@ function TierCarousel({
           onClick={next}
           animate={{ x: [0, 4, 0] }}
           transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut", delay: 0.2 }}
-          className="absolute right-1 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-white/30 bg-black/55 text-white shadow-lg backdrop-blur-sm transition hover:bg-lime-400 hover:text-slate-900"
+          className="absolute right-1 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-white/30 bg-black/55 text-white shadow-lg backdrop-blur-sm transition hover:bg-primary hover:text-primary-foreground"
         >
           <ChevronRight className="h-5 w-5" />
         </motion.button>
       </div>
 
-      {/* Dot indicators */}
       <div className="mt-2 flex items-center justify-center gap-1.5">
         {STAKING_TIERS.map((t) => (
           <button
@@ -203,7 +226,7 @@ function TierCarousel({
             onClick={() => onChange(t.id)}
             className={cn(
               "h-1.5 rounded-full transition-all",
-              t.id === tierId ? "w-5 bg-lime-500" : "w-1.5 bg-slate-400/50 hover:bg-slate-500",
+              t.id === tierId ? "w-5 bg-primary" : "w-1.5 bg-muted-foreground/40 hover:bg-muted-foreground/70",
             )}
           />
         ))}
@@ -213,7 +236,6 @@ function TierCarousel({
 }
 
 function formatPennyDisplay(amount: bigint): string {
-  // PENNY uses 6 decimals in ProofOfAccess requiredAmount (10**6)
   const whole = amount / 1_000_000n;
   return whole.toLocaleString();
 }
@@ -223,11 +245,11 @@ export default function Staking() {
   const account = useActiveAccount();
   const selectedNetwork = useNetworkStore((state) => state.selectedNetwork);
   const canAccessStaking = canAccessFarm(selectedNetwork);
-  /** Live contract (not dummy stand-in) — required for mint txs */
   const poaLive = hasLiveProofOfAccess(selectedNetwork);
   const { mintTier, isPending: isMinting } = useProofOfAccessMint();
 
-  const [tierId, setTierId] = useState<TierId>(1); // default Pirate (Bronze)
+  // Marble (0) on first visit; restore last choice on return
+  const [tierId, setTierId] = useState<TierId>(() => readCachedTierId());
   const [mintConfig, setMintConfig] = useState<ProofOfAccessMintConfig | null>(null);
   const [loadingConfig, setLoadingConfig] = useState(false);
   const [farmAmount, setFarmAmount] = useState("");
@@ -237,6 +259,11 @@ export default function Staking() {
   const [activeSidebarTab, setActiveSidebarTab] = useState<"mint" | "streams" | "info">("mint");
 
   const tier = useMemo(() => getTier(tierId), [tierId]);
+
+  const handleTierChange = useCallback((id: TierId) => {
+    setTierId(id);
+    writeCachedTierId(id);
+  }, []);
 
   useEffect(() => {
     if (!canAccessStaking) {
@@ -315,12 +342,11 @@ export default function Staking() {
 
   if (!canAccessStaking) {
     return (
-      <div className="relative flex min-h-screen items-center justify-center bg-[#0a1210] font-sora text-white">
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-emerald-950/80 to-[#060a08]" />
+      <div className="relative flex min-h-screen items-center justify-center textured-bg">
         <div className="relative z-10 flex flex-col items-center gap-3 px-6 text-center">
-          <ShieldAlert className="h-10 w-10 text-amber-400" />
-          <p className="font-cinzel text-xl font-semibold">Farm locked</p>
-          <p className="max-w-sm text-sm text-white/60">
+          <ShieldAlert className="h-10 w-10 text-amber-500" />
+          <p className="font-cinzel text-xl font-semibold text-foreground">Farm locked</p>
+          <p className="max-w-sm text-sm text-muted-foreground">
             This network has no ProofOfAccess contract. Redirecting to markets…
           </p>
         </div>
@@ -329,13 +355,18 @@ export default function Staking() {
   }
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-[#0a1210] font-sora text-white">
-      <div
-        className="pointer-events-none absolute inset-0 bg-cover bg-center opacity-40"
-        style={{ backgroundImage: `url(${deepforestFlora})` }}
-      />
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-emerald-950/85 via-[#0a1210]/88 to-[#060a08]" />
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,_rgba(52,211,153,0.12),_transparent_55%)]" />
+    <div className="relative min-h-screen overflow-hidden textured-bg font-sora text-foreground">
+      {/* Soft network accent washes (same language as History / Markets) */}
+      <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
+        <div
+          className="absolute -right-1/2 -top-1/2 h-full w-full animate-pulse bg-gradient-to-bl from-primary/5 via-transparent to-transparent"
+          style={{ animationDuration: "4s" }}
+        />
+        <div
+          className="absolute -bottom-1/2 -left-1/2 h-full w-full animate-pulse bg-gradient-to-tr from-accent/5 via-transparent to-transparent"
+          style={{ animationDuration: "6s" }}
+        />
+      </div>
 
       <Header isConnected={!!account} />
 
@@ -345,32 +376,32 @@ export default function Staking() {
             variant="ghost"
             size="sm"
             onClick={() => navigate("/app")}
-            className="rounded-full border border-white/10 bg-black/30 text-white hover:bg-white/10 hover:text-white"
+            className="rounded-full border border-border/60 theme-surface text-foreground hover:bg-muted/50"
           >
             <ArrowLeft className="h-4 w-4" />
             <span className="hidden sm:inline">Markets</span>
           </Button>
 
           <div className="flex flex-wrap items-center gap-2">
-            <div className="flex items-center gap-1.5 rounded-full border border-cyan-400/30 bg-slate-900/80 px-3 py-1.5 font-jetbrains text-xs font-semibold shadow-lg backdrop-blur-md sm:text-sm">
-              <span className="text-cyan-300">
-                {DEMO.payTokenBalance} {DEMO.payTokenSymbol}
+            <div className="flex items-center gap-1.5 rounded-full border border-border/60 theme-surface px-3 py-1.5 font-jetbrains text-xs font-semibold sm:text-sm">
+              <span className="text-primary">
+                {DEMO.nativeBalance} {selectedNetwork.symbol}
               </span>
-              <InfinityIcon className="h-3.5 w-3.5 text-white/50" />
-              <span className="text-sky-300">
-                {DEMO.payTokenBalance} {DEMO.payTokenSymbol}
+              <InfinityIcon className="h-3.5 w-3.5 text-muted-foreground" />
+              <span className="text-accent">
+                {DEMO.pennyBalance} PENNY
               </span>
             </div>
 
-            <div className="flex items-center gap-2 rounded-full border border-emerald-400/25 bg-slate-900/80 px-3 py-1.5 shadow-lg backdrop-blur-md">
+            <div className="flex items-center gap-2 rounded-full border border-border/60 theme-surface px-3 py-1.5">
               <span className="relative flex h-2.5 w-2.5">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" />
-                <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-400" />
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-success opacity-60" />
+                <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-success" />
               </span>
               <div className="leading-tight">
-                <p className="font-jetbrains text-[10px] text-white/60 sm:text-xs">{shortWallet}</p>
-                <p className="font-jetbrains text-[10px] font-medium text-emerald-300 sm:text-xs">
-                  {DEMO.ethBalance} ETH
+                <p className="font-jetbrains text-[10px] text-muted-foreground sm:text-xs">{shortWallet}</p>
+                <p className="font-jetbrains text-[10px] font-medium text-success sm:text-xs">
+                  {DEMO.nativeBalance} {selectedNetwork.symbol}
                 </p>
               </div>
             </div>
@@ -379,15 +410,15 @@ export default function Staking() {
 
         <div className="flex min-h-0 flex-1 flex-col gap-3 lg:flex-row">
           {/* Left rail — tier picker + mint */}
-          <aside className="flex w-full flex-col overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-b from-slate-200/95 to-amber-50/90 text-slate-900 shadow-xl lg:w-[260px] lg:shrink-0">
-            <div className="border-b border-slate-300/60 bg-slate-300/50 px-3 py-3">
-              <p className="mb-2 text-center font-orbitron text-[10px] font-bold uppercase tracking-[0.2em] text-slate-600">
+          <aside className="flex w-full flex-col overflow-hidden rounded-2xl border border-border/60 theme-surface-elevated shadow-xl lg:w-[260px] lg:shrink-0">
+            <div className="border-b border-border/50 bg-muted/30 px-3 py-3">
+              <p className="mb-2 text-center font-orbitron text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
                 Pick your tier
               </p>
-              <TierCarousel tierId={tierId} onChange={setTierId} />
+              <TierCarousel tierId={tierId} onChange={handleTierChange} />
             </div>
 
-            <div className="flex items-center justify-center border-b border-slate-300/60 bg-slate-900/5 px-3 py-3">
+            <div className="flex items-center justify-center border-b border-border/50 px-3 py-3">
               <button
                 type="button"
                 disabled={isMinting}
@@ -396,7 +427,7 @@ export default function Staking() {
                   void handleMint();
                 }}
                 className={cn(
-                  "flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-lime-500 bg-lime-400 px-6 py-2.5 font-orbitron text-xl font-extrabold tracking-wide text-slate-900 shadow-[0_0_24px_rgba(163,230,53,0.55)] transition hover:scale-[1.02] hover:bg-lime-300 disabled:cursor-not-allowed disabled:opacity-70",
+                  "flex w-full items-center justify-center gap-2 rounded-2xl border border-primary/40 bg-primary px-6 py-2.5 font-orbitron text-xl font-extrabold tracking-wide text-primary-foreground shadow-[0_0_24px_hsl(var(--primary)/0.35)] transition hover:scale-[1.02] hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-70",
                 )}
               >
                 {isMinting ? (
@@ -411,7 +442,7 @@ export default function Staking() {
             </div>
 
             <div className="flex flex-1 flex-col gap-3 p-3">
-              <div className="flex gap-1 rounded-xl bg-slate-900/5 p-1">
+              <div className="flex gap-1 rounded-xl bg-muted/40 p-1">
                 {(
                   [
                     { id: "mint" as const, label: "Mint", icon: Coins },
@@ -426,8 +457,8 @@ export default function Staking() {
                     className={cn(
                       "flex flex-1 items-center justify-center gap-1 rounded-lg px-2 py-1.5 font-sora text-[11px] font-semibold transition",
                       activeSidebarTab === id
-                        ? "bg-white text-slate-900 shadow"
-                        : "text-slate-600 hover:bg-white/50",
+                        ? "bg-card text-foreground shadow-sm border border-border/50"
+                        : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
                     )}
                   >
                     <Icon className="h-3.5 w-3.5" />
@@ -436,7 +467,7 @@ export default function Staking() {
                 ))}
               </div>
 
-              <div className="min-h-[140px] flex-1 rounded-xl border border-amber-200/80 bg-amber-100/80 p-3 font-sora text-sm">
+              <div className="min-h-[140px] flex-1 rounded-xl border border-border/50 bg-card/60 p-3 font-sora text-sm">
                 <AnimatePresence mode="wait">
                   {activeSidebarTab === "mint" && (
                     <motion.div
@@ -446,21 +477,19 @@ export default function Staking() {
                       exit={{ opacity: 0, x: 8 }}
                       className="space-y-2"
                     >
-                      <p className="font-orbitron text-[10px] font-bold uppercase tracking-[0.2em] text-amber-800/80">
+                      <p className="font-orbitron text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
                         Proof of Access
                       </p>
-                      <p className="leading-relaxed text-slate-700">
+                      <p className="leading-relaxed text-muted-foreground">
                         Mint a{" "}
-                        <span className="font-bold text-slate-900">
-                          {tier.title}
-                        </span>{" "}
-                        <span className="font-jetbrains text-xs text-slate-500">
+                        <span className="font-bold text-foreground">{tier.title}</span>{" "}
+                        <span className="font-jetbrains text-xs text-muted-foreground">
                           ({tier.contractName})
                         </span>{" "}
                         NFT pass · tierLevel{" "}
-                        <span className="font-jetbrains font-bold">{tierId}</span>
+                        <span className="font-jetbrains font-bold text-foreground">{tierId}</span>
                       </p>
-                      <div className="space-y-1 rounded-lg bg-white/70 px-2.5 py-2 font-jetbrains text-[11px] text-slate-600">
+                      <div className="space-y-1 rounded-lg border border-border/40 bg-background/50 px-2.5 py-2 font-jetbrains text-[11px] text-muted-foreground">
                         {loadingConfig ? (
                           <p className="flex items-center gap-1.5">
                             <Loader2 className="h-3 w-3 animate-spin" /> Loading fee…
@@ -469,7 +498,7 @@ export default function Staking() {
                           <>
                             <div className="flex justify-between gap-2">
                               <span>Burn</span>
-                              <span className="font-semibold text-slate-900">
+                              <span className="font-semibold text-foreground">
                                 {mintConfig
                                   ? `${formatPennyDisplay(mintConfig.burnAmount)} PENNY`
                                   : `${tier.multiplier}× base`}
@@ -477,7 +506,7 @@ export default function Staking() {
                             </div>
                             <div className="flex justify-between gap-2">
                               <span>Mint fee</span>
-                              <span className="font-semibold text-slate-900">
+                              <span className="font-semibold text-foreground">
                                 {mintConfig
                                   ? `${formatEther(mintConfig.mintFee)} ETH`
                                   : "0.00001 ETH"}
@@ -485,20 +514,22 @@ export default function Staking() {
                             </div>
                             <div className="flex justify-between gap-2">
                               <span>List slots</span>
-                              <span className="font-semibold text-slate-900">{tier.lists}</span>
+                              <span className="font-semibold text-foreground">{tier.lists}</span>
                             </div>
                             <div className="flex justify-between gap-2">
                               <span>Multiplier</span>
-                              <span className="font-semibold text-slate-900">{tier.multiplier}×</span>
+                              <span className="font-semibold text-foreground">{tier.multiplier}×</span>
                             </div>
                           </>
                         )}
-                        <div className="mt-1 border-t border-slate-200/80 pt-1 text-[10px] text-slate-500">
+                        <div className="mt-1 border-t border-border/40 pt-1 text-[10px] text-muted-foreground">
                           {selectedNetwork.name} ·{" "}
                           {poaLive ? (
-                            <span className="text-emerald-700">contract live</span>
+                            <span className="text-success">contract live</span>
                           ) : (
-                            <span className="text-amber-700">zero stand-in · set proof_of_access after deploy</span>
+                            <span className="text-amber-600 dark:text-amber-400">
+                              zero stand-in · set proof_of_access after deploy
+                            </span>
                           )}
                         </div>
                       </div>
@@ -517,26 +548,26 @@ export default function Staking() {
                       exit={{ opacity: 0, x: 8 }}
                       className="space-y-2"
                     >
-                      <p className="font-orbitron text-[10px] font-bold uppercase tracking-[0.2em] text-amber-800/80">
+                      <p className="font-orbitron text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
                         Reward streams
                       </p>
-                      <p className="text-xs text-slate-600">
+                      <p className="text-xs text-muted-foreground">
                         Subscribed {DEMO.subscriptions.length}/{DEMO.maxSubscriptions}
                       </p>
                       <ul className="space-y-1.5">
                         {DEMO.subscriptions.map((s) => (
                           <li
                             key={s}
-                            className="flex items-center justify-between rounded-lg bg-white/70 px-2.5 py-1.5 font-jetbrains text-xs font-semibold"
+                            className="flex items-center justify-between rounded-lg border border-border/40 bg-background/50 px-2.5 py-1.5 font-jetbrains text-xs font-semibold text-foreground"
                           >
                             <span>{s}</span>
-                            <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
+                            <CheckCircle2 className="h-3.5 w-3.5 text-success" />
                           </li>
                         ))}
                       </ul>
                       <Button
                         size="sm"
-                        className="mt-1 w-full rounded-lg bg-slate-900 font-sora text-white hover:bg-slate-800"
+                        className="mt-1 w-full rounded-lg bg-primary font-sora text-primary-foreground hover:opacity-90"
                         onClick={() => handleDemoAction("Manage subscriptions")}
                       >
                         Manage streams
@@ -549,28 +580,28 @@ export default function Staking() {
                       initial={{ opacity: 0, x: -8 }}
                       animate={{ opacity: 1, x: 0 }}
                       exit={{ opacity: 0, x: 8 }}
-                      className="space-y-2 text-xs text-slate-700"
+                      className="space-y-2 text-xs text-muted-foreground"
                     >
-                      <p className="font-orbitron text-[10px] font-bold uppercase tracking-[0.2em] text-amber-800/80">
+                      <p className="font-orbitron text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
                         Protocol
                       </p>
-                      <div className="space-y-1.5 rounded-lg bg-white/70 p-2 font-sora">
+                      <div className="space-y-1.5 rounded-lg border border-border/40 bg-background/50 p-2 font-sora text-foreground">
                         <div className="flex justify-between">
-                          <span>Participants</span>
+                          <span className="text-muted-foreground">Participants</span>
                           <span className="font-jetbrains font-semibold">
                             {DEMO.participants.toLocaleString()}
                           </span>
                         </div>
                         <div className="flex justify-between">
-                          <span>Current ERA</span>
+                          <span className="text-muted-foreground">Current ERA</span>
                           <span className="font-jetbrains font-semibold">{DEMO.era}</span>
                         </div>
                         <div className="flex justify-between">
-                          <span>Timelock</span>
+                          <span className="text-muted-foreground">Timelock</span>
                           <span className="font-jetbrains font-semibold">{DEMO.timelockHours}h</span>
                         </div>
                         <div className="flex justify-between">
-                          <span>Model</span>
+                          <span className="text-muted-foreground">Model</span>
                           <span className="font-semibold">Multi-token V2</span>
                         </div>
                       </div>
@@ -579,10 +610,10 @@ export default function Staking() {
                 </AnimatePresence>
               </div>
 
-              <div className="flex items-center justify-between gap-2 border-t border-slate-300/50 pt-2">
+              <div className="flex items-center justify-between gap-2 border-t border-border/50 pt-2">
                 <button
                   type="button"
-                  className="flex h-10 w-10 items-center justify-center rounded-xl border-2 border-lime-500 bg-lime-400 text-slate-900 shadow-md transition hover:bg-lime-300"
+                  className="flex h-10 w-10 items-center justify-center rounded-xl border border-primary/40 bg-primary text-primary-foreground shadow-md transition hover:opacity-90"
                   title="Quick farm"
                   onClick={() => handleDemoAction("Sidebar quick action")}
                 >
@@ -590,7 +621,7 @@ export default function Staking() {
                 </button>
                 <button
                   type="button"
-                  className="flex h-10 w-10 items-center justify-center rounded-full bg-sky-500 text-white shadow-md transition hover:bg-sky-400"
+                  className="flex h-10 w-10 items-center justify-center rounded-full border border-border/50 bg-accent text-accent-foreground shadow-md transition hover:opacity-90"
                   title="Help"
                   onClick={() => setActiveSidebarTab("info")}
                 >
@@ -607,28 +638,28 @@ export default function Staking() {
                 label="Total Farm"
                 value={DEMO.totalFarm}
                 unit={DEMO.stakeToken}
-                accentClass="text-sky-300"
+                accentClass="text-primary"
                 delay={0.05}
               />
               <StatCard
                 label="Current Farm"
                 value={DEMO.currentFarm}
                 unit={DEMO.stakeToken}
-                accentClass="text-cyan-300"
+                accentClass="text-accent"
                 delay={0.1}
               />
               <StatCard
                 label="Harvested"
                 value={`${totalHarvested} tokens`}
                 unit="claimed"
-                accentClass="text-amber-300"
+                accentClass="text-amber-600 dark:text-amber-300"
                 delay={0.15}
               />
               <StatCard
                 label="Estimated Rewards"
                 value={totalEstimated.toFixed(2)}
                 unit="mixed"
-                accentClass="text-emerald-300"
+                accentClass="text-success"
                 delay={0.2}
               />
             </div>
@@ -637,10 +668,10 @@ export default function Staking() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.25 }}
-              className="flex flex-wrap items-center gap-2 rounded-xl border border-white/10 bg-black/35 px-3 py-2 backdrop-blur-md"
+              className="flex flex-wrap items-center gap-2 rounded-xl border border-border/50 theme-surface px-3 py-2"
             >
-              <Sparkles className="h-4 w-4 text-amber-300" />
-              <span className="font-sora text-xs font-medium tracking-wide text-white/70">
+              <Sparkles className="h-4 w-4 text-primary" />
+              <span className="font-sora text-xs font-medium tracking-wide text-muted-foreground">
                 Viewing · {tier.title}
               </span>
               <span
@@ -660,7 +691,7 @@ export default function Staking() {
                     "rounded-full px-2.5 py-1 font-jetbrains text-xs font-semibold transition",
                     selectedReward === r.symbol
                       ? "bg-gradient-to-r text-white shadow-md " + r.color
-                      : "bg-white/10 text-white/80 hover:bg-white/20",
+                      : "theme-chip-secondary hover:opacity-90",
                   )}
                 >
                   {r.estimated} {r.symbol}
@@ -668,21 +699,23 @@ export default function Staking() {
               ))}
             </motion.div>
 
-            {/* Three action columns — backgrounds follow selected tier */}
             <div className="grid flex-1 grid-cols-1 gap-3 md:grid-cols-3">
               <ActionColumn
                 title="Farm"
                 subtitle="Stake GAME · Serving"
                 background={tier.art.farm}
-                accent=""
                 delay={0.15}
               >
                 <div className="space-y-2.5">
-                  <div className="rounded-xl border border-red-400/40 bg-red-900/75 px-3 py-2 text-center backdrop-blur-sm">
-                    <p className="font-sora text-xs font-medium tracking-wide text-red-100/90">Pre-Approved</p>
-                    <p className="font-jetbrains text-lg font-bold text-white">
+                  <div className="rounded-xl border border-destructive/40 bg-destructive/80 px-3 py-2 text-center backdrop-blur-sm">
+                    <p className="font-sora text-xs font-medium tracking-wide text-destructive-foreground/90">
+                      Pre-Approved
+                    </p>
+                    <p className="font-jetbrains text-lg font-bold text-destructive-foreground">
                       {DEMO.preApproved}{" "}
-                      <span className="font-sora text-sm font-semibold text-red-100/80">{DEMO.stakeToken}</span>
+                      <span className="font-sora text-sm font-semibold text-destructive-foreground/80">
+                        {DEMO.stakeToken}
+                      </span>
                     </p>
                   </div>
                   <Input
@@ -691,7 +724,7 @@ export default function Staking() {
                     placeholder="Enter Amount"
                     value={farmAmount}
                     onChange={(e) => setFarmAmount(e.target.value)}
-                    className="h-11 rounded-xl border-0 bg-white text-center font-jetbrains font-medium text-slate-900 placeholder:font-sora placeholder:text-slate-500 focus-visible:ring-2 focus-visible:ring-emerald-400"
+                    className="h-11 rounded-xl border border-border/50 theme-input-surface text-center font-jetbrains font-medium text-foreground placeholder:font-sora placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-primary"
                   />
                   <div className="flex gap-1.5">
                     {["25%", "50%", "MAX"].map((pct) => (
@@ -715,7 +748,7 @@ export default function Staking() {
                     ))}
                   </div>
                   <Button
-                    className="h-12 w-full rounded-xl bg-emerald-500 font-orbitron text-sm font-bold tracking-wide text-white shadow-lg shadow-emerald-900/40 hover:bg-emerald-400 sm:text-base"
+                    className="h-12 w-full rounded-xl bg-primary font-orbitron text-sm font-bold tracking-wide text-primary-foreground shadow-lg hover:opacity-90 sm:text-base"
                     onClick={() => handleDemoAction("Farm Now")}
                   >
                     <Sprout className="h-4 w-4" />
@@ -728,11 +761,10 @@ export default function Staking() {
                 title="Withdraw"
                 subtitle="Unstake · Panicked"
                 background={tier.art.withdraw}
-                accent=""
                 delay={0.25}
               >
                 <div className="space-y-2.5">
-                  <div className="rounded-xl border border-amber-400/30 bg-black/55 px-3 py-2 text-center backdrop-blur-sm">
+                  <div className="rounded-xl border border-white/20 bg-black/55 px-3 py-2 text-center backdrop-blur-sm">
                     <p className="font-sora text-xs font-medium tracking-wide text-amber-200/90">Your stake</p>
                     <p className="font-jetbrains text-lg font-bold text-white">
                       {DEMO.currentFarm}{" "}
@@ -748,10 +780,10 @@ export default function Staking() {
                     placeholder="Withdraw amount"
                     value={withdrawAmount}
                     onChange={(e) => setWithdrawAmount(e.target.value)}
-                    className="h-11 rounded-xl border-0 bg-white/95 text-center font-jetbrains font-medium text-slate-900 placeholder:font-sora placeholder:text-slate-500 focus-visible:ring-2 focus-visible:ring-emerald-400"
+                    className="h-11 rounded-xl border border-border/50 theme-input-surface text-center font-jetbrains font-medium text-foreground placeholder:font-sora placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-primary"
                   />
                   <Button
-                    className="h-12 w-full rounded-xl bg-emerald-500 font-orbitron text-sm font-bold tracking-wide text-white shadow-lg shadow-emerald-900/40 hover:bg-emerald-400 sm:text-base"
+                    className="h-12 w-full rounded-xl bg-primary font-orbitron text-sm font-bold tracking-wide text-primary-foreground shadow-lg hover:opacity-90 sm:text-base"
                     onClick={() => handleDemoAction("Withdraw Now")}
                   >
                     <Wallet className="h-4 w-4" />
@@ -764,11 +796,10 @@ export default function Staking() {
                 title="Harvest"
                 subtitle="Claim · Epic glory"
                 background={tier.art.harvest}
-                accent=""
                 delay={0.35}
               >
                 <div className="space-y-2.5">
-                  <div className="rounded-xl border border-emerald-400/30 bg-black/55 px-3 py-2 backdrop-blur-sm">
+                  <div className="rounded-xl border border-white/20 bg-black/55 px-3 py-2 backdrop-blur-sm">
                     <div className="relative">
                       <button
                         type="button"
@@ -799,20 +830,20 @@ export default function Staking() {
                             initial={{ opacity: 0, y: -6 }}
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, y: -6 }}
-                            className="absolute bottom-full left-0 right-0 z-20 mb-2 overflow-hidden rounded-xl border border-white/15 bg-slate-950/95 shadow-xl"
+                            className="absolute bottom-full left-0 right-0 z-20 mb-2 overflow-hidden rounded-xl border border-border/60 theme-surface-elevated shadow-xl"
                           >
                             {DEMO.rewards.map((r) => (
                               <li key={r.symbol}>
                                 <button
                                   type="button"
-                                  className="flex w-full items-center justify-between px-3 py-2 text-left font-sora text-sm hover:bg-white/10"
+                                  className="flex w-full items-center justify-between px-3 py-2 text-left font-sora text-sm text-foreground hover:bg-muted/50"
                                   onClick={() => {
                                     setSelectedReward(r.symbol);
                                     setShowRewardPicker(false);
                                   }}
                                 >
-                                  <span className="font-medium text-white">{r.symbol}</span>
-                                  <span className="font-jetbrains text-emerald-300">{r.estimated}</span>
+                                  <span className="font-medium">{r.symbol}</span>
+                                  <span className="font-jetbrains text-success">{r.estimated}</span>
                                 </button>
                               </li>
                             ))}
@@ -830,7 +861,7 @@ export default function Staking() {
 
                   <div className="flex gap-1.5">
                     <Button
-                      className="h-12 flex-1 rounded-xl bg-emerald-500 font-orbitron text-sm font-bold tracking-wide text-white shadow-lg shadow-emerald-900/40 hover:bg-emerald-400 sm:text-base"
+                      className="h-12 flex-1 rounded-xl bg-primary font-orbitron text-sm font-bold tracking-wide text-primary-foreground shadow-lg hover:opacity-90 sm:text-base"
                       onClick={() => handleDemoAction(`Harvest ${selectedReward}`)}
                     >
                       <Leaf className="h-4 w-4" />
@@ -850,8 +881,8 @@ export default function Staking() {
           </section>
         </div>
 
-        <p className="mt-3 text-center font-sora text-[10px] tracking-wide text-white/40 sm:text-xs">
-          ProofOfAccess mint · tier {tierId} {tier.title} · column art swaps with tier · farm/harvest still preview
+        <p className="mt-3 text-center font-sora text-[10px] tracking-wide text-muted-foreground sm:text-xs">
+          ProofOfAccess mint · tier {tierId} {tier.title} · themed with network light/dark surfaces
         </p>
       </main>
     </div>
