@@ -16,6 +16,7 @@ import MarketPage from "./pages/MarketPage";
 import MyThots from "./pages/MyThots";
 import YourThots from "./pages/YourThots";
 import History from "./pages/History";
+import Staking from "./pages/Staking";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -68,6 +69,7 @@ const App = () => (
             <Route path="/my-thots" element={<MyThots />} />
             <Route path="/your-thots" element={<YourThots />} />
             <Route path="/history" element={<History />} />
+            <Route path="/staking" element={<Staking />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

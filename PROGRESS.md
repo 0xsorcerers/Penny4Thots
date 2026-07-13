@@ -6,6 +6,14 @@ This file tracks all significant progress. Updated automatically after major cha
 
 ## 2026-07-13
 
+### UI: Staking / Harvester design page (Battledogs-style layout)
+- Added design-preview staking page at `/staking` matching the outline staker layout.
+- Left rail: mint CTA, reward streams panel, protocol info.
+- Top stats: Total Farm, Current Farm, Harvested, Estimated Rewards + multi-token yield chips.
+- Three full-bleed action columns with unique character art: Farm Now, Withdraw Now, Harvest Now.
+- Multi-token harvest picker (USDC / ETH / PENNY mock data) for Harvester V2 streams.
+- Character backgrounds in `webapp/public/staking/`. Contract wiring not connected yet.
+
 ### Security: SafeERC20 on ProofOfAccess + Harvester
 - Added OpenZeppelin `SafeERC20` to `ProofOfAccess.sol` and `HarvesterV2.sol`.
 - Replaced raw ERC20 `transfer` / `transferFrom` + boolean `require` checks with `safeTransfer` / `safeTransferFrom`.
