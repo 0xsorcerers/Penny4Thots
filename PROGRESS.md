@@ -6,6 +6,15 @@ This file tracks all significant progress. Updated automatically after major cha
 
 ## 2026-07-13
 
+### Feature: ProofOfAccess tier mint + epic tier art carousel
+- Left rail: swipeable NFT tier picker (bouncy chevron arrows + dots) for tiers 0–5 matching on-chain `mint(uint256 _tierLevel)`.
+- Fantasy titles map to contract metals: Deckhand (Marble), Pirate (Bronze), Corsair (Silver), Admiral (Gold), Dragonlord (Platinum), Emperor (Emerald).
+- Mint button approves PENNY burn then calls ProofOfAccess `mint` via thirdweb (fee + tierLevel); shows burn amount, fee, list slots, multiplier.
+- Farm / Withdraw / Harvest column backgrounds swap with selected tier: serving (farm), panicked upgraded (withdraw), epic glory (harvest).
+- Epic art under `webapp/public/staking/tiers/{id}-{slug}/` (nft + 3 columns each). Portrait assets scale on mobile via CSS cover.
+- Network config: `proofOfAccess_address` + `harvester_address` (paste after deploy). Mint stays disabled until address is set.
+- Shared helpers: `stakingTiers.ts`, `proofOfAccess.json` ABI, `useProofOfAccessMint` / `fetchProofOfAccessMintConfig` in utils.
+
 ### UI: Staking / Harvester design page (Battledogs-style layout)
 - Added design-preview staking page at `/staking` matching the outline staker layout.
 - Left rail: mint CTA, reward streams panel, protocol info.

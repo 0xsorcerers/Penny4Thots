@@ -7,12 +7,14 @@ import { sepolia as viemSepolia } from "viem/chains";
 import { ReactElement } from "react";
 import penny4thots from "../abi/penny4thots.json";
 import erc20 from "../abi/ERC20.json";
-import { chains } from "./networkData";
+import proofOfAccessAbiJson from "../abi/proofOfAccess.json";
+import { chains, hasValidProofOfAccess } from "./networkData";
 import { getCurrentNetwork } from "../store/networkStore";
 import { NETWORK_THEMES } from "./networkTheme";
 
 const contractABI = penny4thots.abi as Abi;
 const erc20ABI = erc20.abi as Abi;
+const proofOfAccessABI = proofOfAccessAbiJson.abi as Abi;
 
 // ============================================================================
 // ERC20 Token Functions (for token-based voting)
@@ -1514,6 +1516,179 @@ export const readMarketLock = async (marketId: number): Promise<MarketLock> => {
     finalizedUpTo: Number(result[0]),
     sharesFinalized: result[1],
   };
+};
+
+// ============================================================================
+// ProofOfAccess (NFT mint) — Harvester access pass
+// ============================================================================
+
+/** Contract defaults when chain is not live yet (mirrors ProofOfAccess.sol) */
+export const PROOF_OF_ACCESS_DEFAULTS = {
+  mintFee: 10_000_000_000_000n, // 0.00001 ether
+  requiredAmount: 2_000_000n * 1_000_000n, // 2_000_000 * 10**6
+  multipliers: [1n, 2n, 4n, 8n, 16n, 32n] as const,
+};
+
+export function getProofOfAccessAddress(): Address | null {
+  const network = getCurrentNetwork();
+  if (!hasValidProofOfAccess(network)) return null;
+  return network.proofOfAccess_address as Address;
+}
+
+export const getProofOfAccessContract = () => {
+  const address = getProofOfAccessAddress();
+  if (!address) throw new Error("ProofOfAccess not deployed on this network");
+  return getContract({
+    client,
+    chain: getThirdwebNetwork(),
+    address,
+  });
+};
+
+export interface ProofOfAccessMintConfig {
+  mintFee: bigint;
+  requiredAmount: bigint;
+  multiplier: bigint;
+  burnAmount: bigint;
+  paused: boolean;
+  deployed: boolean;
+}
+
+/** Read mint fee / burn requirements for a tier (falls back to contract defaults if undeployed). */
+export async function fetchProofOfAccessMintConfig(tierLevel: number): Promise<ProofOfAccessMintConfig> {
+  const address = getProofOfAccessAddress();
+  const clamped = Math.max(0, Math.min(5, tierLevel));
+
+  if (!address) {
+    const multiplier = PROOF_OF_ACCESS_DEFAULTS.multipliers[clamped] ?? 1n;
+    return {
+      mintFee: PROOF_OF_ACCESS_DEFAULTS.mintFee,
+      requiredAmount: PROOF_OF_ACCESS_DEFAULTS.requiredAmount,
+      multiplier,
+      burnAmount: PROOF_OF_ACCESS_DEFAULTS.requiredAmount * multiplier,
+      paused: false,
+      deployed: false,
+    };
+  }
+
+  const client_ = getPublicClient();
+  try {
+    const [mintFee, requiredAmount, multiplier, paused] = await Promise.all([
+      client_.readContract({
+        address,
+        abi: proofOfAccessABI,
+        functionName: "mintFee",
+      }) as Promise<bigint>,
+      client_.readContract({
+        address,
+        abi: proofOfAccessABI,
+        functionName: "requiredAmount",
+      }) as Promise<bigint>,
+      client_.readContract({
+        address,
+        abi: proofOfAccessABI,
+        functionName: "multipliers",
+        args: [BigInt(clamped)],
+      }) as Promise<bigint>,
+      client_.readContract({
+        address,
+        abi: proofOfAccessABI,
+        functionName: "paused",
+      }) as Promise<boolean>,
+    ]);
+
+    return {
+      mintFee,
+      requiredAmount,
+      multiplier,
+      burnAmount: requiredAmount * multiplier,
+      paused,
+      deployed: true,
+    };
+  } catch (err) {
+    console.error("fetchProofOfAccessMintConfig failed, using defaults", err);
+    const multiplier = PROOF_OF_ACCESS_DEFAULTS.multipliers[clamped] ?? 1n;
+    return {
+      mintFee: PROOF_OF_ACCESS_DEFAULTS.mintFee,
+      requiredAmount: PROOF_OF_ACCESS_DEFAULTS.requiredAmount,
+      multiplier,
+      burnAmount: PROOF_OF_ACCESS_DEFAULTS.requiredAmount * multiplier,
+      paused: false,
+      deployed: true,
+    };
+  }
+}
+
+/** Approve PENNY burn amount for the ProofOfAccess spender. */
+export const preparePennyApproveForProofOfAccess = (amount: bigint) => {
+  const network = getCurrentNetwork();
+  const penny = network.penny_address as Address;
+  const spender = getProofOfAccessAddress();
+  if (!spender) throw new Error("ProofOfAccess not deployed on this network");
+  if (!penny || penny === ZERO_ADDRESS) throw new Error("PENNY token not configured");
+
+  const tokenContract = getContract({
+    client,
+    chain: getThirdwebNetwork(),
+    address: penny,
+  });
+
+  return prepareContractCall({
+    contract: tokenContract,
+    method: "function approve(address spender, uint256 amount) external returns (bool)",
+    params: [spender, amount],
+  });
+};
+
+export const prepareProofOfAccessMint = (tierLevel: number) => {
+  return prepareContractCall({
+    contract: getProofOfAccessContract(),
+    method: "function mint(uint256 _tierLevel) public payable",
+    params: [BigInt(tierLevel)],
+  });
+};
+
+/**
+ * Hook: approve PENNY then mint ProofOfAccess NFT for selected tierLevel (0–5).
+ * Requires wallet connection via thirdweb (user signs — not a backend key).
+ */
+export const useProofOfAccessMint = () => {
+  const { mutateAsync: sendTx, isPending, error } = useSendTransaction();
+
+  const mintTier = async (tierLevel: number) => {
+    const config = await fetchProofOfAccessMintConfig(tierLevel);
+    if (!config.deployed) {
+      throw new Error("ProofOfAccess contract is not deployed on this network yet");
+    }
+    if (config.paused) {
+      throw new Error("Minting is paused");
+    }
+
+    // 1) Approve PENNY burn
+    const approveTx = preparePennyApproveForProofOfAccess(config.burnAmount);
+    const approveResult = await sendTx(approveTx);
+    await waitForReceipt({
+      client,
+      chain: getThirdwebNetwork(),
+      transactionHash: approveResult.transactionHash,
+    });
+
+    // 2) Mint with fee
+    const mintTx = {
+      ...prepareProofOfAccessMint(tierLevel),
+      value: config.mintFee,
+    };
+    const mintResult = await sendTx(mintTx);
+    await waitForReceipt({
+      client,
+      chain: getThirdwebNetwork(),
+      transactionHash: mintResult.transactionHash,
+    });
+
+    return mintResult;
+  };
+
+  return { mintTier, isPending, error };
 };
 
 // Re-export useful viem utilities
