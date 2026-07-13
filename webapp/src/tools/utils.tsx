@@ -8,7 +8,7 @@ import { ReactElement } from "react";
 import penny4thots from "../abi/penny4thots.json";
 import erc20 from "../abi/ERC20.json";
 import proofOfAccessAbiJson from "../abi/proofOfAccess.json";
-import { chains, hasLiveProofOfAccess, hasValidProofOfAccess } from "./networkData";
+import { hasLiveProofOfAccess } from "./networkData";
 import { getCurrentNetwork } from "../store/networkStore";
 import { NETWORK_THEMES } from "./networkTheme";
 
