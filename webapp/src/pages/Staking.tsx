@@ -513,7 +513,7 @@ export default function Staking() {
                               </span>
                             </div>
                             <div className="flex justify-between gap-2">
-                              <span>List slots</span>
+                              <span>Revenue Streams</span>
                               <span className="font-semibold text-foreground">{tier.lists}</span>
                             </div>
                             <div className="flex justify-between gap-2">
@@ -749,10 +749,10 @@ export default function Staking() {
                   </div>
                   <Button
                     className="h-12 w-full rounded-xl bg-primary font-orbitron text-sm font-bold tracking-wide text-primary-foreground shadow-lg hover:opacity-90 sm:text-base"
-                    onClick={() => handleDemoAction("Farm Now")}
+                    onClick={() => handleDemoAction("Stake Now")}
                   >
                     <Sprout className="h-4 w-4" />
-                    Farm Now
+                    Stake Now
                   </Button>
                 </div>
               </ActionColumn>
