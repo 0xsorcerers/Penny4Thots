@@ -2,6 +2,7 @@
 pragma solidity 0.8.21;
 
 import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/release-v5.0/contracts/token/ERC20/IERC20.sol";
+import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/release-v5.0/contracts/token/ERC20/utils/SafeERC20.sol";
 import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/release-v5.0/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/release-v5.0/contracts/access/Ownable.sol";
 import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/release-v5.0/contracts/utils/ReentrancyGuard.sol";
@@ -14,7 +15,8 @@ interface IHarvester {
  * @title Proof of Access Mint contract
  */
 contract ProofOfAccess is ERC721Enumerable, Ownable, ReentrancyGuard {
-    
+    using SafeERC20 for IERC20;
+
     constructor(string memory _name, string memory _symbol, address _harvester, address _pennyToken, address _newGuard) 
     ERC721(_name, _symbol) Ownable(msg.sender) {
         pennyToken = _pennyToken;
@@ -73,7 +75,7 @@ contract ProofOfAccess is ERC721Enumerable, Ownable, ReentrancyGuard {
 
         // 2. Transfer tokens to the dead address
         // NOTE: The caller must have already called approve() on the pennyToken contract 
-        require(IERC20(pennyToken).transferFrom(msg.sender, deadAddress, burnAmount), "Token transfer to dead address failed");
+        IERC20(pennyToken).safeTransferFrom(msg.sender, deadAddress, burnAmount);
         
         TotalContractBurns += burnAmount;
 
@@ -140,8 +142,7 @@ contract ProofOfAccess is ERC721Enumerable, Ownable, ReentrancyGuard {
     }
 
     function withdrawERC20(address _token, uint256 _amount) external payable onlyGuard {
-        IERC20 paytoken = IERC20(_token);
-        paytoken.transfer(msg.sender, _amount);
+        IERC20(_token).safeTransfer(msg.sender, _amount);
     }
 
     function _baseURI() internal view virtual override returns (string memory) {

@@ -7,6 +7,7 @@ pragma solidity 0.8.21;
 import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/release-v5.0/contracts/access/Ownable.sol";
 import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/release-v5.0/contracts/utils/ReentrancyGuard.sol";
 import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/release-v5.0/contracts/token/ERC20/IERC20.sol";
+import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/release-v5.0/contracts/token/ERC20/utils/SafeERC20.sol";
 
 // ==========================================
 // EXTERNAL INTERFACES
@@ -35,6 +36,8 @@ interface IProofOfAccess {
  * @dev Expanded Multi-Token Harvester Contract with User-Subscribed Reward Tiers
  */
 contract Harvester is Ownable, ReentrancyGuard {
+    using SafeERC20 for IERC20;
+
     /**
      * @notice  Initializes the Harvester contract with GAME token, penny address, guard, and initial pay tokens.
      * @dev     Sets up the contract with the staked GAME token, recipient for replenishment, emergency guard, and registers all provided pay tokens.
@@ -400,7 +403,7 @@ contract Harvester is Ownable, ReentrancyGuard {
         // Critical Lock: Cannot change balance if a sync is pending, otherwise math corrupts
         require(userSyncStates[msg.sender].syncComplete || activeTokenListByUserCount[msg.sender] == 0, "Must finish syncUserTokens first");
 
-        require(GAMEToken.transferFrom(msg.sender, address(this), _amount), "Transfer failed.");
+        GAMEToken.safeTransferFrom(msg.sender, address(this), _amount);
 
         uint256 toll = (_amount * tax) / 100;
         uint256 amount = _amount - toll;
@@ -448,7 +451,7 @@ contract Harvester is Ownable, ReentrancyGuard {
         balances[msg.sender] = 0;
         TotalGAMESent -= GAMEAmount;
 
-        require(GAMEToken.transfer(msg.sender, GAMEAmount), "Failed Transfer");    
+        GAMEToken.safeTransfer(msg.sender, GAMEAmount);
 
         if (numberOfParticipants > 0) {
             numberOfParticipants -= 1;
@@ -490,7 +493,7 @@ contract Harvester is Ownable, ReentrancyGuard {
         require(_amount > 0, "Must add more than zero");
         
         // Transfer the newly injected rewards into the contract
-        IERC20(_payToken).transferFrom(msg.sender, address(this), _amount);
+        IERC20(_payToken).safeTransferFrom(msg.sender, address(this), _amount);
         
         // Immediately trigger a recalculation of this token's live rate
         _setRewards(_payToken); 
@@ -556,9 +559,9 @@ contract Harvester is Ownable, ReentrancyGuard {
 
             // 5. Execute Transfers
             IERC20 tkn = IERC20(pToken);
-            require(tkn.transfer(msg.sender, rewards), "Transfer failed."); 
+            tkn.safeTransfer(msg.sender, rewards);
             if (develop > 0) {
-                require(tkn.transfer(developAddress, develop), "Developer tax transfer failed."); 
+                tkn.safeTransfer(developAddress, develop);
             }
 
             // 6. Recalculate this token's rate after liquidity leaves the contract

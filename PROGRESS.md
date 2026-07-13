@@ -4,6 +4,15 @@ This file tracks all significant progress. Updated automatically after major cha
 
 ---
 
+## 2026-07-13
+
+### Security: SafeERC20 on ProofOfAccess + Harvester
+- Added OpenZeppelin `SafeERC20` to `ProofOfAccess.sol` and `HarvesterV2.sol`.
+- Replaced raw ERC20 `transfer` / `transferFrom` + boolean `require` checks with `safeTransfer` / `safeTransferFrom`.
+- Covers mint burn, admin ERC20 withdraw, GAME stake/unstake, reward injection, and reward claims (including develop tax).
+
+---
+
 ## 2026-04-13
 
 ### Update: Localized Store Badges Above Get Started Buttons
