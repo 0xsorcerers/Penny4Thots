@@ -16,44 +16,139 @@ import {
   ChevronRight,
   ShieldAlert,
   Loader2,
+  Fuel,
+  AlertTriangle,
+  ImageOff,
+  Search,
+  Plus,
+  X,
+  Radio,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useActiveAccount } from "thirdweb/react";
+import type { Address } from "viem";
 import { Header } from "@/components/layout/Header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useNetworkStore } from "@/store/networkStore";
-import { canAccessFarm, hasLiveProofOfAccess } from "@/tools/networkData";
-import { STAKING_TIERS, getTier, type TierId } from "@/tools/stakingTiers";
+import {
+  canAccessFarm,
+  hasLiveHarvester,
+  hasLiveProofOfAccess,
+} from "@/tools/networkData";
+import {
+  STAKING_TIERS,
+  getTier,
+  getTierByContractName,
+  pickHighestBasketNft,
+  type TierId,
+} from "@/tools/stakingTiers";
+import {
+  getWhitelistedTokensByCategory,
+  resolveRewardTokenLabel,
+  shortTokenLabel,
+  type RewardTokenCategory,
+  type WhitelistedRewardToken,
+} from "@/tools/whitelisted";
 import {
   Connector,
+  checkHarvesterDepositReadiness,
+  checkProofOfAccessMintReadiness,
+  fetchHarvesterClaimsPage,
+  fetchHarvesterFarmStats,
+  fetchHarvesterUserClaimsCount,
   fetchProofOfAccessMintConfig,
+  fetchTotalPennySent,
+  fetchUserSubscriptions,
+  fetchWalletStakingBalances,
+  fetchWithdrawTimelock,
+  formatCompactTokenAmount,
+  formatDurationCountdown,
   formatEther,
+  getPlayerOwners,
+  HARVESTER_CLAIMS_PAGE_SIZE,
+  loadUserRewardStreamsSnapshot,
+  planFarmDepositSteps,
+  resolveMaxRewardStreams,
+  fromTokenSmallestUnit,
+  toTokenSmallestUnit,
+  useHarvesterFarm,
   useProofOfAccessMint,
+  type ClaimableRewardStream,
+  type HarvesterClaimDisplay,
+  type HarvesterDepositReadiness,
+  type HarvesterFarmStep,
+  type HarvesterWithdrawTimelock,
   type ProofOfAccessMintConfig,
+  type ProofOfAccessMintReadiness,
+  type ProofOfAccessPlayer,
+  type UserRewardStreamsSnapshot,
 } from "@/tools/utils";
 
-/** Demo / design-preview data — multi-token Harvester V2 mock */
-const DEMO = {
-  nativeBalance: "0.0014",
-  pennyBalance: "30.075",
-  totalFarm: "12,450.00",
-  currentFarm: "8,200.50",
-  preApproved: "25,000.00",
-  stakeToken: "GAME",
-  rewards: [
-    { symbol: "USDC", harvested: "142.50", estimated: "18.34", color: "from-emerald-400 to-teal-500" },
-    { symbol: "ETH", harvested: "0.084", estimated: "0.012", color: "from-indigo-400 to-violet-500" },
-    { symbol: "PENNY", harvested: "1,280.00", estimated: "96.40", color: "from-amber-400 to-orange-500" },
-  ],
-  subscriptions: ["USDC", "ETH", "PENNY"],
-  maxSubscriptions: 5,
-  participants: 1_248,
-  era: 42,
-  timelockHours: 24,
+const STAKE_TOKEN = "PENNY";
+
+/** Soft color accents for estimated-reward chips (cycles by index). */
+const STREAM_CHIP_COLORS = [
+  "from-emerald-400 to-teal-500",
+  "from-indigo-400 to-violet-500",
+  "from-amber-400 to-orange-500",
+  "from-rose-400 to-pink-500",
+  "from-cyan-400 to-sky-500",
+  "from-lime-400 to-green-500",
+];
+
+const CATEGORY_LABELS: Record<RewardTokenCategory, string> = {
+  crypto: "Crypto",
+  stock: "Stocks",
+  etf: "ETFs",
+  commodity: "Commodities",
+  other: "Other",
 };
+
+const CATEGORY_ORDER: RewardTokenCategory[] = [
+  "crypto",
+  "stock",
+  "etf",
+  "commodity",
+  "other",
+];
+
+function isValidAddress(value: string): value is Address {
+  return /^0x[a-fA-F0-9]{40}$/.test(value.trim());
+}
+
+function normalizeAddr(a: string): string {
+  return a.trim().toLowerCase();
+}
+
+function sameAddressSet(a: Address[], b: Address[]): boolean {
+  if (a.length !== b.length) return false;
+  const sa = a.map(normalizeAddr).sort();
+  const sb = b.map(normalizeAddr).sort();
+  return sa.every((v, i) => v === sb[i]);
+}
 
 const TIER_STORAGE_KEY = "penny4thots-staking-last-tier";
 
@@ -86,14 +181,15 @@ type ActionColumnProps = {
   delay?: number;
 };
 
-/** Art columns keep a dark overlay for character readability on top of tier art */
+/** Art columns keep a dark overlay for character readability on top of tier art.
+ * Desktop (lg+): fill remaining viewport height so Stake/Withdraw/Harvest CTAs stay in view. */
 function ActionColumn({ title, subtitle, background, children, delay = 0 }: ActionColumnProps) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 28 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.55, delay, ease: "easeOut" }}
-      className="group relative min-h-[380px] flex-1 overflow-hidden rounded-2xl border border-border/60 shadow-xl sm:min-h-[420px] lg:min-h-[520px]"
+      className="group relative min-h-[320px] flex-1 overflow-hidden rounded-2xl border border-border/60 shadow-xl sm:min-h-[360px] lg:min-h-0 lg:h-full"
     >
       <AnimatePresence mode="wait">
         <motion.div
@@ -112,16 +208,16 @@ function ActionColumn({ title, subtitle, background, children, delay = 0 }: Acti
       <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-black/25" />
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,transparent_20%,rgba(0,0,0,0.35)_100%)]" />
 
-      <div className="absolute left-4 right-4 top-4 z-10">
+      <div className="absolute left-3 right-3 top-3 z-10 sm:left-4 sm:right-4 sm:top-4">
         <p className="font-sora text-[10px] font-semibold uppercase tracking-[0.28em] text-white/70">
           {subtitle}
         </p>
-        <h3 className="font-cinzel text-xl font-bold tracking-wide text-white drop-shadow-lg sm:text-2xl">
+        <h3 className="font-cinzel text-lg font-bold tracking-wide text-white drop-shadow-lg sm:text-xl lg:text-2xl">
           {title}
         </h3>
       </div>
 
-      <div className="relative z-10 flex h-full min-h-[380px] flex-col justify-end p-4 pb-5 sm:min-h-[420px] sm:p-5 lg:min-h-[520px]">
+      <div className="relative z-10 flex h-full min-h-[320px] flex-col justify-end p-3 pb-4 sm:min-h-[360px] sm:p-4 lg:min-h-0 lg:p-4 lg:pb-4">
         {children}
       </div>
     </motion.div>
@@ -134,26 +230,64 @@ function StatCard({
   unit,
   accentClass,
   delay = 0,
+  onClick,
+  title,
 }: {
   label: string;
   value: string;
   unit: string;
   accentClass: string;
   delay?: number;
+  onClick?: () => void;
+  title?: string;
 }) {
+  const interactive = typeof onClick === "function";
   return (
     <motion.div
       initial={{ opacity: 0, y: -12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, delay }}
-      className="rounded-xl border border-border/50 theme-surface px-3 py-2.5 sm:px-4"
+      className={cn(
+        "rounded-xl border border-border/50 theme-surface px-3 py-2 sm:px-4 lg:py-1.5",
+        interactive &&
+          "cursor-pointer transition hover:border-amber-500/40 hover:bg-amber-500/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/40",
+      )}
+      onClick={onClick}
+      onKeyDown={
+        interactive
+          ? (e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                onClick?.();
+              }
+            }
+          : undefined
+      }
+      role={interactive ? "button" : undefined}
+      tabIndex={interactive ? 0 : undefined}
+      title={title}
     >
       <p className={cn("font-sora text-[11px] font-medium tracking-wide sm:text-xs", accentClass)}>{label}</p>
-      <p className="mt-0.5 font-jetbrains text-base font-semibold tracking-tight text-foreground sm:text-lg">
-        {value} <span className="font-sora text-sm font-semibold text-muted-foreground">{unit}</span>
+      <p className="mt-0.5 font-jetbrains text-sm font-semibold tracking-tight text-foreground sm:text-base lg:text-[15px]">
+        {value} <span className="font-sora text-xs font-semibold text-muted-foreground sm:text-sm">{unit}</span>
       </p>
     </motion.div>
   );
+}
+
+function formatClaimWhen(timestamp: number): string {
+  if (!timestamp) return "—";
+  try {
+    return new Date(timestamp * 1000).toLocaleString(undefined, {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  } catch {
+    return "—";
+  }
 }
 
 function TierCarousel({
@@ -182,17 +316,21 @@ function TierCarousel({
             animate={{ opacity: 1, x: 0, scale: 1 }}
             exit={{ opacity: 0, x: -24, scale: 0.96 }}
             transition={{ duration: 0.35 }}
-            className="aspect-square w-full object-cover object-top"
+            className="aspect-square w-full object-cover object-top lg:aspect-[5/4] xl:aspect-square"
             draggable={false}
           />
         </AnimatePresence>
 
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent px-2 pb-2 pt-10">
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent px-2 pb-1.5 pt-8 lg:pb-1 lg:pt-6">
           <p className="font-orbitron text-[9px] font-bold uppercase tracking-[0.22em] text-white/70">
             Tier {tier.id} · {tier.contractName}
           </p>
-          <p className="font-cinzel text-lg font-bold text-white drop-shadow">{tier.title}</p>
-          <p className="font-sora text-[10px] leading-snug text-white/75">{tier.tagline}</p>
+          <p className="font-cinzel text-base font-bold text-white drop-shadow sm:text-lg lg:text-base xl:text-lg">
+            {tier.title}
+          </p>
+          <p className="hidden font-sora text-[10px] leading-snug text-white/75 sm:block lg:hidden xl:block">
+            {tier.tagline}
+          </p>
         </div>
 
         <motion.button
@@ -235,9 +373,12 @@ function TierCarousel({
   );
 }
 
-function formatPennyDisplay(amount: bigint): string {
-  const whole = amount / 1_000_000n;
-  return whole.toLocaleString();
+function formatPennyDisplay(amount: bigint, decimals = 18): string {
+  return formatCompactTokenAmount(amount, decimals, 2);
+}
+
+function formatNativeDisplay(amount: bigint): string {
+  return formatCompactTokenAmount(amount, 18, 4);
 }
 
 export default function Staking() {
@@ -246,24 +387,302 @@ export default function Staking() {
   const selectedNetwork = useNetworkStore((state) => state.selectedNetwork);
   const canAccessStaking = canAccessFarm(selectedNetwork);
   const poaLive = hasLiveProofOfAccess(selectedNetwork);
+  const harvesterLive = hasLiveHarvester(selectedNetwork);
   const { mintTier, isPending: isMinting } = useProofOfAccessMint();
+  const {
+    farmDeposit,
+    updateSubscriptions,
+    farmWithdraw,
+    farmClaim,
+    isPending: isFarming,
+  } = useHarvesterFarm();
 
   // Marble (0) on first visit; restore last choice on return
   const [tierId, setTierId] = useState<TierId>(() => readCachedTierId());
   const [mintConfig, setMintConfig] = useState<ProofOfAccessMintConfig | null>(null);
   const [loadingConfig, setLoadingConfig] = useState(false);
   const [farmAmount, setFarmAmount] = useState("");
-  const [withdrawAmount, setWithdrawAmount] = useState("");
-  const [selectedReward, setSelectedReward] = useState(DEMO.rewards[0].symbol);
+  const [selectedRewardAddress, setSelectedRewardAddress] = useState<Address | null>(null);
   const [showRewardPicker, setShowRewardPicker] = useState(false);
   const [activeSidebarTab, setActiveSidebarTab] = useState<"mint" | "streams" | "info">("mint");
+  const [mintDialogOpen, setMintDialogOpen] = useState(false);
+  const [mintReadiness, setMintReadiness] = useState<ProofOfAccessMintReadiness | null>(null);
+  const [loadingReadiness, setLoadingReadiness] = useState(false);
+  const [mintStep, setMintStep] = useState<"idle" | "checking" | "approving" | "minting">("idle");
+
+  // Farm / Harvester
+  const [farmStep, setFarmStep] = useState<HarvesterFarmStep>("idle");
+  const [farmStatus, setFarmStatus] = useState("Ready to farm PENNY");
+  const [farmReadiness, setFarmReadiness] = useState<HarvesterDepositReadiness | null>(null);
+  const [loadingFarmReadiness, setLoadingFarmReadiness] = useState(false);
+  const [totalFarmPennySent, setTotalFarmPennySent] = useState<bigint | null>(null);
+  const [currentFarmBalance, setCurrentFarmBalance] = useState<bigint | null>(null);
+  const [liveSubscriptions, setLiveSubscriptions] = useState<Address[]>([]);
+  const [loadingFarmStats, setLoadingFarmStats] = useState(false);
+
+  // Withdraw timelock
+  const [withdrawLock, setWithdrawLock] = useState<HarvesterWithdrawTimelock | null>(null);
+  const [withdrawCountdown, setWithdrawCountdown] = useState(0);
+  const [withdrawStep, setWithdrawStep] = useState<"idle" | "checking" | "withdrawing">("idle");
+  const [loadingWithdrawLock, setLoadingWithdrawLock] = useState(false);
+
+  // Claim / harvest streams (full on-chain snapshot + era math when staked)
+  const [claimableStreams, setClaimableStreams] = useState<ClaimableRewardStream[]>([]);
+  const [rewardSnapshot, setRewardSnapshot] = useState<UserRewardStreamsSnapshot | null>(null);
+  const [loadingClaimables, setLoadingClaimables] = useState(false);
+  const [claimDialogOpen, setClaimDialogOpen] = useState(false);
+  const [claimSelection, setClaimSelection] = useState<Address[]>([]);
+  const [claimStep, setClaimStep] = useState<"idle" | "claiming">("idle");
+
+  // Harvested claim history (Harvester.userTotalClaimHistory + getUserClaims)
+  const [harvestedCount, setHarvestedCount] = useState<number | null>(null);
+  const [loadingHarvestedCount, setLoadingHarvestedCount] = useState(false);
+  const [claimHistoryOpen, setClaimHistoryOpen] = useState(false);
+  const [claimHistoryPage, setClaimHistoryPage] = useState(0);
+  const [claimHistoryPageCount, setClaimHistoryPageCount] = useState(0);
+  const [claimHistoryRows, setClaimHistoryRows] = useState<HarvesterClaimDisplay[]>([]);
+  const [loadingClaimHistory, setLoadingClaimHistory] = useState(false);
+
+  // Subscription dialog
+  const [subDialogOpen, setSubDialogOpen] = useState(false);
+  const [subDialogMode, setSubDialogMode] = useState<"farm" | "manage">("manage");
+  const [selectedStreams, setSelectedStreams] = useState<Address[]>([]);
+  const [streamSearch, setStreamSearch] = useState("");
+  const [customTokenInput, setCustomTokenInput] = useState("");
+  const [maxStreams, setMaxStreams] = useState(1);
+  /** Token id of designated basket NFT for Harvester subscribe limits (0 = standard / no NFT) */
+  const [designatedNftId, setDesignatedNftId] = useState<bigint | null>(null);
+  const [subscribeNftId, setSubscribeNftId] = useState<bigint>(0n);
+
+  // Live wallet balances (viem reads)
+  const [nativeBalance, setNativeBalance] = useState<bigint | null>(null);
+  const [pennyBalance, setPennyBalance] = useState<bigint | null>(null);
+  const [walletPennyDecimals, setWalletPennyDecimals] = useState(18);
+  const [loadingBalances, setLoadingBalances] = useState(false);
+
+  // Owned ProofOfAccess NFTs (basket)
+  const [ownedNfts, setOwnedNfts] = useState<ProofOfAccessPlayer[]>([]);
+  const [loadingNfts, setLoadingNfts] = useState(false);
+  const [selectedNft, setSelectedNft] = useState<ProofOfAccessPlayer | null>(null);
+  const [nftDialogOpen, setNftDialogOpen] = useState(false);
 
   const tier = useMemo(() => getTier(tierId), [tierId]);
+  const pennyDecimals =
+    mintConfig?.pennyDecimals ??
+    mintReadiness?.pennyDecimals ??
+    farmReadiness?.pennyDecimals ??
+    walletPennyDecimals ??
+    18;
+
+  const whitelistByCategory = useMemo(
+    () => getWhitelistedTokensByCategory(selectedNetwork.chainId),
+    [selectedNetwork.chainId],
+  );
 
   const handleTierChange = useCallback((id: TierId) => {
     setTierId(id);
     writeCachedTierId(id);
   }, []);
+
+  const refreshBalances = useCallback(async () => {
+    if (!account?.address) {
+      setNativeBalance(null);
+      setPennyBalance(null);
+      return;
+    }
+    setLoadingBalances(true);
+    try {
+      const bal = await fetchWalletStakingBalances(account.address as Address);
+      setNativeBalance(bal.ethBalance);
+      setPennyBalance(bal.pennyBalance);
+      setWalletPennyDecimals(bal.pennyDecimals);
+    } catch (err) {
+      console.error("refreshBalances failed", err);
+      setNativeBalance(null);
+      setPennyBalance(null);
+    } finally {
+      setLoadingBalances(false);
+    }
+  }, [account?.address]);
+
+  const refreshOwnedNfts = useCallback(async () => {
+    if (!account?.address || !poaLive) {
+      setOwnedNfts([]);
+      return;
+    }
+    setLoadingNfts(true);
+    try {
+      const players = await getPlayerOwners(account.address as Address);
+      setOwnedNfts(players);
+    } catch (err) {
+      console.error("refreshOwnedNfts failed", err);
+      setOwnedNfts([]);
+    } finally {
+      setLoadingNfts(false);
+    }
+  }, [account?.address, poaLive]);
+
+  /**
+   * Pull Total Farm from Harvester.TotalPENNYSent and user stake from balances[user].
+   * Safe to call before/after deposit or withdraw so the dashboard stays in sync.
+   */
+  const refreshFarmStats = useCallback(async () => {
+    if (!harvesterLive) {
+      setTotalFarmPennySent(null);
+      setCurrentFarmBalance(null);
+      setLiveSubscriptions([]);
+      return;
+    }
+    setLoadingFarmStats(true);
+    try {
+      if (account?.address) {
+        const stats = await fetchHarvesterFarmStats(account.address as Address);
+        setTotalFarmPennySent(stats.totalFarmPennySent);
+        setCurrentFarmBalance(stats.stakedBalance);
+        setLiveSubscriptions(stats.subscriptions);
+      } else {
+        // Global TotalPENNYSent does not require a wallet
+        const total = await fetchTotalPennySent();
+        setTotalFarmPennySent(total);
+        setCurrentFarmBalance(null);
+        setLiveSubscriptions([]);
+      }
+    } catch (err) {
+      console.error("refreshFarmStats failed", err);
+      setTotalFarmPennySent(null);
+      setCurrentFarmBalance(null);
+      setLiveSubscriptions([]);
+    } finally {
+      setLoadingFarmStats(false);
+    }
+  }, [account?.address, harvesterLive]);
+
+  /** entryMap + timeLock for withdraw countdown / button lock. */
+  const refreshWithdrawLock = useCallback(async () => {
+    if (!account?.address || !harvesterLive) {
+      setWithdrawLock(null);
+      setWithdrawCountdown(0);
+      return;
+    }
+    setLoadingWithdrawLock(true);
+    try {
+      const lock = await fetchWithdrawTimelock(account.address as Address);
+      setWithdrawLock(lock);
+      setWithdrawCountdown(lock.remainingSeconds);
+    } catch (err) {
+      console.error("refreshWithdrawLock failed", err);
+      setWithdrawLock(null);
+      setWithdrawCountdown(0);
+    } finally {
+      setLoadingWithdrawLock(false);
+    }
+  }, [account?.address, harvesterLive]);
+
+  /**
+   * Staking page reward load path:
+   * - Always re-read balances, subscriptions, globals, claimRewards, tokenEconomics, eras
+   * - Run stored-era accrual math only when balances[user] > 0 (active stake)
+   * - Display claimable amounts to the last token unit
+   */
+  const refreshClaimables = useCallback(async () => {
+    if (!account?.address || !harvesterLive) {
+      setClaimableStreams([]);
+      setRewardSnapshot(null);
+      return;
+    }
+    setLoadingClaimables(true);
+    try {
+      const snapshot = await loadUserRewardStreamsSnapshot(account.address as Address);
+      setRewardSnapshot(snapshot);
+      setClaimableStreams(snapshot.streams);
+      // Keep Current Farm aligned with the same balances[] read used for era gate
+      setCurrentFarmBalance(snapshot.stakedBalance);
+      if (snapshot.subscriptions.length) {
+        setLiveSubscriptions(snapshot.subscriptions);
+      }
+      setSelectedRewardAddress((prev) => {
+        if (
+          prev &&
+          snapshot.streams.some((s) => normalizeAddr(s.address) === normalizeAddr(prev))
+        ) {
+          return prev;
+        }
+        return snapshot.streams[0]?.address ?? null;
+      });
+    } catch (err) {
+      console.error("refreshClaimables failed", err);
+      setClaimableStreams([]);
+      setRewardSnapshot(null);
+    } finally {
+      setLoadingClaimables(false);
+    }
+  }, [account?.address, harvesterLive]);
+
+  /** Total harvest claims — Harvester.userTotalClaimHistory (claims count). */
+  const refreshHarvestedCount = useCallback(async () => {
+    if (!account?.address || !harvesterLive) {
+      setHarvestedCount(null);
+      return;
+    }
+    setLoadingHarvestedCount(true);
+    try {
+      const count = await fetchHarvesterUserClaimsCount(account.address as Address);
+      setHarvestedCount(count);
+    } catch (err) {
+      console.error("refreshHarvestedCount failed", err);
+      setHarvestedCount(null);
+    } finally {
+      setLoadingHarvestedCount(false);
+    }
+  }, [account?.address, harvesterLive]);
+
+  /**
+   * Load one page of claim history via getUserClaims(start, batchSize).
+   * Batches only the entries needed for the current page (max page size on screen).
+   */
+  const refreshClaimHistoryPage = useCallback(
+    async (page: number, totalHint?: number | null) => {
+      if (!account?.address || !harvesterLive) {
+        setClaimHistoryRows([]);
+        setClaimHistoryPageCount(0);
+        setHarvestedCount(null);
+        return;
+      }
+      setLoadingClaimHistory(true);
+      try {
+        const result = await fetchHarvesterClaimsPage(
+          account.address as Address,
+          page,
+          HARVESTER_CLAIMS_PAGE_SIZE,
+          typeof totalHint === "number" ? totalHint : undefined,
+        );
+        setHarvestedCount(result.total);
+        setClaimHistoryPage(result.page);
+        setClaimHistoryPageCount(result.pageCount);
+        setClaimHistoryRows(result.claims);
+      } catch (err) {
+        console.error("refreshClaimHistoryPage failed", err);
+        setClaimHistoryRows([]);
+        setClaimHistoryPageCount(0);
+      } finally {
+        setLoadingClaimHistory(false);
+      }
+    },
+    [account?.address, harvesterLive],
+  );
+
+  const openClaimHistory = useCallback(() => {
+    if (!account?.address) {
+      toast.error("Connect your wallet to view claim history");
+      return;
+    }
+    if (!harvesterLive) {
+      toast.error("Harvester not live yet");
+      return;
+    }
+    setClaimHistoryPage(0);
+    setClaimHistoryOpen(true);
+  }, [account?.address, harvesterLive]);
 
   useEffect(() => {
     if (!canAccessStaking) {
@@ -292,21 +711,812 @@ export default function Staking() {
     };
   }, [tierId, selectedNetwork.chainId]);
 
-  const selectedRewardData = useMemo(
-    () => DEMO.rewards.find((r) => r.symbol === selectedReward) ?? DEMO.rewards[0],
-    [selectedReward],
+  // Load / refresh balances when wallet or network changes
+  useEffect(() => {
+    void refreshBalances();
+  }, [refreshBalances, selectedNetwork.chainId]);
+
+  // Load owned NFTs when wallet or network changes
+  useEffect(() => {
+    void refreshOwnedNfts();
+  }, [refreshOwnedNfts, selectedNetwork.chainId]);
+
+  // Live farm totals from Harvester
+  useEffect(() => {
+    void refreshFarmStats();
+  }, [refreshFarmStats, selectedNetwork.chainId]);
+
+  // Withdraw timelock after last deposit entry
+  useEffect(() => {
+    void refreshWithdrawLock();
+  }, [refreshWithdrawLock, selectedNetwork.chainId]);
+
+  // Tick withdraw countdown once per second while locked (strict > unlockAt)
+  useEffect(() => {
+    if (!withdrawLock?.unlockAt || withdrawLock.stakedBalance <= 0n) {
+      setWithdrawCountdown(0);
+      return;
+    }
+    const tick = () => {
+      const now = Math.floor(Date.now() / 1000);
+      // Match contract: need now > unlockAt
+      const remaining =
+        now <= withdrawLock.unlockAt ? withdrawLock.unlockAt - now + 1 : 0;
+      setWithdrawCountdown(remaining);
+    };
+    tick();
+    const id = window.setInterval(tick, 1000);
+    return () => window.clearInterval(id);
+  }, [withdrawLock?.unlockAt, withdrawLock?.stakedBalance]);
+
+  // On every staking page load / wallet / network change: fresh contract data + estimates
+  useEffect(() => {
+    void refreshClaimables();
+  }, [refreshClaimables, selectedNetwork.chainId]);
+
+  // Harvested total from userTotalClaimHistory
+  useEffect(() => {
+    void refreshHarvestedCount();
+  }, [refreshHarvestedCount, selectedNetwork.chainId]);
+
+  // While claim-history dialog is open, load only the page batch needed for the screen
+  useEffect(() => {
+    if (!claimHistoryOpen) return;
+    void refreshClaimHistoryPage(claimHistoryPage);
+  }, [
+    claimHistoryOpen,
+    claimHistoryPage,
+    refreshClaimHistoryPage,
+    account?.address,
+    selectedNetwork.chainId,
+  ]);
+
+  // While user has active stake, re-read chain params + re-run era math on a cadence
+  // (owner can change tax/timeLock; new ERAs complete over time)
+  useEffect(() => {
+    if (!account?.address || !harvesterLive) return;
+    if (!rewardSnapshot?.hasActiveStake) return;
+    const id = window.setInterval(() => {
+      void refreshClaimables();
+    }, 60_000);
+    return () => window.clearInterval(id);
+  }, [account?.address, harvesterLive, rewardSnapshot?.hasActiveStake, refreshClaimables]);
+
+  /**
+   * Designated NFT for farm / subscribe limits:
+   * - No NFTs → standard (1 stream, nftId 0)
+   * - First load / invalid previous → highest NFT in basket
+   * - Manual switch only via "Choose this Tier" (does not follow mint carousel)
+   */
+  useEffect(() => {
+    const usable = ownedNfts.filter((n) => !n.BLACKLIST);
+    if (usable.length === 0) {
+      setDesignatedNftId(null);
+      setMaxStreams(1);
+      setSubscribeNftId(0n);
+      return;
+    }
+
+    setDesignatedNftId((prev) => {
+      const stillOwned = prev !== null && usable.some((n) => n.ID === prev);
+      if (stillOwned) return prev;
+      const highest = pickHighestBasketNft(usable);
+      return highest?.ID ?? null;
+    });
+  }, [ownedNfts]);
+
+  // Keep maxStreams + subscribeNftId aligned with designated basket NFT
+  useEffect(() => {
+    const { maxStreams: max, nftId } = resolveMaxRewardStreams(ownedNfts, designatedNftId);
+    setMaxStreams(max);
+    setSubscribeNftId(nftId);
+  }, [ownedNfts, designatedNftId]);
+
+  /** True until the user has at least one Harvester reward stream */
+  const needsStreamSubscription = Boolean(
+    account && harvesterLive && liveSubscriptions.length === 0,
   );
 
-  const totalEstimated = DEMO.rewards.reduce((acc, r) => acc + parseFloat(r.estimated.replace(/,/g, "")), 0);
-  const totalHarvested = DEMO.rewards.length;
+  // Red status: prompt stream subscription when none yet (standard or with NFTs)
+  useEffect(() => {
+    if (!account || !harvesterLive) return;
+    if (farmStep !== "idle" || loadingFarmReadiness || isFarming) return;
 
-  const handleDemoAction = (action: string) => {
-    toast.success(`${action} (design preview)`, {
-      description: "Farm / withdraw / harvest wiring comes next.",
+    if (needsStreamSubscription) {
+      setFarmStatus("Subscribe to at least 1 reward stream to farm");
+    } else if (liveSubscriptions.length > 0) {
+      setFarmStatus((prev) =>
+        prev.toLowerCase().includes("subscribe") || prev.toLowerCase().includes("reward stream")
+          ? "Ready to farm PENNY"
+          : prev,
+      );
+    }
+  }, [
+    account,
+    harvesterLive,
+    needsStreamSubscription,
+    liveSubscriptions.length,
+    farmStep,
+    loadingFarmReadiness,
+    isFarming,
+  ]);
+
+  const selectedRewardData = useMemo(() => {
+    if (!selectedRewardAddress) return null;
+    return (
+      claimableStreams.find(
+        (s) => normalizeAddr(s.address) === normalizeAddr(selectedRewardAddress),
+      ) ?? null
+    );
+  }, [claimableStreams, selectedRewardAddress]);
+
+  const canWithdrawNow = useMemo(() => {
+    if (!account || !harvesterLive) return false;
+    if (!withdrawLock || withdrawLock.stakedBalance <= 0n) return false;
+    if (loadingWithdrawLock || withdrawStep !== "idle" || isFarming) return false;
+    // Live countdown: 0 means now is strictly past entryMap + timeLock
+    return withdrawCountdown <= 0 && withdrawLock.entryTimestamp > 0;
+  }, [
+    account,
+    harvesterLive,
+    withdrawLock,
+    loadingWithdrawLock,
+    withdrawStep,
+    isFarming,
+    withdrawCountdown,
+  ]);
+
+  /** Live plan: skip approve when pre-approved; include subscribe when streams changed */
+  const farmPlan = useMemo(() => {
+    if (!farmReadiness || selectedStreams.length === 0) return null;
+    return planFarmDepositSteps({
+      allowance: farmReadiness.allowance,
+      depositAmount: farmReadiness.depositAmount,
+      priorSubscriptions: farmReadiness.subscriptions,
+      nextSubscriptions: selectedStreams,
     });
-  };
+  }, [farmReadiness, selectedStreams]);
 
-  const handleMint = useCallback(async () => {
+  const preApprovedDisplay =
+    farmReadiness != null
+      ? formatPennyDisplay(farmReadiness.allowance, farmReadiness.pennyDecimals)
+      : null;
+
+  // Keep red status in sync with planned steps while dialog is open / amount ready
+  useEffect(() => {
+    if (farmStep !== "idle" || loadingFarmReadiness || isFarming) return;
+    if (!farmReadiness || !farmPlan) return;
+    if (subDialogMode === "farm" && subDialogOpen) {
+      const steps = farmPlan.stepLabels.join(" → ");
+      if (!farmPlan.needsApproval && farmReadiness.allowance > 0n) {
+        setFarmStatus(
+          `Pre-approved ${preApprovedDisplay} PENNY · next: ${steps || "deposit"}`,
+        );
+      } else if (farmPlan.needsApproval) {
+        setFarmStatus(`Needs approve · next: ${steps}`);
+      } else {
+        setFarmStatus(`Ready · ${steps}`);
+      }
+    }
+  }, [
+    farmPlan,
+    farmReadiness,
+    farmStep,
+    loadingFarmReadiness,
+    isFarming,
+    subDialogMode,
+    subDialogOpen,
+    preApprovedDisplay,
+  ]);
+
+  const filteredCategories = useMemo(() => {
+    const q = streamSearch.trim().toLowerCase();
+    const result: Partial<Record<RewardTokenCategory, WhitelistedRewardToken[]>> = {};
+    for (const cat of CATEGORY_ORDER) {
+      const list = whitelistByCategory[cat] ?? [];
+      if (!list.length) continue;
+      const filtered = q
+        ? list.filter(
+            (t) =>
+              t.name.toLowerCase().includes(q) ||
+              t.address.toLowerCase().includes(q),
+          )
+        : list;
+      if (filtered.length) result[cat] = filtered;
+    }
+    return result;
+  }, [whitelistByCategory, streamSearch]);
+
+  const nativeDisplay =
+    !account
+      ? "—"
+      : loadingBalances && nativeBalance === null
+        ? "…"
+        : nativeBalance !== null
+          ? formatNativeDisplay(nativeBalance)
+          : "—";
+
+  const pennyDisplay =
+    !account
+      ? "—"
+      : loadingBalances && pennyBalance === null
+        ? "…"
+        : pennyBalance !== null
+          ? formatPennyDisplay(pennyBalance, walletPennyDecimals)
+          : "—";
+
+  const totalFarmDisplay =
+    !harvesterLive
+      ? "—"
+      : loadingFarmStats && totalFarmPennySent === null
+        ? "…"
+        : totalFarmPennySent !== null
+          ? formatPennyDisplay(totalFarmPennySent, pennyDecimals)
+          : "0";
+
+  const currentFarmDisplay =
+    !account || !harvesterLive
+      ? "—"
+      : loadingFarmStats && currentFarmBalance === null
+        ? "…"
+        : currentFarmBalance !== null
+          ? formatPennyDisplay(currentFarmBalance, pennyDecimals)
+          : "0";
+
+  const walletPennyHuman =
+    pennyBalance !== null ? formatPennyDisplay(pennyBalance, walletPennyDecimals) : "0";
+
+  const parseFarmAmount = useCallback((): bigint | null => {
+    const raw = farmAmount.trim();
+    if (!raw || Number.isNaN(Number(raw)) || Number(raw) <= 0) return null;
+    try {
+      return toTokenSmallestUnit(raw, pennyDecimals);
+    } catch {
+      return null;
+    }
+  }, [farmAmount, pennyDecimals]);
+
+  const setFarmAmountPercent = useCallback(
+    (pct: "25%" | "50%" | "MAX") => {
+      if (pennyBalance === null || pennyBalance <= 0n) {
+        setFarmAmount("0");
+        return;
+      }
+      const portion =
+        pct === "MAX"
+          ? pennyBalance
+          : (pennyBalance * BigInt(pct === "25%" ? 25 : 50)) / 100n;
+      setFarmAmount(fromTokenSmallestUnit(portion, walletPennyDecimals));
+    },
+    [pennyBalance, walletPennyDecimals],
+  );
+
+  /** Full unstake via Harvester.withdraw() after timelock. */
+  const handleWithdrawNow = useCallback(async () => {
+    if (!account) {
+      toast.error("Connect your wallet to withdraw");
+      return;
+    }
+    if (!harvesterLive) {
+      toast.error("Harvester not live yet");
+      return;
+    }
+    if (!canWithdrawNow) {
+      toast.error("Withdraw locked", {
+        description:
+          withdrawCountdown > 0
+            ? `Timelock remaining: ${formatDurationCountdown(withdrawCountdown)}`
+            : "No stake available to withdraw.",
+      });
+      return;
+    }
+
+    setWithdrawStep("checking");
+    try {
+      await farmWithdraw({
+        onStep: (step) => {
+          setWithdrawStep(step === "idle" ? "idle" : step);
+        },
+      });
+      toast.success("Withdraw complete", {
+        description: "Your PENNY stake was returned to your wallet.",
+      });
+      await Promise.all([
+        refreshFarmStats(),
+        refreshWithdrawLock(),
+        refreshBalances(),
+        refreshClaimables(),
+      ]);
+    } catch (err) {
+      console.error("withdraw failed", err);
+      const msg = err instanceof Error ? err.message : "Withdraw failed";
+      toast.error("Withdraw failed", { description: msg });
+    } finally {
+      setWithdrawStep("idle");
+    }
+  }, [
+    account,
+    harvesterLive,
+    canWithdrawNow,
+    withdrawCountdown,
+    farmWithdraw,
+    refreshFarmStats,
+    refreshWithdrawLock,
+    refreshBalances,
+    refreshClaimables,
+  ]);
+
+  const openClaimDialog = useCallback(
+    (preselectAll: boolean) => {
+      if (!account) {
+        toast.error("Connect your wallet to claim");
+        return;
+      }
+      if (!harvesterLive) {
+        toast.error("Harvester not live yet");
+        return;
+      }
+      if (claimableStreams.length === 0) {
+        toast.error("No reward streams", {
+          description: "Subscribe to reward streams while farming first.",
+        });
+        return;
+      }
+      if (preselectAll) {
+        setClaimSelection(claimableStreams.map((s) => s.address));
+      } else if (selectedRewardAddress) {
+        setClaimSelection([selectedRewardAddress]);
+      } else {
+        setClaimSelection(claimableStreams.map((s) => s.address));
+      }
+      setClaimDialogOpen(true);
+    },
+    [account, harvesterLive, claimableStreams, selectedRewardAddress],
+  );
+
+  const toggleClaimToken = useCallback((address: Address) => {
+    setClaimSelection((prev) => {
+      const exists = prev.some((a) => normalizeAddr(a) === normalizeAddr(address));
+      if (exists) {
+        return prev.filter((a) => normalizeAddr(a) !== normalizeAddr(address));
+      }
+      return [...prev, address];
+    });
+  }, []);
+
+  const runClaim = useCallback(
+    async (tokens: Address[], label: string) => {
+      if (!account) {
+        toast.error("Connect your wallet to claim");
+        return;
+      }
+      if (!tokens.length) {
+        toast.error("Select at least one reward stream");
+        return;
+      }
+      setClaimStep("claiming");
+      try {
+        await farmClaim({
+          tokens,
+          onStep: (step) => {
+            if (step === "idle") setClaimStep("idle");
+            else setClaimStep("claiming");
+          },
+        });
+        toast.success(label, {
+          description: `Claimed ${tokens.length} stream${tokens.length === 1 ? "" : "s"}.`,
+        });
+        setClaimDialogOpen(false);
+        await Promise.all([
+          refreshClaimables(),
+          refreshFarmStats(),
+          refreshBalances(),
+          refreshHarvestedCount(),
+        ]);
+        // New claims land at the end of history — show newest page
+        setClaimHistoryPage(0);
+        if (claimHistoryOpen) {
+          await refreshClaimHistoryPage(0);
+        }
+      } catch (err) {
+        console.error("claim failed", err);
+        const msg = err instanceof Error ? err.message : "Claim failed";
+        toast.error("Claim failed", { description: msg });
+      } finally {
+        setClaimStep("idle");
+      }
+    },
+    [
+      account,
+      farmClaim,
+      refreshClaimables,
+      refreshFarmStats,
+      refreshBalances,
+      refreshHarvestedCount,
+      claimHistoryOpen,
+      refreshClaimHistoryPage,
+    ],
+  );
+
+  const handleHarvestSelected = useCallback(async () => {
+    await runClaim(claimSelection, "Rewards claimed");
+  }, [runClaim, claimSelection]);
+
+  const handleHarvestAll = useCallback(async () => {
+    if (!account) {
+      toast.error("Connect your wallet to claim");
+      return;
+    }
+    if (!harvesterLive) {
+      toast.error("Harvester not live yet");
+      return;
+    }
+    if (claimableStreams.length === 0) {
+      toast.error("No reward streams", {
+        description: "Subscribe to reward streams while farming first.",
+      });
+      return;
+    }
+    await runClaim(
+      claimableStreams.map((s) => s.address),
+      "Harvested all streams",
+    );
+  }, [account, harvesterLive, claimableStreams, runClaim]);
+
+  const openNftDialog = useCallback((nft: ProofOfAccessPlayer) => {
+    setSelectedNft(nft);
+    setNftDialogOpen(true);
+  }, []);
+
+  const isAlreadyDesignated = useCallback(
+    (nft: ProofOfAccessPlayer | null | undefined) => {
+      if (!nft || designatedNftId === null) return false;
+      return nft.ID === designatedNftId;
+    },
+    [designatedNftId],
+  );
+
+  /** Manual tier switch — only way to change designated basket NFT (not mint carousel) */
+  const switchToNftTier = useCallback(() => {
+    if (!selectedNft || selectedNft.BLACKLIST) return;
+    if (isAlreadyDesignated(selectedNft)) return;
+
+    const mapped = getTierByContractName(selectedNft.TIER);
+    setDesignatedNftId(selectedNft.ID);
+    setMaxStreams(Math.max(1, Number(selectedNft.LISTS)));
+    setSubscribeNftId(selectedNft.ID);
+    // Sync farm / viewing art to the chosen basket tier (mint carousel still free to browse)
+    handleTierChange(mapped.id);
+    setNftDialogOpen(false);
+    toast.success(`Designated ${mapped.title}`, {
+      description: `Token #${selectedNft.ID.toString()} · up to ${Number(selectedNft.LISTS)} revenue streams`,
+    });
+  }, [selectedNft, isAlreadyDesignated, handleTierChange]);
+
+  const toggleStream = useCallback(
+    (address: Address) => {
+      setSelectedStreams((prev) => {
+        const exists = prev.some((a) => normalizeAddr(a) === normalizeAddr(address));
+        if (exists) {
+          return prev.filter((a) => normalizeAddr(a) !== normalizeAddr(address));
+        }
+        if (prev.length >= maxStreams) {
+          toast.error(`Max ${maxStreams} stream${maxStreams === 1 ? "" : "s"}`, {
+            description:
+              ownedNfts.filter((n) => !n.BLACKLIST).length === 0
+                ? "Standard access (no NFT) — you can pick only 1 reward stream."
+                : "Your designated NFT unlocks this many revenue streams.",
+          });
+          return prev;
+        }
+        return [...prev, address];
+      });
+    },
+    [maxStreams, ownedNfts.length],
+  );
+
+  const addCustomToken = useCallback(() => {
+    const raw = customTokenInput.trim();
+    if (!isValidAddress(raw)) {
+      toast.error("Enter a valid token contract address (0x…)");
+      return;
+    }
+    const addr = raw as Address;
+    toggleStream(addr);
+    setCustomTokenInput("");
+    setStreamSearch("");
+  }, [customTokenInput, toggleStream]);
+
+  const openSubscriptionDialog = useCallback(
+    async (mode: "farm" | "manage") => {
+      if (!account) {
+        toast.error("Connect your wallet first");
+        return;
+      }
+      if (!harvesterLive) {
+        toast.error("Harvester not live yet", {
+          description:
+            "Using zero stand-in address. Deploy Harvester, then set harvester in networkData.",
+        });
+        return;
+      }
+
+      setSubDialogMode(mode);
+      setStreamSearch("");
+      setCustomTokenInput("");
+      setSubDialogOpen(true);
+      setFarmStatus(
+        mode === "farm"
+          ? "Pick reward streams, then confirm deposit…"
+          : "Update your reward stream subscriptions…",
+      );
+
+      // Seed selection from on-chain subscriptions
+      try {
+        const subs = await fetchUserSubscriptions(account.address as Address);
+        setSelectedStreams(subs.tokens.length ? [...subs.tokens] : []);
+        setLiveSubscriptions(subs.tokens);
+      } catch {
+        setSelectedStreams([]);
+      }
+    },
+    [account, harvesterLive],
+  );
+
+  /** Stake Now → readiness check + subscription dialog */
+  const openFarmFlow = useCallback(async () => {
+    if (!account) {
+      toast.error("Connect your wallet to farm");
+      return;
+    }
+    if (!harvesterLive) {
+      toast.error("Harvester not live yet", {
+        description:
+          "Using zero stand-in address. Deploy Harvester, then set harvester in networkData.",
+      });
+      return;
+    }
+
+    const amount = parseFarmAmount();
+    if (amount === null) {
+      toast.error("Enter a valid PENNY amount to farm");
+      return;
+    }
+
+    // Snapshot TotalPENNYSent before deposit flow
+    void refreshFarmStats();
+
+    setFarmStep("checking");
+    setFarmStatus("Checking PENNY balance and gas…");
+    setLoadingFarmReadiness(true);
+    setFarmReadiness(null);
+
+    try {
+      const readiness = await checkHarvesterDepositReadiness(
+        account.address as Address,
+        amount,
+        {
+          ownedNfts,
+          preferredNftId: subscribeNftId,
+          expectedTxCount: 3,
+        },
+      );
+      setFarmReadiness(readiness);
+      setMaxStreams(readiness.maxStreams);
+      setSubscribeNftId(readiness.nftId);
+
+      if (!readiness.hasEnoughPenny) {
+        setFarmStatus(
+          `Not enough PENNY — need ${formatPennyDisplay(amount, readiness.pennyDecimals)}, have ${formatPennyDisplay(readiness.pennyBalance, readiness.pennyDecimals)}`,
+        );
+        toast.error("Not enough PENNY", {
+          description: `You need ${formatPennyDisplay(amount, readiness.pennyDecimals)} PENNY in your wallet to deposit.`,
+        });
+      } else if (!readiness.hasEnoughGas) {
+        setFarmStatus(
+          `Not enough ${selectedNetwork.symbol} for gas (need ~${formatEther(readiness.ethNeeded)})`,
+        );
+        toast.error(`Not enough ${selectedNetwork.symbol} for gas`, {
+          description: `Approve + subscribe + deposit need gas. Mint fee buffer ${formatEther(readiness.mintFee)} ${selectedNetwork.symbol} + est. gas ~${formatEther(readiness.ethGasReserve)}.`,
+        });
+      } else {
+        setFarmStatus("Select reward streams, then confirm deposit");
+      }
+
+      await openSubscriptionDialog("farm");
+      setFarmStep("idle");
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Could not prepare farm";
+      setFarmStatus(message);
+      toast.error(message);
+      setFarmStep("idle");
+    } finally {
+      setLoadingFarmReadiness(false);
+    }
+  }, [
+    account,
+    harvesterLive,
+    parseFarmAmount,
+    ownedNfts,
+    subscribeNftId,
+    selectedNetwork.symbol,
+    openSubscriptionDialog,
+    refreshFarmStats,
+  ]);
+
+  const confirmFarmDeposit = useCallback(async () => {
+    if (!account || !farmReadiness) {
+      toast.error("Farm readiness not loaded");
+      return;
+    }
+    if (selectedStreams.length === 0) {
+      toast.error("Pick at least one reward stream");
+      return;
+    }
+    if (selectedStreams.length > maxStreams) {
+      toast.error(`Max ${maxStreams} stream(s) for your pass`);
+      return;
+    }
+    if (!farmReadiness.hasEnoughPenny) {
+      toast.error("Not enough PENNY for this deposit");
+      return;
+    }
+
+    // Plan from dialog state (fresh on-chain re-check happens inside farmDeposit)
+    const planned = planFarmDepositSteps({
+      allowance: farmReadiness.allowance,
+      depositAmount: farmReadiness.depositAmount,
+      priorSubscriptions: farmReadiness.subscriptions,
+      nextSubscriptions: selectedStreams,
+    });
+
+    try {
+      // TotalPENNYSent snapshot before deposit txs
+      await refreshFarmStats();
+
+      toast.loading(
+        planned.needsApproval
+          ? "Preparing approve → …"
+          : planned.needsSubscribe
+            ? "Preparing subscribe → deposit…"
+            : "Preparing deposit…",
+        { id: "farm-harvester" },
+      );
+      const result = await farmDeposit({
+        wallet: account.address as Address,
+        amount: farmReadiness.depositAmount,
+        selectedTokens: selectedStreams,
+        nftId: subscribeNftId,
+        readiness: farmReadiness,
+        onStep: (step, detail) => {
+          setFarmStep(step);
+          if (detail) setFarmStatus(detail);
+          if (step === "approving") {
+            toast.loading("Approve PENNY in your wallet…", {
+              id: "farm-harvester",
+              description: `Allow Harvester to spend ${formatPennyDisplay(farmReadiness.depositAmount, farmReadiness.pennyDecimals)} PENNY`,
+            });
+          } else if (step === "subscribing") {
+            toast.loading("Confirm reward streams in your wallet…", {
+              id: "farm-harvester",
+              description: `subscribeToToken · tokenId ${subscribeNftId.toString()} · ${selectedStreams.length} stream(s) (list changed)`,
+            });
+          } else if (step === "depositing") {
+            toast.loading("Confirm deposit in your wallet…", {
+              id: "farm-harvester",
+              description: `deposit(${formatPennyDisplay(farmReadiness.depositAmount, farmReadiness.pennyDecimals)} PENNY)`,
+            });
+          } else if (step === "checking" && detail) {
+            toast.loading(detail, { id: "farm-harvester" });
+          }
+        },
+      });
+
+      const ran: string[] = [];
+      if (result.didApprove) ran.push("approved");
+      if (result.didSubscribe) ran.push("subscribed");
+      ran.push("deposited");
+      toast.success("PENNY deposited to Harvester", {
+        id: "farm-harvester",
+        description: ran.join(" · "),
+      });
+      setFarmStatus(
+        `Deposited ${formatPennyDisplay(farmReadiness.depositAmount, farmReadiness.pennyDecimals)} PENNY`,
+      );
+      setSubDialogOpen(false);
+      setFarmAmount("");
+      setFarmReadiness(null);
+      void refreshBalances();
+      // TotalPENNYSent + balances + timelock + claimables after successful deposit
+      await Promise.all([
+        refreshFarmStats(),
+        refreshWithdrawLock(),
+        refreshClaimables(),
+      ]);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Farm deposit failed";
+      setFarmStatus(message);
+      toast.error(message, { id: "farm-harvester" });
+      // Still re-read TotalPENNYSent after a failed mid-flow attempt
+      void refreshFarmStats();
+    } finally {
+      setFarmStep("idle");
+    }
+  }, [
+    account,
+    farmReadiness,
+    selectedStreams,
+    maxStreams,
+    farmDeposit,
+    subscribeNftId,
+    refreshBalances,
+    refreshFarmStats,
+    refreshWithdrawLock,
+    refreshClaimables,
+  ]);
+
+  const confirmManageSubscriptions = useCallback(async () => {
+    if (!account) {
+      toast.error("Connect your wallet");
+      return;
+    }
+    if (selectedStreams.length === 0) {
+      toast.error("Pick at least one reward stream");
+      return;
+    }
+    if (selectedStreams.length > maxStreams) {
+      toast.error(`Max ${maxStreams} stream(s) for your pass`);
+      return;
+    }
+
+    // Unchanged list — nothing to send
+    if (sameAddressSet(liveSubscriptions, selectedStreams)) {
+      toast.message("No changes", { description: "Your streams already match this list." });
+      setSubDialogOpen(false);
+      return;
+    }
+
+    try {
+      setFarmStep("subscribing");
+      setFarmStatus("Confirm subscription list in your wallet…");
+      toast.loading("Confirm subscriptions…", { id: "farm-subscribe" });
+      await updateSubscriptions({
+        tokens: selectedStreams,
+        nftId: subscribeNftId,
+        maxStreams,
+        onStep: (step, detail) => {
+          setFarmStep(step);
+          if (detail) setFarmStatus(detail);
+        },
+      });
+      toast.success("Reward streams updated", {
+        id: "farm-subscribe",
+        description: `${selectedStreams.length} stream(s) active`,
+      });
+      setFarmStatus(`Subscribed to ${selectedStreams.length} stream(s)`);
+      setSubDialogOpen(false);
+      void refreshFarmStats();
+      void refreshClaimables();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Subscription update failed";
+      setFarmStatus(message);
+      toast.error(message, { id: "farm-subscribe" });
+    } finally {
+      setFarmStep("idle");
+    }
+  }, [
+    account,
+    selectedStreams,
+    maxStreams,
+    liveSubscriptions,
+    updateSubscriptions,
+    subscribeNftId,
+    refreshFarmStats,
+    refreshClaimables,
+  ]);
+
+  /** Open confirm dialog + load gas / approval readiness for the chosen tier */
+  const openMintDialog = useCallback(async () => {
     if (!account) {
       toast.error("Connect your wallet to mint");
       return;
@@ -323,18 +1533,90 @@ export default function Staking() {
       return;
     }
 
+    setActiveSidebarTab("mint");
+    setMintDialogOpen(true);
+    setLoadingReadiness(true);
+    setMintReadiness(null);
+
     try {
-      toast.loading("Approving PENNY burn…", { id: "mint-poa" });
-      await mintTier(tierId);
+      const readiness = await checkProofOfAccessMintReadiness(
+        account.address as Address,
+        tierId,
+      );
+      setMintReadiness(readiness);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Could not check mint requirements";
+      toast.error(message);
+      setMintDialogOpen(false);
+    } finally {
+      setLoadingReadiness(false);
+    }
+  }, [account, poaLive, mintConfig?.paused, tierId]);
+
+  const confirmMint = useCallback(async () => {
+    if (!account) {
+      toast.error("Connect your wallet to mint");
+      return;
+    }
+    if (!mintReadiness?.canMint) {
+      if (mintReadiness && !mintReadiness.hasEnoughPenny) {
+        toast.error("Not enough PENNY", {
+          description: `You need ${formatPennyDisplay(mintReadiness.config.burnAmount, mintReadiness.pennyDecimals)} PENNY to burn for this tier.`,
+        });
+      } else if (mintReadiness && !mintReadiness.hasEnoughGas) {
+        toast.error(`Not enough ${selectedNetwork.symbol} for gas`, {
+          description: `Mint fee is ${formatEther(mintReadiness.config.mintFee)} ${selectedNetwork.symbol}, plus gas for approve + mint. Add more ${selectedNetwork.symbol} and try again.`,
+        });
+      }
+      return;
+    }
+
+    try {
+      setMintStep("checking");
+      toast.loading("Preparing mint…", { id: "mint-poa" });
+      await mintTier(tierId, {
+        wallet: account.address as Address,
+        readiness: mintReadiness,
+        onStep: (step) => {
+          setMintStep(step);
+          if (step === "approving") {
+            toast.loading("Approve PENNY burn in your wallet…", {
+              id: "mint-poa",
+              description: `Allow ProofOfAccess to spend ${formatPennyDisplay(mintReadiness.config.burnAmount, mintReadiness.pennyDecimals)} PENNY`,
+            });
+          } else if (step === "minting") {
+            toast.loading("Confirm mint in your wallet…", {
+              id: "mint-poa",
+              description: `mint(${tierId}) · fee ${formatEther(mintReadiness.config.mintFee)} ${selectedNetwork.symbol}`,
+            });
+          }
+        },
+      });
       toast.success(`Minted ${tier.title} (${tier.contractName})`, {
         id: "mint-poa",
-        description: `Tier level ${tierId} · ${tier.lists} list slots`,
+        description: `Tier level ${tierId} · ${tier.lists} revenue streams`,
       });
+      setMintDialogOpen(false);
+      setMintReadiness(null);
+      // Refresh PENNY / native balances and NFT row after mint
+      void refreshBalances();
+      void refreshOwnedNfts();
     } catch (err) {
       const message = err instanceof Error ? err.message : "Mint failed";
       toast.error(message, { id: "mint-poa" });
+    } finally {
+      setMintStep("idle");
     }
-  }, [account, poaLive, mintConfig?.paused, mintTier, tierId, tier]);
+  }, [
+    account,
+    mintReadiness,
+    mintTier,
+    tierId,
+    tier,
+    selectedNetwork.symbol,
+    refreshBalances,
+    refreshOwnedNfts,
+  ]);
 
   const shortWallet = account?.address
     ? `${account.address.slice(0, 6)}…${account.address.slice(-4)}`
@@ -355,7 +1637,7 @@ export default function Staking() {
   }
 
   return (
-    <div className="relative min-h-screen overflow-hidden textured-bg font-sora text-foreground">
+    <div className="relative min-h-screen overflow-x-hidden textured-bg font-sora text-foreground lg:h-[100dvh] lg:max-h-[100dvh] lg:overflow-hidden">
       {/* Soft network accent washes (same language as History / Markets) */}
       <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
         <div
@@ -370,8 +1652,8 @@ export default function Staking() {
 
       <Header isConnected={!!account} />
 
-      <main className="relative z-10 mx-auto flex min-h-screen max-w-[1600px] flex-col px-2 pb-6 pt-20 sm:px-4 lg:px-6">
-        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+      <main className="relative z-10 mx-auto flex min-h-screen max-w-[1600px] flex-col px-2 pb-3 pt-16 sm:px-4 sm:pt-[4.5rem] lg:h-[100dvh] lg:min-h-0 lg:max-h-[100dvh] lg:overflow-hidden lg:px-5 lg:pb-1.5 lg:pt-[4.25rem]">
+        <div className="mb-2 flex shrink-0 flex-wrap items-center justify-between gap-2 lg:mb-1.5">
           <Button
             variant="ghost"
             size="sm"
@@ -385,55 +1667,58 @@ export default function Staking() {
           <div className="flex flex-wrap items-center gap-2">
             <div className="flex items-center gap-1.5 rounded-full border border-border/60 theme-surface px-3 py-1.5 font-jetbrains text-xs font-semibold sm:text-sm">
               <span className="text-primary">
-                {DEMO.nativeBalance} {selectedNetwork.symbol}
+                {nativeDisplay} {selectedNetwork.symbol}
               </span>
               <InfinityIcon className="h-3.5 w-3.5 text-muted-foreground" />
-              <span className="text-accent">
-                {DEMO.pennyBalance} PENNY
-              </span>
+              <span className="text-accent">{pennyDisplay} PENNY</span>
             </div>
 
             <div className="flex items-center gap-2 rounded-full border border-border/60 theme-surface px-3 py-1.5">
               <span className="relative flex h-2.5 w-2.5">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-success opacity-60" />
-                <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-success" />
+                {account ? (
+                  <>
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-success opacity-60" />
+                    <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-success" />
+                  </>
+                ) : (
+                  <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-muted-foreground/50" />
+                )}
               </span>
               <div className="leading-tight">
                 <p className="font-jetbrains text-[10px] text-muted-foreground sm:text-xs">{shortWallet}</p>
                 <p className="font-jetbrains text-[10px] font-medium text-success sm:text-xs">
-                  {DEMO.nativeBalance} {selectedNetwork.symbol}
+                  {nativeDisplay} {selectedNetwork.symbol}
                 </p>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="flex min-h-0 flex-1 flex-col gap-3 lg:flex-row">
+        <div className="flex min-h-0 flex-1 flex-col gap-2 lg:flex-row lg:gap-2.5 lg:overflow-hidden">
           {/* Left rail — tier picker + mint */}
-          <aside className="flex w-full flex-col overflow-hidden rounded-2xl border border-border/60 theme-surface-elevated shadow-xl lg:w-[260px] lg:shrink-0">
-            <div className="border-b border-border/50 bg-muted/30 px-3 py-3">
-              <p className="mb-2 text-center font-orbitron text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+          <aside className="flex w-full flex-col overflow-hidden rounded-2xl border border-border/60 theme-surface-elevated shadow-xl lg:w-[240px] lg:max-h-full lg:shrink-0 xl:w-[260px]">
+            <div className="border-b border-border/50 bg-muted/30 px-2.5 py-2 sm:px-3 sm:py-2.5 lg:py-2">
+              <p className="mb-1.5 text-center font-orbitron text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground lg:mb-1">
                 Pick your tier
               </p>
               <TierCarousel tierId={tierId} onChange={handleTierChange} />
             </div>
 
-            <div className="flex items-center justify-center border-b border-border/50 px-3 py-3">
+            <div className="flex shrink-0 items-center justify-center border-b border-border/50 px-3 py-2 lg:py-2">
               <button
                 type="button"
-                disabled={isMinting}
+                disabled={isMinting || loadingReadiness}
                 onClick={() => {
-                  setActiveSidebarTab("mint");
-                  void handleMint();
+                  void openMintDialog();
                 }}
                 className={cn(
-                  "flex w-full items-center justify-center gap-2 rounded-2xl border border-primary/40 bg-primary px-6 py-2.5 font-orbitron text-xl font-extrabold tracking-wide text-primary-foreground shadow-[0_0_24px_hsl(var(--primary)/0.35)] transition hover:scale-[1.02] hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-70",
+                  "flex w-full items-center justify-center gap-2 rounded-2xl border border-primary/40 bg-primary px-6 py-2 font-orbitron text-lg font-extrabold tracking-wide text-primary-foreground shadow-[0_0_24px_hsl(var(--primary)/0.35)] transition hover:scale-[1.02] hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-70 sm:text-xl lg:py-2",
                 )}
               >
-                {isMinting ? (
+                {isMinting || loadingReadiness ? (
                   <>
                     <Loader2 className="h-5 w-5 animate-spin" />
-                    minting…
+                    {isMinting ? "minting…" : "checking…"}
                   </>
                 ) : (
                   "mint"
@@ -441,8 +1726,8 @@ export default function Staking() {
               </button>
             </div>
 
-            <div className="flex flex-1 flex-col gap-3 p-3">
-              <div className="flex gap-1 rounded-xl bg-muted/40 p-1">
+            <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto p-2.5 sm:p-3 lg:gap-2 lg:overflow-hidden">
+              <div className="flex shrink-0 gap-1 rounded-xl bg-muted/40 p-1">
                 {(
                   [
                     { id: "mint" as const, label: "Mint", icon: Coins },
@@ -467,7 +1752,7 @@ export default function Staking() {
                 ))}
               </div>
 
-              <div className="min-h-[140px] flex-1 rounded-xl border border-border/50 bg-card/60 p-3 font-sora text-sm">
+              <div className="min-h-[100px] flex-1 overflow-y-auto rounded-xl border border-border/50 bg-card/60 p-2.5 font-sora text-sm lg:min-h-0 lg:p-2.5">
                 <AnimatePresence mode="wait">
                   {activeSidebarTab === "mint" && (
                     <motion.div
@@ -475,21 +1760,21 @@ export default function Staking() {
                       initial={{ opacity: 0, x: -8 }}
                       animate={{ opacity: 1, x: 0 }}
                       exit={{ opacity: 0, x: 8 }}
-                      className="space-y-2"
+                      className="space-y-1.5"
                     >
                       <p className="font-orbitron text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
                         Proof of Access
                       </p>
-                      <p className="leading-relaxed text-muted-foreground">
+                      <p className="text-xs leading-relaxed text-muted-foreground lg:text-[11px]">
                         Mint a{" "}
                         <span className="font-bold text-foreground">{tier.title}</span>{" "}
-                        <span className="font-jetbrains text-xs text-muted-foreground">
+                        <span className="font-jetbrains text-[10px] text-muted-foreground">
                           ({tier.contractName})
                         </span>{" "}
-                        NFT pass · tierLevel{" "}
+                        · tier{" "}
                         <span className="font-jetbrains font-bold text-foreground">{tierId}</span>
                       </p>
-                      <div className="space-y-1 rounded-lg border border-border/40 bg-background/50 px-2.5 py-2 font-jetbrains text-[11px] text-muted-foreground">
+                      <div className="space-y-1 rounded-lg border border-border/40 bg-background/50 px-2.5 py-1.5 font-jetbrains text-[11px] text-muted-foreground">
                         {loadingConfig ? (
                           <p className="flex items-center gap-1.5">
                             <Loader2 className="h-3 w-3 animate-spin" /> Loading fee…
@@ -500,7 +1785,7 @@ export default function Staking() {
                               <span>Burn</span>
                               <span className="font-semibold text-foreground">
                                 {mintConfig
-                                  ? `${formatPennyDisplay(mintConfig.burnAmount)} PENNY`
+                                  ? `${formatPennyDisplay(mintConfig.burnAmount, pennyDecimals)} PENNY`
                                   : `${tier.multiplier}× base`}
                               </span>
                             </div>
@@ -508,12 +1793,12 @@ export default function Staking() {
                               <span>Mint fee</span>
                               <span className="font-semibold text-foreground">
                                 {mintConfig
-                                  ? `${formatEther(mintConfig.mintFee)} ETH`
-                                  : "0.00001 ETH"}
+                                  ? `${formatEther(mintConfig.mintFee)} ${selectedNetwork.symbol}`
+                                  : `0.00001 ${selectedNetwork.symbol}`}
                               </span>
                             </div>
                             <div className="flex justify-between gap-2">
-                              <span>Revenue Streams</span>
+                              <span>Streams</span>
                               <span className="font-semibold text-foreground">{tier.lists}</span>
                             </div>
                             <div className="flex justify-between gap-2">
@@ -552,23 +1837,41 @@ export default function Staking() {
                         Reward streams
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        Subscribed {DEMO.subscriptions.length}/{DEMO.maxSubscriptions}
+                        Subscribed {liveSubscriptions.length}/{maxStreams}
+                        {ownedNfts.filter((n) => !n.BLACKLIST).length === 0 ? (
+                          <span className="block text-[10px] text-amber-600 dark:text-amber-400">
+                            Standard access · max 1 stream
+                          </span>
+                        ) : designatedNftId !== null ? (
+                          <span className="block text-[10px] text-muted-foreground">
+                            Designated NFT #{designatedNftId.toString()}
+                          </span>
+                        ) : null}
                       </p>
                       <ul className="space-y-1.5">
-                        {DEMO.subscriptions.map((s) => (
+                        {liveSubscriptions.length === 0 && (
+                          <li className="rounded-lg border border-border/40 bg-background/50 px-2.5 py-1.5 font-sora text-[11px] text-muted-foreground">
+                            No streams yet — farm or open Subscriptions
+                          </li>
+                        )}
+                        {liveSubscriptions.map((addr) => (
                           <li
-                            key={s}
+                            key={addr}
                             className="flex items-center justify-between rounded-lg border border-border/40 bg-background/50 px-2.5 py-1.5 font-jetbrains text-xs font-semibold text-foreground"
                           >
-                            <span>{s}</span>
-                            <CheckCircle2 className="h-3.5 w-3.5 text-success" />
+                            <span className="truncate pr-2">
+                              {resolveRewardTokenLabel(selectedNetwork.chainId, addr)}
+                            </span>
+                            <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-success" />
                           </li>
                         ))}
                       </ul>
                       <Button
                         size="sm"
                         className="mt-1 w-full rounded-lg bg-primary font-sora text-primary-foreground hover:opacity-90"
-                        onClick={() => handleDemoAction("Manage subscriptions")}
+                        onClick={() => {
+                          void openSubscriptionDialog("manage");
+                        }}
                       >
                         Manage streams
                       </Button>
@@ -587,18 +1890,23 @@ export default function Staking() {
                       </p>
                       <div className="space-y-1.5 rounded-lg border border-border/40 bg-background/50 p-2 font-sora text-foreground">
                         <div className="flex justify-between">
-                          <span className="text-muted-foreground">Participants</span>
-                          <span className="font-jetbrains font-semibold">
-                            {DEMO.participants.toLocaleString()}
+                          <span className="text-muted-foreground">Stake token</span>
+                          <span className="font-jetbrains font-semibold">PENNY</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Harvester</span>
+                          <span
+                            className={cn(
+                              "font-semibold",
+                              harvesterLive ? "text-success" : "text-amber-600 dark:text-amber-400",
+                            )}
+                          >
+                            {harvesterLive ? "live" : "stand-in"}
                           </span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-muted-foreground">Current ERA</span>
-                          <span className="font-jetbrains font-semibold">{DEMO.era}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Timelock</span>
-                          <span className="font-jetbrains font-semibold">{DEMO.timelockHours}h</span>
+                          <span className="text-muted-foreground">Max streams</span>
+                          <span className="font-jetbrains font-semibold">{maxStreams}</span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">Model</span>
@@ -610,55 +1918,176 @@ export default function Staking() {
                 </AnimatePresence>
               </div>
 
-              <div className="flex items-center justify-between gap-2 border-t border-border/50 pt-2">
-                <button
-                  type="button"
-                  className="flex h-10 w-10 items-center justify-center rounded-xl border border-primary/40 bg-primary text-primary-foreground shadow-md transition hover:opacity-90"
-                  title="Quick farm"
-                  onClick={() => handleDemoAction("Sidebar quick action")}
+              {/* Owned NFT thumbnails — scroll/swipe; Subscriptions + Help pinned right */}
+              <div className="mt-auto flex shrink-0 items-center gap-1.5 border-t border-border/50 pt-1.5 lg:pt-1">
+                <div
+                  className="flex min-w-0 flex-1 items-center gap-1.5 overflow-x-auto overscroll-x-contain scroll-smooth py-0.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                  style={{ WebkitOverflowScrolling: "touch" }}
+                  aria-label="Your Proof of Access NFTs"
                 >
-                  <Sprout className="h-5 w-5" />
-                </button>
+                  {loadingNfts && (
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-border/40 bg-muted/40">
+                      <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
+                    </div>
+                  )}
+                  {!loadingNfts && !account && (
+                    <p className="truncate px-1 font-sora text-[10px] text-muted-foreground">
+                      Connect to see NFTs
+                    </p>
+                  )}
+                  {!loadingNfts && account && ownedNfts.length === 0 && (
+                    <p className="truncate px-1 font-sora text-[10px] text-muted-foreground">
+                      No PoA NFTs yet
+                    </p>
+                  )}
+                  {!loadingNfts &&
+                    ownedNfts.map((nft) => {
+                      const nftTier = getTierByContractName(nft.TIER);
+                      const tokenId = nft.ID.toString();
+                      const isDesignated = designatedNftId !== null && nft.ID === designatedNftId;
+                      return (
+                        <button
+                          key={`${tokenId}-${nft.TIER}`}
+                          type="button"
+                          title={
+                            isDesignated
+                              ? `${nftTier.title} #${tokenId} · designated`
+                              : `${nftTier.title} #${tokenId}`
+                          }
+                          onClick={() => openNftDialog(nft)}
+                          className={cn(
+                            "relative h-9 w-9 shrink-0 overflow-hidden rounded-lg border shadow-sm transition hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
+                            nft.BLACKLIST
+                              ? "border-destructive/50 opacity-70"
+                              : isDesignated
+                                ? "border-primary ring-2 ring-primary/70"
+                                : "border-border/60 hover:border-primary/60",
+                          )}
+                          style={{ boxShadow: `0 0 10px ${nftTier.glow}` }}
+                        >
+                          <img
+                            src={nftTier.art.nft}
+                            alt={`${nftTier.title} #${tokenId}`}
+                            className="h-full w-full object-cover object-top"
+                            draggable={false}
+                          />
+                          <span className="absolute inset-x-0 bottom-0 bg-black/65 py-px text-center font-jetbrains text-[8px] font-bold leading-none text-white">
+                            #{tokenId.length > 4 ? tokenId.slice(-3) : tokenId}
+                          </span>
+                          {isDesignated && (
+                            <span className="absolute left-0.5 top-0.5 h-1.5 w-1.5 rounded-full bg-primary shadow" />
+                          )}
+                        </button>
+                      );
+                    })}
+                </div>
+                <motion.button
+                  type="button"
+                  title={
+                    needsStreamSubscription
+                      ? "Subscribe to a reward stream (required)"
+                      : "Reward stream subscriptions"
+                  }
+                  onClick={() => {
+                    void openSubscriptionDialog("manage");
+                  }}
+                  animate={
+                    needsStreamSubscription
+                      ? {
+                          rotate: [0, -14, 14, -12, 12, -8, 8, 0],
+                          scale: [1, 1.1, 1.1, 1.06, 1],
+                        }
+                      : subDialogOpen
+                        ? { scale: [1, 1.04, 1] }
+                        : { rotate: 0, scale: 1 }
+                  }
+                  transition={
+                    needsStreamSubscription
+                      ? { duration: 0.65, repeat: Infinity, repeatDelay: 0.85, ease: "easeInOut" }
+                      : { duration: 0.25 }
+                  }
+                  className={cn(
+                    "relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full border shadow-md transition",
+                    needsStreamSubscription
+                      ? "border-amber-400 bg-amber-500 text-white shadow-[0_0_18px_rgba(245,158,11,0.65)]"
+                      : subDialogOpen
+                        ? "border-primary bg-primary text-primary-foreground shadow-[0_0_16px_hsl(var(--primary)/0.55)]"
+                        : "border-border/50 bg-emerald-600 text-white hover:opacity-90",
+                  )}
+                >
+                  <Radio className="h-4 w-4" />
+                  {liveSubscriptions.length > 0 ? (
+                    <span className="absolute -right-0.5 -top-0.5 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-primary px-0.5 font-jetbrains text-[8px] font-bold text-primary-foreground">
+                      {liveSubscriptions.length}
+                    </span>
+                  ) : needsStreamSubscription ? (
+                    <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 animate-ping rounded-full bg-amber-200" />
+                  ) : null}
+                </motion.button>
                 <button
                   type="button"
-                  className="flex h-10 w-10 items-center justify-center rounded-full border border-border/50 bg-accent text-accent-foreground shadow-md transition hover:opacity-90"
-                  title="Help"
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-border/50 bg-accent text-accent-foreground shadow-md transition hover:opacity-90"
+                  title="Help / Support"
                   onClick={() => setActiveSidebarTab("info")}
                 >
-                  <HelpCircle className="h-5 w-5" />
+                  <HelpCircle className="h-4 w-4" />
                 </button>
               </div>
             </div>
           </aside>
 
           {/* Main stage */}
-          <section className="flex min-w-0 flex-1 flex-col gap-3">
-            <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
+          <section className="flex min-h-0 min-w-0 flex-1 flex-col gap-2 lg:overflow-hidden lg:gap-1.5">
+            <div className="grid shrink-0 grid-cols-2 gap-1.5 lg:grid-cols-4 lg:gap-2">
               <StatCard
                 label="Total Farm"
-                value={DEMO.totalFarm}
-                unit={DEMO.stakeToken}
+                value={totalFarmDisplay}
+                unit={STAKE_TOKEN}
                 accentClass="text-primary"
                 delay={0.05}
               />
               <StatCard
                 label="Current Farm"
-                value={DEMO.currentFarm}
-                unit={DEMO.stakeToken}
+                value={currentFarmDisplay}
+                unit={STAKE_TOKEN}
                 accentClass="text-accent"
                 delay={0.1}
               />
               <StatCard
                 label="Harvested"
-                value={`${totalHarvested} tokens`}
-                unit="claimed"
+                value={
+                  !account || !harvesterLive
+                    ? "—"
+                    : loadingHarvestedCount && harvestedCount === null
+                      ? "…"
+                      : String(harvestedCount ?? 0)
+                }
+                unit={
+                  !account || !harvesterLive
+                    ? ""
+                    : (harvestedCount ?? 0) === 1
+                      ? "claim"
+                      : "claims"
+                }
                 accentClass="text-amber-600 dark:text-amber-300"
                 delay={0.15}
+                onClick={account && harvesterLive ? openClaimHistory : undefined}
+                title={
+                  account && harvesterLive
+                    ? "View claim history"
+                    : undefined
+                }
               />
               <StatCard
                 label="Estimated Rewards"
-                value={totalEstimated.toFixed(2)}
-                unit="mixed"
+                value={
+                  !account || !harvesterLive
+                    ? "—"
+                    : loadingClaimables && claimableStreams.length === 0
+                      ? "…"
+                      : String(claimableStreams.length || liveSubscriptions.length || 0)
+                }
+                unit="streams"
                 accentClass="text-success"
                 delay={0.2}
               />
@@ -668,7 +2097,7 @@ export default function Staking() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.25 }}
-              className="flex flex-wrap items-center gap-2 rounded-xl border border-border/50 theme-surface px-3 py-2"
+              className="flex shrink-0 flex-wrap items-center gap-1.5 rounded-xl border border-border/50 theme-surface px-2.5 py-1.5 lg:px-3 lg:py-1"
             >
               <Sparkles className="h-4 w-4 text-primary" />
               <span className="font-sora text-xs font-medium tracking-wide text-muted-foreground">
@@ -682,77 +2111,133 @@ export default function Staking() {
               >
                 {tier.contractName}
               </span>
-              {DEMO.rewards.map((r) => (
-                <button
-                  key={r.symbol}
-                  type="button"
-                  onClick={() => setSelectedReward(r.symbol)}
-                  className={cn(
-                    "rounded-full px-2.5 py-1 font-jetbrains text-xs font-semibold transition",
-                    selectedReward === r.symbol
-                      ? "bg-gradient-to-r text-white shadow-md " + r.color
-                      : "theme-chip-secondary hover:opacity-90",
-                  )}
-                >
-                  {r.estimated} {r.symbol}
-                </button>
-              ))}
+              {claimableStreams.length === 0 ? (
+                <span className="font-sora text-[11px] text-muted-foreground">
+                  {account && harvesterLive
+                    ? loadingClaimables
+                      ? "Loading streams…"
+                      : "No claimable streams yet"
+                    : "Connect to view reward streams"}
+                </span>
+              ) : (
+                claimableStreams.map((r, i) => (
+                  <button
+                    key={r.address}
+                    type="button"
+                    onClick={() => setSelectedRewardAddress(r.address)}
+                    className={cn(
+                      "rounded-full px-2.5 py-1 font-jetbrains text-xs font-semibold transition",
+                      selectedRewardAddress &&
+                        normalizeAddr(selectedRewardAddress) === normalizeAddr(r.address)
+                        ? "bg-gradient-to-r text-white shadow-md " +
+                            STREAM_CHIP_COLORS[i % STREAM_CHIP_COLORS.length]
+                        : "theme-chip-secondary hover:opacity-90",
+                    )}
+                  >
+                    {r.claimableDisplay} {r.symbol}
+                  </button>
+                ))
+              )}
             </motion.div>
 
-            <div className="grid flex-1 grid-cols-1 gap-3 md:grid-cols-3">
+            <div className="grid min-h-0 flex-1 grid-cols-1 gap-2 md:grid-cols-3 md:gap-2.5 lg:min-h-0 lg:overflow-hidden">
               <ActionColumn
                 title="Farm"
-                subtitle="Stake GAME · Serving"
+                subtitle="Stake PENNY · Serving"
                 background={tier.art.farm}
                 delay={0.15}
               >
-                <div className="space-y-2.5">
-                  <div className="rounded-xl border border-destructive/40 bg-destructive/80 px-3 py-2 text-center backdrop-blur-sm">
-                    <p className="font-sora text-xs font-medium tracking-wide text-destructive-foreground/90">
-                      Pre-Approved
+                <div className="space-y-2 lg:space-y-1.5">
+                  <div className="rounded-xl border border-destructive/40 bg-destructive/80 px-3 py-1.5 text-center backdrop-blur-sm sm:py-2">
+                    <p className="font-sora text-[11px] font-medium tracking-wide text-destructive-foreground/90 sm:text-xs">
+                      {farmStep !== "idle" || loadingFarmReadiness
+                        ? "In progress"
+                        : farmReadiness && !farmReadiness.needsApproval
+                          ? "Pre-Approved"
+                          : "Status"}
                     </p>
-                    <p className="font-jetbrains text-lg font-bold text-destructive-foreground">
-                      {DEMO.preApproved}{" "}
-                      <span className="font-sora text-sm font-semibold text-destructive-foreground/80">
-                        {DEMO.stakeToken}
-                      </span>
+                    {farmReadiness && farmReadiness.allowance > 0n && farmStep === "idle" && !loadingFarmReadiness ? (
+                      <p className="font-jetbrains text-base font-bold text-destructive-foreground sm:text-lg">
+                        {preApprovedDisplay}{" "}
+                        <span className="font-sora text-sm font-semibold text-destructive-foreground/80">
+                          PENNY
+                        </span>
+                      </p>
+                    ) : null}
+                    <p className="font-sora text-xs font-semibold leading-snug text-destructive-foreground sm:text-sm">
+                      {loadingFarmReadiness || farmStep === "checking" ? (
+                        <span className="inline-flex items-center justify-center gap-1.5">
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          {farmStatus}
+                        </span>
+                      ) : farmStep === "approving" ||
+                        farmStep === "subscribing" ||
+                        farmStep === "depositing" ? (
+                        <span className="inline-flex items-center justify-center gap-1.5">
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          {farmStatus}
+                        </span>
+                      ) : (
+                        farmStatus
+                      )}
                     </p>
+                    {account && pennyBalance !== null && (
+                      <p className="mt-0.5 font-jetbrains text-[10px] text-destructive-foreground/75">
+                        Wallet {walletPennyHuman} PENNY
+                        {farmPlan && farmStep === "idle" ? (
+                          <span className="block opacity-90">
+                            Flow: {farmPlan.stepLabels.join(" → ") || "—"}
+                          </span>
+                        ) : null}
+                      </p>
+                    )}
                   </div>
                   <Input
                     type="number"
                     inputMode="decimal"
-                    placeholder="Enter Amount"
+                    placeholder="Enter PENNY amount"
                     value={farmAmount}
                     onChange={(e) => setFarmAmount(e.target.value)}
-                    className="h-11 rounded-xl border border-border/50 theme-input-surface text-center font-jetbrains font-medium text-foreground placeholder:font-sora placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-primary"
+                    disabled={isFarming}
+                    className="h-10 rounded-xl border border-border/50 theme-input-surface text-center font-jetbrains font-medium text-foreground placeholder:font-sora placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-primary lg:h-9"
                   />
                   <div className="flex gap-1.5">
-                    {["25%", "50%", "MAX"].map((pct) => (
+                    {(["25%", "50%", "MAX"] as const).map((pct) => (
                       <button
                         key={pct}
                         type="button"
-                        onClick={() =>
-                          setFarmAmount(
-                            pct === "MAX"
-                              ? DEMO.preApproved.replace(/,/g, "")
-                              : (
-                                  (parseFloat(DEMO.preApproved.replace(/,/g, "")) * parseInt(pct, 10)) /
-                                  100
-                                ).toFixed(2),
-                          )
-                        }
-                        className="flex-1 rounded-lg bg-white/15 py-1 font-orbitron text-[10px] font-bold uppercase tracking-wide text-white backdrop-blur-sm transition hover:bg-white/25"
+                        disabled={isFarming}
+                        onClick={() => setFarmAmountPercent(pct)}
+                        className="flex-1 rounded-lg bg-white/15 py-1 font-orbitron text-[10px] font-bold uppercase tracking-wide text-white backdrop-blur-sm transition hover:bg-white/25 disabled:opacity-50"
                       >
                         {pct}
                       </button>
                     ))}
                   </div>
                   <Button
-                    className="h-12 w-full rounded-xl bg-primary font-orbitron text-sm font-bold tracking-wide text-primary-foreground shadow-lg hover:opacity-90 sm:text-base"
-                    onClick={() => handleDemoAction("Stake Now")}
+                    className="h-11 w-full rounded-xl bg-primary font-orbitron text-sm font-bold tracking-wide text-primary-foreground shadow-lg hover:opacity-90 sm:text-base lg:h-10"
+                    disabled={isFarming || loadingFarmReadiness}
+                    onClick={() => {
+                      void openFarmFlow();
+                    }}
                   >
-                    <Sprout className="h-4 w-4" />
-                    Stake Now
+                    {isFarming || loadingFarmReadiness ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        {farmStep === "approving"
+                          ? "Approving…"
+                          : farmStep === "subscribing"
+                            ? "Subscribing…"
+                            : farmStep === "depositing"
+                              ? "Depositing…"
+                              : "Checking…"}
+                      </>
+                    ) : (
+                      <>
+                        <Sprout className="h-4 w-4" />
+                        Stake Now
+                      </>
+                    )}
                   </Button>
                 </div>
               </ActionColumn>
@@ -763,31 +2248,61 @@ export default function Staking() {
                 background={tier.art.withdraw}
                 delay={0.25}
               >
-                <div className="space-y-2.5">
-                  <div className="rounded-xl border border-white/20 bg-black/55 px-3 py-2 text-center backdrop-blur-sm">
-                    <p className="font-sora text-xs font-medium tracking-wide text-amber-200/90">Your stake</p>
-                    <p className="font-jetbrains text-lg font-bold text-white">
-                      {DEMO.currentFarm}{" "}
-                      <span className="font-sora text-sm font-semibold text-white/70">{DEMO.stakeToken}</span>
+                <div className="space-y-2 lg:space-y-1.5">
+                  <div className="rounded-xl border border-white/20 bg-black/55 px-3 py-1.5 text-center backdrop-blur-sm sm:py-2">
+                    <p className="font-sora text-[11px] font-medium tracking-wide text-amber-200/90 sm:text-xs">Your stake</p>
+                    <p className="font-jetbrains text-base font-bold text-white sm:text-lg">
+                      {currentFarmDisplay}{" "}
+                      <span className="font-sora text-sm font-semibold text-white/70">{STAKE_TOKEN}</span>
                     </p>
-                    <p className="mt-0.5 font-sora text-[10px] text-white/50">
-                      Timelock: {DEMO.timelockHours}h after entry
+                    {withdrawLock && withdrawLock.stakedBalance > 0n ? (
+                      withdrawCountdown > 0 ? (
+                        <p className="mt-0.5 font-sora text-[10px] text-amber-200/90">
+                          Timelock{" "}
+                          <span className="font-jetbrains font-semibold tabular-nums">
+                            {formatDurationCountdown(withdrawCountdown)}
+                          </span>
+                        </p>
+                      ) : (
+                        <p className="mt-0.5 font-sora text-[10px] text-emerald-300/90">
+                          Ready to withdraw
+                        </p>
+                      )
+                    ) : (
+                      <p className="mt-0.5 font-sora text-[10px] text-white/50">
+                        {loadingWithdrawLock
+                          ? "Checking timelock…"
+                          : "Timelock starts after your last deposit"}
+                      </p>
+                    )}
+                  </div>
+                  <div className="rounded-xl border border-border/50 theme-input-surface px-3 py-2 text-center lg:py-1.5">
+                    <p className="font-sora text-[10px] text-muted-foreground">Full unstake</p>
+                    <p className="font-jetbrains text-sm font-semibold text-foreground">
+                      {currentFarmDisplay} {STAKE_TOKEN}
                     </p>
                   </div>
-                  <Input
-                    type="number"
-                    inputMode="decimal"
-                    placeholder="Withdraw amount"
-                    value={withdrawAmount}
-                    onChange={(e) => setWithdrawAmount(e.target.value)}
-                    className="h-11 rounded-xl border border-border/50 theme-input-surface text-center font-jetbrains font-medium text-foreground placeholder:font-sora placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-primary"
-                  />
                   <Button
-                    className="h-12 w-full rounded-xl bg-primary font-orbitron text-sm font-bold tracking-wide text-primary-foreground shadow-lg hover:opacity-90 sm:text-base"
-                    onClick={() => handleDemoAction("Withdraw Now")}
+                    className={cn(
+                      "h-11 w-full rounded-xl bg-primary font-orbitron text-sm font-bold tracking-wide text-primary-foreground shadow-lg sm:text-base lg:h-10",
+                      !canWithdrawNow && "opacity-40 grayscale hover:opacity-40",
+                    )}
+                    disabled={!canWithdrawNow || withdrawStep !== "idle"}
+                    onClick={() => {
+                      void handleWithdrawNow();
+                    }}
                   >
-                    <Wallet className="h-4 w-4" />
-                    Withdraw Now
+                    {withdrawStep !== "idle" ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        {withdrawStep === "withdrawing" ? "Withdrawing…" : "Checking…"}
+                      </>
+                    ) : (
+                      <>
+                        <Wallet className="h-4 w-4" />
+                        Withdraw Now
+                      </>
+                    )}
                   </Button>
                 </div>
               </ActionColumn>
@@ -798,23 +2313,33 @@ export default function Staking() {
                 background={tier.art.harvest}
                 delay={0.35}
               >
-                <div className="space-y-2.5">
-                  <div className="rounded-xl border border-white/20 bg-black/55 px-3 py-2 backdrop-blur-sm">
+                <div className="space-y-2 lg:space-y-1.5">
+                  <div className="rounded-xl border border-white/20 bg-black/55 px-3 py-1.5 backdrop-blur-sm sm:py-2">
                     <div className="relative">
                       <button
                         type="button"
                         onClick={() => setShowRewardPicker((v) => !v)}
-                        className="flex w-full items-center justify-between gap-2 text-left"
+                        disabled={claimableStreams.length === 0}
+                        className="flex w-full items-center justify-between gap-2 text-left disabled:opacity-60"
                       >
                         <div>
-                          <p className="font-sora text-xs font-medium tracking-wide text-emerald-200/90">
-                            Claimable · {selectedReward}
+                          <p className="font-sora text-[11px] font-medium tracking-wide text-emerald-200/90 sm:text-xs">
+                            Claimable · {selectedRewardData?.symbol ?? "—"}
                           </p>
-                          <p className="font-jetbrains text-lg font-bold text-white">
-                            {selectedRewardData.estimated}{" "}
-                            <span className="font-sora text-sm font-semibold text-white/70">
-                              {selectedReward}
-                            </span>
+                          <p className="font-jetbrains text-base font-bold text-white sm:text-lg">
+                            {loadingClaimables && !selectedRewardData ? (
+                              <span className="inline-flex items-center gap-1.5">
+                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                …
+                              </span>
+                            ) : (
+                              <>
+                                {selectedRewardData?.claimableDisplay ?? "0"}{" "}
+                                <span className="font-sora text-sm font-semibold text-white/70">
+                                  {selectedRewardData?.symbol ?? ""}
+                                </span>
+                              </>
+                            )}
                           </p>
                         </div>
                         <ChevronDown
@@ -825,25 +2350,27 @@ export default function Staking() {
                         />
                       </button>
                       <AnimatePresence>
-                        {showRewardPicker && (
+                        {showRewardPicker && claimableStreams.length > 0 && (
                           <motion.ul
                             initial={{ opacity: 0, y: -6 }}
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, y: -6 }}
-                            className="absolute bottom-full left-0 right-0 z-20 mb-2 overflow-hidden rounded-xl border border-border/60 theme-surface-elevated shadow-xl"
+                            className="absolute bottom-full left-0 right-0 z-20 mb-2 max-h-48 overflow-y-auto rounded-xl border border-border/60 theme-surface-elevated shadow-xl"
                           >
-                            {DEMO.rewards.map((r) => (
-                              <li key={r.symbol}>
+                            {claimableStreams.map((r) => (
+                              <li key={r.address}>
                                 <button
                                   type="button"
                                   className="flex w-full items-center justify-between px-3 py-2 text-left font-sora text-sm text-foreground hover:bg-muted/50"
                                   onClick={() => {
-                                    setSelectedReward(r.symbol);
+                                    setSelectedRewardAddress(r.address);
                                     setShowRewardPicker(false);
                                   }}
                                 >
                                   <span className="font-medium">{r.symbol}</span>
-                                  <span className="font-jetbrains text-success">{r.estimated}</span>
+                                  <span className="font-jetbrains text-success">
+                                    {r.claimableDisplay}
+                                  </span>
                                 </button>
                               </li>
                             ))}
@@ -852,26 +2379,48 @@ export default function Staking() {
                       </AnimatePresence>
                     </div>
                     <p className="mt-1 font-sora text-[10px] text-white/50">
-                      Lifetime harvested:{" "}
-                      <span className="font-jetbrains">
-                        {selectedRewardData.harvested} {selectedReward}
-                      </span>
+                      {claimableStreams.length === 0
+                        ? "Subscribe while farming to unlock streams"
+                        : rewardSnapshot?.hasActiveStake
+                          ? `${claimableStreams.length} stream${claimableStreams.length === 1 ? "" : "s"} · era math (active stake)`
+                          : `${claimableStreams.length} stream${claimableStreams.length === 1 ? "" : "s"} · stake to accrue eras`}
                     </p>
                   </div>
 
                   <div className="flex gap-1.5">
                     <Button
-                      className="h-12 flex-1 rounded-xl bg-primary font-orbitron text-sm font-bold tracking-wide text-primary-foreground shadow-lg hover:opacity-90 sm:text-base"
-                      onClick={() => handleDemoAction(`Harvest ${selectedReward}`)}
+                      className="h-11 flex-1 rounded-xl bg-primary font-orbitron text-sm font-bold tracking-wide text-primary-foreground shadow-lg hover:opacity-90 sm:text-base lg:h-10"
+                      disabled={
+                        claimStep === "claiming" ||
+                        isFarming ||
+                        claimableStreams.length === 0
+                      }
+                      onClick={() => openClaimDialog(false)}
                     >
-                      <Leaf className="h-4 w-4" />
-                      Harvest Now
+                      {claimStep === "claiming" ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          Claiming…
+                        </>
+                      ) : (
+                        <>
+                          <Leaf className="h-4 w-4" />
+                          Harvest Now
+                        </>
+                      )}
                     </Button>
                   </div>
                   <button
                     type="button"
-                    onClick={() => handleDemoAction("Harvest all streams")}
-                    className="w-full rounded-lg bg-white/10 py-2 font-sora text-xs font-semibold tracking-wide text-white/90 backdrop-blur-sm transition hover:bg-white/20"
+                    disabled={
+                      claimStep === "claiming" ||
+                      isFarming ||
+                      claimableStreams.length === 0
+                    }
+                    onClick={() => {
+                      void handleHarvestAll();
+                    }}
+                    className="w-full rounded-lg bg-white/10 py-1.5 font-sora text-xs font-semibold tracking-wide text-white/90 backdrop-blur-sm transition hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-40 lg:py-1"
                   >
                     Harvest all streams
                   </button>
@@ -881,10 +2430,965 @@ export default function Staking() {
           </section>
         </div>
 
-        <p className="mt-3 text-center font-sora text-[10px] tracking-wide text-muted-foreground sm:text-xs">
-          ProofOfAccess mint · tier {tierId} {tier.title} · themed with network light/dark surfaces
-        </p>
       </main>
+
+      {/* Claim rewards — select streams (name, symbol, amount) then claim(address[]) */}
+      <Dialog
+        open={claimDialogOpen}
+        onOpenChange={(open) => {
+          if (claimStep === "claiming") return;
+          setClaimDialogOpen(open);
+        }}
+      >
+        <DialogContent className="max-w-md border-border/60 theme-surface-elevated font-sora sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="font-cinzel text-xl">Claim rewards</DialogTitle>
+            <DialogDescription className="font-sora text-sm text-muted-foreground">
+              Choose which reward streams to harvest. Amounts are estimated with the same
+              era math the Harvester runs on claim — final on-chain accounting settles at
+              transaction time.
+            </DialogDescription>
+          </DialogHeader>
+
+          <ScrollArea className="max-h-[min(50vh,360px)] pr-3">
+            <ul className="space-y-2">
+              {claimableStreams.map((stream) => {
+                const checked = claimSelection.some(
+                  (a) => normalizeAddr(a) === normalizeAddr(stream.address),
+                );
+                return (
+                  <li key={stream.address}>
+                    <label
+                      className={cn(
+                        "flex cursor-pointer items-start gap-3 rounded-xl border px-3 py-2.5 transition",
+                        checked
+                          ? "border-primary/50 bg-primary/10"
+                          : "border-border/50 theme-surface hover:border-border",
+                      )}
+                    >
+                      <Checkbox
+                        checked={checked}
+                        onCheckedChange={() => toggleClaimToken(stream.address)}
+                        disabled={claimStep === "claiming"}
+                        className="mt-0.5"
+                      />
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="truncate font-sora text-sm font-semibold text-foreground">
+                            {stream.name}
+                          </p>
+                          <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 font-orbitron text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
+                            {stream.symbol}
+                          </span>
+                        </div>
+                        <p className="mt-0.5 font-jetbrains text-sm font-semibold text-success">
+                          {stream.claimableDisplay}{" "}
+                          <span className="font-sora text-xs font-medium text-muted-foreground">
+                            {stream.symbol}
+                          </span>
+                          <span className="ml-1 font-sora text-[10px] font-medium text-muted-foreground/80">
+                            est.
+                          </span>
+                        </p>
+                        {stream.eraMathApplied && stream.erasProcessed > 0 ? (
+                          <p className="mt-0.5 font-sora text-[10px] text-muted-foreground">
+                            {stream.erasProcessed} era
+                            {stream.erasProcessed === 1 ? "" : "s"} · ERA{" "}
+                            {stream.eraAtBlock.toString()}→
+                            {stream.simulatedCurrentERA.toString()}
+                          </p>
+                        ) : !stream.eraMathApplied ? (
+                          <p className="mt-0.5 font-sora text-[10px] text-muted-foreground">
+                            Stored bucket only · stake to accrue new eras
+                          </p>
+                        ) : null}
+                        {stream.isClaimLocked ? (
+                          <p className="mt-0.5 font-sora text-[10px] text-amber-600 dark:text-amber-400">
+                            Per-token claim timelock may skip this stream
+                          </p>
+                        ) : null}
+                      </div>
+                    </label>
+                  </li>
+                );
+              })}
+            </ul>
+          </ScrollArea>
+
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <button
+              type="button"
+              className="font-sora text-xs font-semibold text-primary hover:underline"
+              disabled={claimStep === "claiming"}
+              onClick={() =>
+                setClaimSelection(claimableStreams.map((s) => s.address))
+              }
+            >
+              Select all
+            </button>
+            <button
+              type="button"
+              className="font-sora text-xs font-semibold text-muted-foreground hover:underline"
+              disabled={claimStep === "claiming"}
+              onClick={() => setClaimSelection([])}
+            >
+              Clear
+            </button>
+          </div>
+
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              type="button"
+              variant="outline"
+              disabled={claimStep === "claiming"}
+              onClick={() => setClaimDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              disabled={claimStep === "claiming" || claimSelection.length === 0}
+              onClick={() => {
+                void handleHarvestSelected();
+              }}
+            >
+              {claimStep === "claiming" ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Claiming…
+                </>
+              ) : (
+                <>
+                  <Leaf className="h-4 w-4" />
+                  Claim selected ({claimSelection.length})
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Harvested claim history — userTotalClaimHistory + paginated getUserClaims */}
+      <Dialog open={claimHistoryOpen} onOpenChange={setClaimHistoryOpen}>
+        <DialogContent className="max-w-md border-border/60 theme-surface-elevated font-sora sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="font-cinzel text-xl">Claim history</DialogTitle>
+            <DialogDescription className="font-sora text-sm text-muted-foreground">
+              Your harvest claims on this network, newest first. Loaded in pages of{" "}
+              {HARVESTER_CLAIMS_PAGE_SIZE} from the Harvester contract.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="flex items-center justify-between gap-2 rounded-xl border border-amber-500/25 bg-amber-500/10 px-3 py-2">
+            <div>
+              <p className="font-sora text-[11px] font-medium tracking-wide text-amber-700 dark:text-amber-300">
+                Total claims
+              </p>
+              <p className="font-jetbrains text-lg font-bold text-foreground">
+                {loadingClaimHistory && harvestedCount === null
+                  ? "…"
+                  : String(harvestedCount ?? 0)}
+              </p>
+            </div>
+            <div className="text-right">
+              <p className="font-sora text-[11px] text-muted-foreground">Page</p>
+              <p className="font-jetbrains text-sm font-semibold text-foreground">
+                {claimHistoryPageCount > 0
+                  ? `${claimHistoryPage + 1} / ${claimHistoryPageCount}`
+                  : "—"}
+              </p>
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-border/60 theme-surface overflow-hidden">
+            {loadingClaimHistory ? (
+              <div className="flex flex-col items-center justify-center gap-2 py-12">
+                <Loader2 className="h-7 w-7 animate-spin text-amber-500" />
+                <p className="font-sora text-sm text-muted-foreground">Loading claims…</p>
+              </div>
+            ) : claimHistoryRows.length === 0 ? (
+              <div className="flex flex-col items-center justify-center gap-2 py-12 px-4 text-center">
+                <Leaf className="h-8 w-8 text-muted-foreground/60" />
+                <p className="font-sora text-sm font-medium text-foreground">No claims yet</p>
+                <p className="font-sora text-xs text-muted-foreground max-w-xs">
+                  Harvest reward streams while farming and your history will show up here.
+                </p>
+              </div>
+            ) : (
+              <ScrollArea className="max-h-[min(48vh,360px)]">
+                <ul className="divide-y divide-border/50">
+                  {claimHistoryRows.map((row, index) => (
+                    <li
+                      key={`${row.timestamp}-${row.token}-${row.amount}-${index}`}
+                      className="flex items-start justify-between gap-3 px-3 py-2.5"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate font-sora text-sm font-semibold text-foreground">
+                          {row.name}
+                        </p>
+                        <p className="font-sora text-[11px] text-muted-foreground">
+                          {formatClaimWhen(row.timestamp)}
+                        </p>
+                      </div>
+                      <div className="shrink-0 text-right">
+                        <p className="font-jetbrains text-sm font-bold text-amber-600 dark:text-amber-300">
+                          +{row.displayAmount}{" "}
+                          <span className="font-sora text-xs font-semibold text-muted-foreground">
+                            {row.symbol}
+                          </span>
+                        </p>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </ScrollArea>
+            )}
+          </div>
+
+          <div className="flex items-center justify-between gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={
+                loadingClaimHistory || claimHistoryPage <= 0 || claimHistoryPageCount <= 1
+              }
+              onClick={() => setClaimHistoryPage((p) => Math.max(0, p - 1))}
+            >
+              <ChevronLeft className="h-4 w-4" />
+              Newer
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={loadingClaimHistory}
+              onClick={() => {
+                void refreshClaimHistoryPage(claimHistoryPage);
+              }}
+            >
+              {loadingClaimHistory ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                "Refresh"
+              )}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={
+                loadingClaimHistory ||
+                claimHistoryPageCount <= 1 ||
+                claimHistoryPage >= claimHistoryPageCount - 1
+              }
+              onClick={() =>
+                setClaimHistoryPage((p) =>
+                  claimHistoryPageCount > 0
+                    ? Math.min(claimHistoryPageCount - 1, p + 1)
+                    : p,
+                )
+              }
+            >
+              Older
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Owned NFT detail — large preview + revenue streams + switch tier */}
+      <Dialog
+        open={nftDialogOpen}
+        onOpenChange={(open) => {
+          setNftDialogOpen(open);
+          if (!open) setSelectedNft(null);
+        }}
+      >
+        <DialogContent className="max-w-md border-border/60 theme-surface-elevated font-sora sm:max-w-lg">
+          {selectedNft && (() => {
+            const nftTier = getTierByContractName(selectedNft.TIER);
+            const tokenId = selectedNft.ID.toString();
+            const streams = Number(selectedNft.LISTS);
+            return (
+              <>
+                <DialogHeader>
+                  <DialogTitle className="font-cinzel text-xl">
+                    {nftTier.title}
+                  </DialogTitle>
+                  <DialogDescription className="font-sora text-sm text-muted-foreground">
+                    {nftTier.tagline}
+                  </DialogDescription>
+                </DialogHeader>
+
+                <div className="space-y-3">
+                  <div
+                    className="relative overflow-hidden rounded-xl border-2 border-border/60 shadow-lg"
+                    style={{ boxShadow: `0 0 32px ${nftTier.glow}` }}
+                  >
+                    <img
+                      src={nftTier.art.nft}
+                      alt={`${nftTier.title} NFT #${tokenId}`}
+                      className="aspect-square w-full object-cover object-top sm:aspect-[5/4]"
+                      draggable={false}
+                    />
+                    <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent px-3 pb-2.5 pt-10">
+                      <p className="font-orbitron text-[10px] font-bold uppercase tracking-[0.22em] text-white/70">
+                        Token #{tokenId} · {selectedNft.TIER}
+                      </p>
+                      <p className="font-cinzel text-lg font-bold text-white drop-shadow">
+                        {nftTier.title}
+                      </p>
+                    </div>
+                    {selectedNft.BLACKLIST && (
+                      <div className="absolute left-2 top-2 rounded-full border border-destructive/60 bg-destructive/90 px-2 py-0.5 font-orbitron text-[9px] font-bold uppercase tracking-wider text-destructive-foreground">
+                        Blacklisted
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 rounded-xl border border-border/50 bg-background/60 p-3 font-jetbrains text-xs">
+                    <div>
+                      <p className="font-sora text-[10px] uppercase tracking-wide text-muted-foreground">
+                        Contract tier
+                      </p>
+                      <p className="font-semibold text-foreground">{selectedNft.TIER}</p>
+                    </div>
+                    <div>
+                      <p className="font-sora text-[10px] uppercase tracking-wide text-muted-foreground">
+                        Token ID
+                      </p>
+                      <p className="font-semibold text-foreground">#{tokenId}</p>
+                    </div>
+                    <div>
+                      <p className="font-sora text-[10px] uppercase tracking-wide text-muted-foreground">
+                        Revenue streams
+                      </p>
+                      <p className="font-semibold text-foreground">
+                        {streams} list{streams === 1 ? "" : "s"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="font-sora text-[10px] uppercase tracking-wide text-muted-foreground">
+                        Multiplier
+                      </p>
+                      <p className="font-semibold text-foreground">{nftTier.multiplier}×</p>
+                    </div>
+                    <div className="col-span-2">
+                      <p className="font-sora text-[10px] uppercase tracking-wide text-muted-foreground">
+                        Income access
+                      </p>
+                      <p className="mt-0.5 font-sora text-xs leading-relaxed text-foreground">
+                        This pass unlocks up to{" "}
+                        <span className="font-jetbrains font-semibold">{streams}</span> concurrent
+                        reward streams on the Harvester. Higher tiers allow more simultaneous income
+                        subscriptions.
+                      </p>
+                    </div>
+                    {selectedNft.BLACKLIST && (
+                      <div className="col-span-2 rounded-lg border border-destructive/40 bg-destructive/10 px-2.5 py-2 font-sora text-xs text-destructive">
+                        This NFT is blacklisted and cannot grant farm access until cleared.
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <DialogFooter className="sm:justify-stretch">
+                  {(() => {
+                    const already = isAlreadyDesignated(selectedNft);
+                    const blocked = selectedNft.BLACKLIST;
+                    return (
+                      <Button
+                        type="button"
+                        disabled={already || blocked}
+                        className={cn(
+                          "w-full rounded-xl font-orbitron text-sm font-bold tracking-wide",
+                          already || blocked
+                            ? "cursor-not-allowed bg-muted text-muted-foreground opacity-60 hover:bg-muted"
+                            : "bg-primary text-primary-foreground hover:opacity-90",
+                        )}
+                        onClick={switchToNftTier}
+                      >
+                        {blocked
+                          ? "Blacklisted"
+                          : already
+                            ? "You're already on this Tier"
+                            : "Choose this Tier"}
+                      </Button>
+                    );
+                  })()}
+                </DialogFooter>
+              </>
+            );
+          })()}
+          {!selectedNft && (
+            <div className="flex flex-col items-center gap-2 py-8 text-muted-foreground">
+              <ImageOff className="h-8 w-8" />
+              <p className="text-sm">No NFT selected</p>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Mint confirmation — gas + PENNY approval transparency */}
+      <AlertDialog
+        open={mintDialogOpen}
+        onOpenChange={(open) => {
+          if (isMinting) return;
+          setMintDialogOpen(open);
+          if (!open) {
+            setMintReadiness(null);
+            setMintStep("idle");
+          }
+        }}
+      >
+        <AlertDialogContent className="max-w-md border-border/60 theme-surface-elevated font-sora">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="font-cinzel text-xl">
+              Mint {tier.title}
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-3 text-left text-sm text-muted-foreground">
+                <p>
+                  This mints a{" "}
+                  <span className="font-semibold text-foreground">
+                    {tier.title} ({tier.contractName})
+                  </span>{" "}
+                  Proof of Access NFT via{" "}
+                  <span className="font-jetbrains text-xs">mint({tierId})</span> on{" "}
+                  {selectedNetwork.name}.
+                </p>
+
+                {loadingReadiness && (
+                  <p className="flex items-center gap-2 text-foreground">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Checking balances and gas…
+                  </p>
+                )}
+
+                {mintReadiness && (
+                  <>
+                    <div className="space-y-1.5 rounded-xl border border-border/50 bg-background/60 p-3 font-jetbrains text-xs">
+                      <div className="flex justify-between gap-2">
+                        <span className="text-muted-foreground">PENNY to burn</span>
+                        <span className="font-semibold text-foreground">
+                          {formatPennyDisplay(
+                            mintReadiness.config.burnAmount,
+                            mintReadiness.pennyDecimals,
+                          )}{" "}
+                          PENNY
+                        </span>
+                      </div>
+                      <div className="flex justify-between gap-2">
+                        <span className="text-muted-foreground">Your PENNY</span>
+                        <span
+                          className={cn(
+                            "font-semibold",
+                            mintReadiness.hasEnoughPenny ? "text-success" : "text-destructive",
+                          )}
+                        >
+                          {formatPennyDisplay(
+                            mintReadiness.pennyBalance,
+                            mintReadiness.pennyDecimals,
+                          )}
+                        </span>
+                      </div>
+                      <div className="flex justify-between gap-2">
+                        <span className="text-muted-foreground">Mint fee</span>
+                        <span className="font-semibold text-foreground">
+                          {formatEther(mintReadiness.config.mintFee)} {selectedNetwork.symbol}
+                        </span>
+                      </div>
+                      <div className="flex justify-between gap-2">
+                        <span className="text-muted-foreground">Est. gas reserve</span>
+                        <span className="font-semibold text-foreground">
+                          ~{formatEther(mintReadiness.ethGasReserve)} {selectedNetwork.symbol}
+                        </span>
+                      </div>
+                      <div className="flex justify-between gap-2 border-t border-border/40 pt-1.5">
+                        <span className="text-muted-foreground">Your {selectedNetwork.symbol}</span>
+                        <span
+                          className={cn(
+                            "font-semibold",
+                            mintReadiness.hasEnoughGas ? "text-success" : "text-destructive",
+                          )}
+                        >
+                          {formatEther(mintReadiness.ethBalance)}
+                        </span>
+                      </div>
+                      <div className="flex justify-between gap-2">
+                        <span className="text-muted-foreground">Streams unlocked</span>
+                        <span className="font-semibold text-foreground">{tier.lists}</span>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2 rounded-xl border border-primary/30 bg-primary/5 p-3 text-xs leading-relaxed text-foreground">
+                      <p className="flex items-start gap-2 font-sora">
+                        <Fuel className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                        <span>
+                          You need enough{" "}
+                          <strong>{selectedNetwork.symbol}</strong> for the mint fee plus gas for
+                          {mintReadiness.needsApproval
+                            ? " two wallet popups (approve + mint)"
+                            : " the mint transaction"}
+                          . Keep a little extra so the txs don&apos;t fail.
+                        </span>
+                      </p>
+                      {mintReadiness.needsApproval ? (
+                        <p className="flex items-start gap-2 font-sora">
+                          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
+                          <span>
+                            First you&apos;ll <strong>approve</strong> the ProofOfAccess contract to
+                            spend{" "}
+                            <strong>
+                              {formatPennyDisplay(
+                                mintReadiness.config.burnAmount,
+                                mintReadiness.pennyDecimals,
+                              )}{" "}
+                              PENNY
+                            </strong>
+                            . Those tokens are burned to mint this tier. Confirm the amount in your
+                            wallet carefully.
+                          </span>
+                        </p>
+                      ) : (
+                        <p className="flex items-start gap-2 font-sora text-success">
+                          <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
+                          <span>
+                            PENNY allowance is already set for this burn amount — only the mint
+                            transaction is needed.
+                          </span>
+                        </p>
+                      )}
+                    </div>
+
+                    {!mintReadiness.hasEnoughPenny && (
+                      <p className="rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs text-destructive">
+                        Not enough PENNY in this wallet for the selected tier burn.
+                      </p>
+                    )}
+                    {!mintReadiness.hasEnoughGas && (
+                      <p className="rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs text-destructive">
+                        Not enough {selectedNetwork.symbol} for fee + gas. Add more and try again.
+                      </p>
+                    )}
+                  </>
+                )}
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isMinting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={
+                isMinting ||
+                loadingReadiness ||
+                !mintReadiness?.canMint ||
+                mintStep !== "idle"
+              }
+              onClick={(e) => {
+                e.preventDefault();
+                void confirmMint();
+              }}
+              className="bg-primary text-primary-foreground hover:opacity-90"
+            >
+              {isMinting || mintStep !== "idle" ? (
+                <span className="inline-flex items-center gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  {mintStep === "approving"
+                    ? "Approving…"
+                    : mintStep === "minting"
+                      ? "Minting…"
+                      : "Working…"}
+                </span>
+              ) : mintReadiness?.needsApproval ? (
+                "Approve & Mint"
+              ) : (
+                "Confirm Mint"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Reward stream subscription + farm confirm */}
+      <Dialog
+        open={subDialogOpen}
+        onOpenChange={(open) => {
+          if (isFarming) return;
+          setSubDialogOpen(open);
+          if (!open) {
+            setStreamSearch("");
+            setCustomTokenInput("");
+            if (subDialogMode === "farm" && farmStep === "idle") {
+              setFarmStatus("Ready to farm PENNY");
+            }
+          }
+        }}
+      >
+        <DialogContent className="flex max-h-[90dvh] max-w-lg flex-col gap-0 overflow-hidden border-border/60 p-0 theme-surface-elevated font-sora sm:max-w-xl">
+          <DialogHeader className="shrink-0 space-y-1 border-b border-border/50 px-4 pb-3 pt-4 sm:px-5">
+            <DialogTitle className="font-cinzel text-xl">
+              {subDialogMode === "farm" ? "Farm PENNY · Streams" : "Reward streams"}
+            </DialogTitle>
+            <DialogDescription className="font-sora text-sm text-muted-foreground">
+              Choose up to{" "}
+              <span className="font-jetbrains font-semibold text-foreground">{maxStreams}</span>{" "}
+              revenue stream{maxStreams === 1 ? "" : "s"}
+              {ownedNfts.filter((n) => !n.BLACKLIST).length === 0
+                ? " (standard access — no NFT, limit is 1)."
+                : designatedNftId !== null
+                  ? ` unlocked by designated NFT #${designatedNftId.toString()}.`
+                  : " unlocked by your designated NFT."}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 py-3 sm:px-5">
+            {/* Search + custom address */}
+            <div className="space-y-2">
+              <div className="relative">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  value={streamSearch}
+                  onChange={(e) => setStreamSearch(e.target.value)}
+                  placeholder="Search name or paste 0x address…"
+                  className="h-10 rounded-xl border-border/50 pl-9 font-sora text-sm"
+                />
+              </div>
+              <div className="flex gap-1.5">
+                <Input
+                  value={customTokenInput}
+                  onChange={(e) => setCustomTokenInput(e.target.value)}
+                  placeholder="Custom token contract address"
+                  className="h-9 flex-1 rounded-xl border-border/50 font-jetbrains text-xs"
+                />
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="secondary"
+                  className="h-9 shrink-0 rounded-xl"
+                  onClick={addCustomToken}
+                >
+                  <Plus className="h-4 w-4" />
+                  Add
+                </Button>
+              </div>
+            </div>
+
+            {/* Selection chips */}
+            <div className="rounded-xl border border-border/50 bg-background/50 p-2.5">
+              <div className="mb-1.5 flex items-center justify-between">
+                <p className="font-orbitron text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+                  Your list · {selectedStreams.length}/{maxStreams}
+                </p>
+                {selectedStreams.length > 0 && (
+                  <button
+                    type="button"
+                    className="font-sora text-[10px] font-semibold text-muted-foreground hover:text-destructive"
+                    onClick={() => setSelectedStreams([])}
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
+              {selectedStreams.length === 0 ? (
+                <p className="font-sora text-xs text-muted-foreground">
+                  No streams selected yet
+                </p>
+              ) : (
+                <div className="flex flex-wrap gap-1.5">
+                  {selectedStreams.map((addr) => (
+                    <button
+                      key={addr}
+                      type="button"
+                      onClick={() => toggleStream(addr)}
+                      className="inline-flex max-w-full items-center gap-1 rounded-full border border-primary/40 bg-primary/10 px-2.5 py-1 font-sora text-[11px] font-semibold text-foreground transition hover:bg-destructive/15"
+                      title={addr}
+                    >
+                      <span className="truncate">
+                        {resolveRewardTokenLabel(selectedNetwork.chainId, addr)}
+                      </span>
+                      <X className="h-3 w-3 shrink-0 opacity-70" />
+                    </button>
+                  ))}
+                </div>
+              )}
+              {liveSubscriptions.length > 0 && (
+                <p className="mt-2 font-sora text-[10px] text-muted-foreground">
+                  On-chain now:{" "}
+                  {liveSubscriptions
+                    .map((a) => resolveRewardTokenLabel(selectedNetwork.chainId, a))
+                    .join(", ")}
+                </p>
+              )}
+            </div>
+
+            {/* Farm readiness summary */}
+            {subDialogMode === "farm" && (
+              <div className="space-y-2 rounded-xl border border-primary/30 bg-primary/5 p-3 text-xs leading-relaxed">
+                {loadingFarmReadiness && (
+                  <p className="flex items-center gap-2 text-foreground">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Checking balances and gas…
+                  </p>
+                )}
+                {farmReadiness && (
+                  <>
+                    <div className="space-y-1 font-jetbrains text-[11px]">
+                      <div className="flex justify-between gap-2">
+                        <span className="text-muted-foreground">Deposit</span>
+                        <span className="font-semibold text-foreground">
+                          {formatPennyDisplay(
+                            farmReadiness.depositAmount,
+                            farmReadiness.pennyDecimals,
+                          )}{" "}
+                          PENNY
+                        </span>
+                      </div>
+                      <div className="flex justify-between gap-2">
+                        <span className="text-muted-foreground">Pre-approved</span>
+                        <span
+                          className={cn(
+                            "font-semibold",
+                            farmReadiness.allowance >= farmReadiness.depositAmount
+                              ? "text-success"
+                              : "text-amber-600 dark:text-amber-400",
+                          )}
+                        >
+                          {formatPennyDisplay(
+                            farmReadiness.allowance,
+                            farmReadiness.pennyDecimals,
+                          )}{" "}
+                          PENNY
+                        </span>
+                      </div>
+                      <div className="flex justify-between gap-2">
+                        <span className="text-muted-foreground">Your PENNY</span>
+                        <span
+                          className={cn(
+                            "font-semibold",
+                            farmReadiness.hasEnoughPenny ? "text-success" : "text-destructive",
+                          )}
+                        >
+                          {formatPennyDisplay(
+                            farmReadiness.pennyBalance,
+                            farmReadiness.pennyDecimals,
+                          )}
+                        </span>
+                      </div>
+                      <div className="flex justify-between gap-2">
+                        <span className="text-muted-foreground">Your {selectedNetwork.symbol}</span>
+                        <span
+                          className={cn(
+                            "font-semibold",
+                            farmReadiness.hasEnoughGas ? "text-success" : "text-destructive",
+                          )}
+                        >
+                          {formatEther(farmReadiness.ethBalance)}
+                        </span>
+                      </div>
+                      <div className="flex justify-between gap-2">
+                        <span className="text-muted-foreground">Wallet steps</span>
+                        <span className="font-semibold text-foreground">
+                          {farmPlan?.stepLabels.join(" → ") ?? "deposit"}
+                        </span>
+                      </div>
+                    </div>
+                    <p className="flex items-start gap-2 font-sora text-foreground">
+                      <Fuel className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                      <span>
+                        You need enough <strong>{selectedNetwork.symbol}</strong> for{" "}
+                        <strong>{farmPlan?.stepLabels.join(" → ") || "deposit"}</strong>
+                        . Changing streams always adds a subscribe confirm. Extra pre-approval is
+                        fine — we skip approve when allowance covers the deposit.
+                      </span>
+                    </p>
+                    {farmPlan?.needsApproval ? (
+                      <p className="flex items-start gap-2 font-sora text-foreground">
+                        <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
+                        <span>
+                          You&apos;ll <strong>approve</strong> Harvester for at least the deposit
+                          amount
+                          {farmPlan.needsSubscribe ? ", then subscribe, " : ", "}
+                          then deposit. Approving more than needed is OK for future farms.
+                        </span>
+                      </p>
+                    ) : (
+                      <p className="flex items-start gap-2 font-sora text-success">
+                        <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
+                        <span>
+                          Pre-approved{" "}
+                          <strong>
+                            {formatPennyDisplay(
+                              farmReadiness.allowance,
+                              farmReadiness.pennyDecimals,
+                            )}{" "}
+                            PENNY
+                          </strong>{" "}
+                          — pre-approve to skip.
+                          {farmPlan?.needsSubscribe
+                            ? " Stream list changed: subscribe then deposit."
+                            : " Deposit only."}
+                        </span>
+                      </p>
+                    )}
+                    {farmPlan?.needsSubscribe && (
+                      <p className="flex items-start gap-2 font-sora text-foreground">
+                        <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                        <span>
+                          Reward streams differ from your on-chain list — a{" "}
+                          <strong>subscribeToToken</strong> confirmation is included before deposit.
+                        </span>
+                      </p>
+                    )}
+                    {!farmReadiness.hasEnoughPenny && (
+                      <p className="rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-destructive">
+                        Not enough PENNY in this wallet for the amount you entered.
+                      </p>
+                    )}
+                    {!farmReadiness.hasEnoughGas && (
+                      <p className="rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-destructive">
+                        Not enough {selectedNetwork.symbol} for gas. Add more and try again.
+                      </p>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
+
+            {/* Categorized whitelist */}
+            <ScrollArea className="h-[min(36vh,280px)] rounded-xl border border-border/50">
+              <div className="space-y-3 p-2.5">
+                {CATEGORY_ORDER.map((cat) => {
+                  const list = filteredCategories[cat];
+                  if (!list?.length) return null;
+                  return (
+                    <div key={cat}>
+                      <p className="mb-1.5 px-1 font-orbitron text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+                        {CATEGORY_LABELS[cat]}
+                      </p>
+                      <ul className="space-y-1">
+                        {list.map((token) => {
+                          const checked = selectedStreams.some(
+                            (a) => normalizeAddr(a) === normalizeAddr(token.address),
+                          );
+                          const wasFormer = liveSubscriptions.some(
+                            (a) => normalizeAddr(a) === normalizeAddr(token.address),
+                          );
+                          return (
+                            <li key={token.address}>
+                              <label
+                                className={cn(
+                                  "flex cursor-pointer items-center gap-2.5 rounded-lg border px-2.5 py-2 transition",
+                                  checked
+                                    ? "border-primary/50 bg-primary/10"
+                                    : "border-border/40 bg-background/40 hover:bg-muted/40",
+                                )}
+                              >
+                                <Checkbox
+                                  checked={checked}
+                                  onCheckedChange={() => toggleStream(token.address)}
+                                />
+                                <div className="min-w-0 flex-1">
+                                  <p className="truncate font-sora text-sm font-semibold text-foreground">
+                                    {token.name}
+                                    {wasFormer && (
+                                      <span className="ml-1.5 font-jetbrains text-[10px] font-normal text-primary">
+                                        active
+                                      </span>
+                                    )}
+                                  </p>
+                                  <p className="truncate font-jetbrains text-[10px] text-muted-foreground">
+                                    {shortTokenLabel(token.address)}
+                                  </p>
+                                </div>
+                              </label>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    </div>
+                  );
+                })}
+                {Object.keys(filteredCategories).length === 0 && (
+                  <p className="px-2 py-6 text-center font-sora text-xs text-muted-foreground">
+                    {streamSearch.trim()
+                      ? "No whitelist match — paste a custom 0x address above."
+                      : "No whitelisted tokens on this network yet. Paste a custom address."}
+                  </p>
+                )}
+              </div>
+            </ScrollArea>
+          </div>
+
+          <DialogFooter className="shrink-0 gap-2 border-t border-border/50 px-4 py-3 sm:px-5 sm:justify-between">
+            <Button
+              type="button"
+              variant="outline"
+              className="rounded-xl"
+              disabled={isFarming}
+              onClick={() => setSubDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            {subDialogMode === "farm" ? (
+              <Button
+                type="button"
+                className="rounded-xl bg-primary font-orbitron text-sm font-bold tracking-wide text-primary-foreground"
+                disabled={
+                  isFarming ||
+                  loadingFarmReadiness ||
+                  !farmReadiness?.canDeposit ||
+                  selectedStreams.length === 0 ||
+                  selectedStreams.length > maxStreams ||
+                  farmStep !== "idle"
+                }
+                onClick={() => {
+                  void confirmFarmDeposit();
+                }}
+              >
+                {isFarming || farmStep !== "idle" ? (
+                  <span className="inline-flex items-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    {farmStep === "approving"
+                      ? "Approving…"
+                      : farmStep === "subscribing"
+                        ? "Subscribing…"
+                        : farmStep === "depositing"
+                          ? "Depositing…"
+                          : "Working…"}
+                  </span>
+                ) : (
+                  farmPlan?.ctaLabel ?? "Confirm Deposit"
+                )}
+              </Button>
+            ) : (
+              <Button
+                type="button"
+                className="rounded-xl bg-primary font-orbitron text-sm font-bold tracking-wide text-primary-foreground"
+                disabled={
+                  isFarming ||
+                  selectedStreams.length === 0 ||
+                  selectedStreams.length > maxStreams ||
+                  farmStep !== "idle"
+                }
+                onClick={() => {
+                  void confirmManageSubscriptions();
+                }}
+              >
+                {isFarming || farmStep === "subscribing" ? (
+                  <span className="inline-flex items-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Updating…
+                  </span>
+                ) : (
+                  "Update Streams"
+                )}
+              </Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

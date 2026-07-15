@@ -7,6 +7,69 @@ export interface WhitelistConfig {
   type: string[];
 }
 
+const sepoliaWhitelist: WhitelistConfig = {
+  chainId: 11155111,
+  token: [
+    //cryptocurrencies
+    "Ethereum", "Penny4Thots", "Trump", "PennyUSD", "Musk", "Euros", "Yuan", "Rubles", "Korean Won", "Yen", "Rupees",
+    
+    //stocks
+    "Tesla", "Apple", "Microsoft", "Coinbase", "Google",
+    
+    //etf
+    "QQQ", "SGOV",
+    
+    //commodities
+    "xGOLD", "xSILVER", "xLITHIUM",
+  ],
+  whitelistedTokens: [
+    //cryptocurrencies
+    "0x0000000000000000000000000000000000000000" as Address,
+    "0xDa2BeB1ab94f6868448A697D15B092B578a7B737" as Address,
+    "0xC42cad6c382e14F819ed374080e247A05CB87a58" as Address,
+    "0xe9463B126335E7AA6C3F5e31c4EE74E8a50DDD16" as Address,
+    "0x1eF1276E16e2d5f14c1c43Bcd09d035cFD17bf89" as Address,
+
+    "0xC9106468f3152948976dB862cd14F6A3bB36Af4C" as Address,
+    "0x8bb94d9345EB47e8b5f4555c7724124043D0931a" as Address,
+    "0x65F8BdB6901150cD17cAcBd7CC30dDB92726d04D" as Address,
+    "0x06e823af5629CbA70697DDAb085fFCC2dCCaF1Ac" as Address,
+    "0x9608c510f40f80aef7e71e29af8428e714489430" as Address,
+
+    "0x4896DE7Fc291edE3fD11073fC4Ea2974dD6dB6Cb" as Address,
+
+    //stocks
+    "0xe7BBD4E79F0258B6b941edbb45dF5AE8080b9A8b" as Address,
+    "0xF3FF9ad844b840DEE0D0988bf4EE7b4D4495aEA2" as Address,
+    "0x6785aF35f2c72cD65c0D3c8832Fc399b55F9fa56" as Address,
+    "0x2f19d1fb895179b41588B6fAF63AA50D396AA1E8" as Address,
+    "0x10f74E7D2Bcb7D9184cBdE73ac9f887e47FE1588" as Address,
+
+    //etf
+    "0xe0168E64ac1FC07a930FBF6c1E3Cb8F0838B9B7e" as Address,
+    "0x95272D7d8b8882d2e6dDcea85BF92767c13f6bE7" as Address,
+
+    //commodities
+    "0xbea7473F9655c1E808B834018C4F70135dfad78a" as Address,
+    "0x178BBBdB9F116456fadE7060A904eAC235C928Cc" as Address,
+    "0x224D60f1F07896CeA1573079609CFbD4091Ecc2f" as Address,
+  ],
+  type: [
+    //cryptocurrencies
+    "crypto","crypto", "crypto", "crypto", "crypto", "crypto", "crypto", "crypto", "crypto", "crypto", "crypto",
+
+    //stocks
+    "stock", "stock", "stock", "stock", "stock",
+
+    //etf
+    "etf", "etf",
+
+    //commodities
+    "commodity", "commodity", "commodity"
+  ],
+};
+
+
 const robinhoodWhitelist: WhitelistConfig = {
   chainId: 4663,
   token: [
@@ -97,7 +160,7 @@ const litvmWhitelist: WhitelistConfig = {
   type: [] as string[]
 };
 
-export const whitelists: WhitelistConfig[] = [robinhoodWhitelist, litvmWhitelist];
+export const whitelists: WhitelistConfig[] = [sepoliaWhitelist, robinhoodWhitelist, litvmWhitelist];
 
 export const isTokenWhitelisted = (chainId: number, tokenAddress: Address): boolean => {
   const whitelist = whitelists.find((w) => w.chainId === chainId);
@@ -133,3 +196,84 @@ export const getTokenName = (chainId: number, tokenAddress: Address): string | n
   
   return whitelist.token[index] || null;
 };
+
+export type RewardTokenCategory = "crypto" | "stock" | "etf" | "commodity" | "other";
+
+export interface WhitelistedRewardToken {
+  address: Address;
+  name: string;
+  type: RewardTokenCategory;
+}
+
+/** Normalize whitelist type strings to category keys */
+function normalizeTokenType(type: string): RewardTokenCategory {
+  const t = type.trim().toLowerCase();
+  if (t === "crypto" || t === "cryptocurrency" || t === "cryptocurrencies") return "crypto";
+  if (t === "stock" || t === "stocks") return "stock";
+  if (t === "etf" || t === "etfs") return "etf";
+  if (t === "commodity" || t === "commodities") return "commodity";
+  return "other";
+}
+
+/** All whitelisted reward stream tokens for a chain (ordered as configured). */
+export function getWhitelistedRewardTokens(chainId: number): WhitelistedRewardToken[] {
+  const whitelist = whitelists.find((w) => w.chainId === chainId);
+  if (!whitelist) return [];
+
+  return whitelist.whitelistedTokens.map((address, index) => ({
+    address,
+    name: whitelist.token[index] || shortTokenLabel(address),
+    type: normalizeTokenType(whitelist.type[index] || "other"),
+  }));
+}
+
+/** Group whitelist by category for subscription UI. */
+export function getWhitelistedTokensByCategory(
+  chainId: number,
+): Record<RewardTokenCategory, WhitelistedRewardToken[]> {
+  const tokens = getWhitelistedRewardTokens(chainId);
+  const groups: Record<RewardTokenCategory, WhitelistedRewardToken[]> = {
+    crypto: [],
+    stock: [],
+    etf: [],
+    commodity: [],
+    other: [],
+  };
+  for (const t of tokens) {
+    groups[t.type].push(t);
+  }
+  return groups;
+}
+
+export function shortTokenLabel(address: string): string {
+  if (!address || address.length < 10) return address || "Token";
+  return `${address.slice(0, 6)}…${address.slice(-4)}`;
+}
+
+/** Resolve display name for any address (whitelist or custom). */
+export function resolveRewardTokenLabel(chainId: number, address: Address): string {
+  return getTokenName(chainId, address) || shortTokenLabel(address);
+}
+
+/** True when address is on our official reward-stream whitelist for the chain. */
+export function isRewardTokenVerified(chainId: number, address: Address): boolean {
+  return isTokenWhitelisted(chainId, address);
+}
+
+/**
+ * Whitelist entries whose display name matches (case-insensitive) a custom token name.
+ * Used to flag possible copycat tokens that reuse a verified name.
+ */
+export function findWhitelistNameCollisions(
+  chainId: number,
+  name: string,
+  excludeAddress?: Address,
+): WhitelistedRewardToken[] {
+  const needle = name.trim().toLowerCase();
+  if (!needle) return [];
+  const exclude = excludeAddress?.toLowerCase();
+  return getWhitelistedRewardTokens(chainId).filter((t) => {
+    if (exclude && t.address.toLowerCase() === exclude) return false;
+    return t.name.trim().toLowerCase() === needle;
+  });
+}

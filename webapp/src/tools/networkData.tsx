@@ -31,10 +31,10 @@ const sepolia: NetworkConfig = {
   blockExplorer: 'https://sepolia.etherscan.io',
   decimals: 18,
   symbol: 'sETH',
-  contract_address: '0x569e65de26FA684DDb0b86E68BD9cEc85FeB9A96' as Address, // 0x0f7Cf85d6760b8c7821b747B4f5035fa01a4e1e3 0x7DeA875A4D644aB78e0914FFF8b760bE5e8F54cb
-  penny_address: '',
-  proof_of_access: '0x0000000000000000000000000000000000000000' as Address,
-  harvester: '0x0000000000000000000000000000000000000000' as Address,
+  contract_address: '0x569e65de26FA684DDb0b86E68BD9cEc85FeB9A96' as Address,   
+  penny_address: '0xDa2BeB1ab94f6868448A697D15B092B578a7B737',
+  proof_of_access: '0xD426395b577E0B87aeF21E41E6580D05Bf790daa' as Address,  
+  harvester: '0x9b5268Cb1003eca591C549947Cebf0A0d5360b39' as Address,   
 };
 
 const base: NetworkConfig = {
@@ -203,6 +203,13 @@ export function hasValidProofOfAccess(network: Pick<NetworkConfig, "proof_of_acc
  */
 export function hasLiveProofOfAccess(network: Pick<NetworkConfig, "proof_of_access"> | null | undefined): boolean {
   return isNonZeroAddress(network?.proof_of_access);
+}
+
+/**
+ * True when Harvester is a real deploy (non-zero). Required for stake / deposit txs.
+ */
+export function hasLiveHarvester(network: Pick<NetworkConfig, "harvester"> | null | undefined): boolean {
+  return isNonZeroAddress(network?.harvester);
 }
 
 /**

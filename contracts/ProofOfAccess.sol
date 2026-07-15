@@ -8,7 +8,7 @@ import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/release-v5.0
 import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/release-v5.0/contracts/utils/ReentrancyGuard.sol";
 
 interface IHarvester {
-    function blacklisted(uint256 _index) external view returns (bool);
+    function blacklist(address _requester) external view returns (bool);
 }
 
 /**
@@ -21,24 +21,26 @@ contract ProofOfAccess is ERC721Enumerable, Ownable, ReentrancyGuard {
     ERC721(_name, _symbol) Ownable(msg.sender) {
         pennyToken = _pennyToken;
         harvester = _harvester;
-        guard = _newGuard;
+        pennyDAO = _newGuard;
+        harvestlookup = IHarvester(harvester);
     }
 
     uint256 private _currentSupply; 
-    uint256 public mintFee = 0.00001 ether;
-    uint256 public requiredAmount = 2000000 * 10**6;
+    uint256 public mintFee = 10000000000000;
+    uint256 public requiredAmount = 2000000 * 10**18;
     string public baseURI;
-    address private guard; 
+    address private pennyDAO; 
     address public harvester;
     address public pennyToken;
     address deadAddress = 0x000000000000000000000000000000000000dEaD;
+    IHarvester public harvestlookup; 
     string public Author = "0xSorcerer | Dark-Viper";
     bool public paused = false; 
 
     uint256 public TotalContractBurns;
     
     modifier onlyGuard() {
-        require(msg.sender == guard, "Not authorized.");
+        require(msg.sender == pennyDAO, "Not authorized.");
         _;
     }
 
@@ -54,7 +56,7 @@ contract ProofOfAccess is ERC721Enumerable, Ownable, ReentrancyGuard {
     mapping (uint256 => Player) public players;
     
     // Arrays
-    string[] public TierByName = ["Pirate", "General", "Wizard", "Lord Commander", "Queen", "Emperor"]; 
+    string[] public TierByName = ["Deckhand", "Pirate", "Corsair", "Admiral", "Dragonlord", "Emperor"]; 
     uint256[] public TierByLadder = [2, 4, 8, 12, 15, 20]; 
     uint256[] public multipliers = [1, 2, 4, 8, 16, 32]; 
 
@@ -102,7 +104,9 @@ contract ProofOfAccess is ERC721Enumerable, Ownable, ReentrancyGuard {
     }
     
     function getPlayer(address _player, uint256 _nft) public view returns (uint256) {
-        if (players[_nft].BLACKLIST) return 1;
+        bool blacklisted = harvestlookup.blacklist(_player);
+        if (blacklisted || players[_nft].BLACKLIST) return 1;
+        
         uint256 total = balanceOf(_player);
         for (uint256 i = 0; i < total; i++) {
             uint256 tokenId = tokenOfOwnerByIndex(_player, i);
@@ -128,7 +132,12 @@ contract ProofOfAccess is ERC721Enumerable, Ownable, ReentrancyGuard {
         harvester = _harvester;
         pennyToken = _pennyToken;
         deadAddress = _deadAddress;
-        guard = _newGuard;
+        pennyDAO = _newGuard;
+        harvestlookup = IHarvester(harvester);
+    }
+
+    function setTierByLadder(uint256[] calldata _ladders) external onlyGuard {
+        TierByLadder = _ladders;
     }
 
     function setValues(uint256[] calldata _values) external onlyGuard() {

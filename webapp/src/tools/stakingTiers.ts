@@ -105,9 +105,45 @@ export function getTier(id: number): StakingTier {
   return STAKING_TIERS[Math.max(0, Math.min(5, id))] ?? STAKING_TIERS[0];
 }
 
-/** Format PENNY burn display using 6 decimals (contract requiredAmount uses 10**6) */
-export function formatPennyBurn(requiredAmount: bigint, multiplier: number): string {
+/**
+ * Map on-chain Player.TIER to UI tier config.
+ * Live contract TierByName uses fantasy titles (Deckhand, Pirate, …);
+ * also accept material names (Marble, Bronze, …) for flexibility.
+ */
+export function getTierByContractName(name: string): StakingTier {
+  const key = (name || "").trim().toLowerCase();
+  if (!key) return STAKING_TIERS[0];
+  const found = STAKING_TIERS.find(
+    (t) =>
+      t.title.toLowerCase() === key ||
+      t.contractName.toLowerCase() === key,
+  );
+  return found ?? STAKING_TIERS[0];
+}
+
+/** Format PENNY burn display (contract uses 18-decimal requiredAmount by default) */
+export function formatPennyBurn(requiredAmount: bigint, multiplier: number, decimals = 18): string {
   const burn = requiredAmount * BigInt(multiplier);
-  const whole = burn / 1_000_000n;
+  const whole = burn / 10n ** BigInt(decimals);
   return whole.toLocaleString();
+}
+
+/**
+ * Highest Proof of Access NFT in a wallet basket.
+ * Ranks by LISTS (stream slots), then tier level, then token id.
+ * Blacklisted NFTs are ignored. Returns null when none usable.
+ */
+export function pickHighestBasketNft<
+  T extends { ID: bigint; LISTS: bigint; BLACKLIST: boolean; TIER: string },
+>(owned: T[]): T | null {
+  const usable = owned.filter((n) => !n.BLACKLIST);
+  if (usable.length === 0) return null;
+
+  return usable.reduce((best, cur) => {
+    if (cur.LISTS !== best.LISTS) return cur.LISTS > best.LISTS ? cur : best;
+    const curTier = getTierByContractName(cur.TIER).id;
+    const bestTier = getTierByContractName(best.TIER).id;
+    if (curTier !== bestTier) return curTier > bestTier ? cur : best;
+    return cur.ID > best.ID ? cur : best;
+  });
 }

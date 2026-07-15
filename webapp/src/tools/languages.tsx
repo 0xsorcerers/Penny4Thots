@@ -623,7 +623,7 @@ export const translations: Record<LanguageCode, Translations> = {
     },
     staking: {
       title: "Farm",
-      subtitle: "Stake GAME & harvest multi-token rewards",
+      subtitle: "Stake PENNY & harvest multi-token rewards",
     },
     profileMenu: {
       profile: "Your Profile",
@@ -923,7 +923,7 @@ export const translations: Record<LanguageCode, Translations> = {
     },
     staking: {
       title: "Farm",
-      subtitle: "Apuesta GAME y cosecha recompensas multi-token",
+      subtitle: "Apuesta PENNY y cosecha recompensas multi-token",
     },
     profileMenu: {
       profile: "Tu perfil",
@@ -1222,7 +1222,7 @@ export const translations: Record<LanguageCode, Translations> = {
     },
     staking: {
       title: "Farm",
-      subtitle: "Stakez GAME et récoltez des récompenses multi-tokens",
+      subtitle: "Stakez PENNY et récoltez des récompenses multi-tokens",
     },
     profileMenu: {
       profile: "Votre profil",
@@ -1521,7 +1521,7 @@ export const translations: Record<LanguageCode, Translations> = {
     },
     staking: {
       title: "Farm",
-      subtitle: "GAME staken und Multi-Token-Belohnungen ernten",
+      subtitle: "PENNY staken und Multi-Token-Belohnungen ernten",
     },
     profileMenu: {
       profile: "Dein Profil",
@@ -1820,7 +1820,7 @@ export const translations: Record<LanguageCode, Translations> = {
     },
     staking: {
       title: "Farm",
-      subtitle: "Faça stake de GAME e colha recompensas multi-token",
+      subtitle: "Faça stake de PENNY e colha recompensas multi-token",
     },
     profileMenu: {
       profile: "Seu perfil",
@@ -2118,7 +2118,7 @@ export const translations: Record<LanguageCode, Translations> = {
     },
     staking: {
       title: "农场",
-      subtitle: "质押 GAME，收获多代币奖励",
+      subtitle: "质押 PENNY，收获多代币奖励",
     },
     profileMenu: {
       profile: "你的资料",
@@ -2416,7 +2416,7 @@ export const translations: Record<LanguageCode, Translations> = {
     },
     staking: {
       title: "ファーム",
-      subtitle: "GAMEをステークしてマルチトークン報酬を獲得",
+      subtitle: "PENNYをステークしてマルチトークン報酬を獲得",
     },
     profileMenu: {
       profile: "あなたのプロフィール",
@@ -2714,7 +2714,7 @@ export const translations: Record<LanguageCode, Translations> = {
     },
     staking: {
       title: "팜",
-      subtitle: "GAME 스테이킹 및 멀티 토큰 보상 수확",
+      subtitle: "PENNY 스테이킹 및 멀티 토큰 보상 수확",
     },
     profileMenu: {
       profile: "당신의 프로필",
@@ -3012,7 +3012,7 @@ export const translations: Record<LanguageCode, Translations> = {
     },
     staking: {
       title: "फार्म",
-      subtitle: "GAME स्टेक करें और मल्टी-टोकन रिवॉर्ड कमाएँ",
+      subtitle: "PENNY स्टेक करें और मल्टी-टोकन रिवॉर्ड कमाएँ",
     },
     profileMenu: {
       profile: "आपकी प्रोफाइल",
@@ -3310,7 +3310,7 @@ export const translations: Record<LanguageCode, Translations> = {
     },
     staking: {
       title: "المزرعة",
-      subtitle: "قم بتخزين GAME واحصد مكافآت متعددة الرموز",
+      subtitle: "قم بتخزين PENNY واحصد مكافآت متعددة الرموز",
     },
     profileMenu: {
       profile: "ملفك الشخصي",
@@ -3608,7 +3608,7 @@ export const translations: Record<LanguageCode, Translations> = {
     },
     staking: {
       title: "חווה",
-      subtitle: "סטייקינג של GAME וקציר תגמולים מרובי-טוקנים",
+      subtitle: "סטייקינג של PENNY וקציר תגמולים מרובי-טוקנים",
     },
     profileMenu: {
       profile: "הפרופיל שלך",
