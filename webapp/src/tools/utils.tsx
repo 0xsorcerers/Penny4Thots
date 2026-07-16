@@ -3044,6 +3044,254 @@ export function addressesEqual(a: readonly string[], b: readonly string[]): bool
 }
 
 /**
+ * Tokens present in `prior` but missing from `next` (case-insensitive).
+ * Used when a user replaces their reward subscription list.
+ */
+export function addressesLeftOut(
+  prior: readonly string[],
+  next: readonly string[],
+): Address[] {
+  const nextKeys = new Set(
+    (next ?? [])
+      .filter((a) => isAddress(String(a ?? "").trim()))
+      .map((a) => getAddress(String(a).trim()).toLowerCase()),
+  );
+  const out: Address[] = [];
+  const seen = new Set<string>();
+  for (const raw of prior ?? []) {
+    const trimmed = String(raw ?? "").trim();
+    if (!trimmed || !isAddress(trimmed)) continue;
+    const addr = getAddress(trimmed);
+    const key = addr.toLowerCase();
+    if (seen.has(key) || nextKeys.has(key)) continue;
+    seen.add(key);
+    out.push(addr);
+  }
+  return out;
+}
+
+// ============================================================================
+// Pending unclaimed streams after subscription changes
+// (localStorage — tokens left off the new list that still have rewardsOwed)
+// ============================================================================
+
+const PENDING_UNCLAIMED_STREAMS_KEY_PREFIX = "p4t:pendingUnclaimedStreams";
+
+function pendingUnclaimedStreamsStorageKey(
+  wallet: Address,
+  chainId?: number,
+): string {
+  const chain = chainId ?? getCurrentNetwork().chainId;
+  const w = getAddress(wallet).toLowerCase();
+  return `${PENDING_UNCLAIMED_STREAMS_KEY_PREFIX}:${chain}:${w}`;
+}
+
+function normalizeAddressList(tokens: readonly string[]): Address[] {
+  const out: Address[] = [];
+  const seen = new Set<string>();
+  for (const raw of tokens ?? []) {
+    const trimmed = String(raw ?? "").trim();
+    if (!trimmed) continue;
+    try {
+      const addr = isZeroAddress(trimmed)
+        ? ZERO_ADDRESS
+        : isAddress(trimmed)
+          ? getAddress(trimmed)
+          : null;
+      if (!addr) continue;
+      const key = addr.toLowerCase();
+      if (seen.has(key)) continue;
+      seen.add(key);
+      out.push(addr);
+    } catch {
+      // skip invalid
+    }
+  }
+  return out;
+}
+
+/**
+ * Cached stream token addresses left off a prior subscription that still may
+ * have unclaimed Harvester rewards. Survives reloads until claimed (or zeroed).
+ */
+export function getPendingUnclaimedStreamTokens(
+  wallet: Address,
+  chainId?: number,
+): Address[] {
+  if (typeof localStorage === "undefined") return [];
+  try {
+    const raw = localStorage.getItem(pendingUnclaimedStreamsStorageKey(wallet, chainId));
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as unknown;
+    if (!Array.isArray(parsed)) return [];
+    return normalizeAddressList(parsed.map(String));
+  } catch {
+    return [];
+  }
+}
+
+export function setPendingUnclaimedStreamTokens(
+  wallet: Address,
+  tokens: readonly string[],
+  chainId?: number,
+): Address[] {
+  const normalized = normalizeAddressList(tokens);
+  if (typeof localStorage === "undefined") return normalized;
+  try {
+    const key = pendingUnclaimedStreamsStorageKey(wallet, chainId);
+    if (normalized.length === 0) {
+      localStorage.removeItem(key);
+    } else {
+      localStorage.setItem(key, JSON.stringify(normalized));
+    }
+  } catch (err) {
+    console.error("setPendingUnclaimedStreamTokens failed", err);
+  }
+  return normalized;
+}
+
+/** Merge token addresses into the pending-unclaimed cache (deduped). */
+export function addPendingUnclaimedStreamTokens(
+  wallet: Address,
+  tokens: readonly string[],
+  chainId?: number,
+): Address[] {
+  const existing = getPendingUnclaimedStreamTokens(wallet, chainId);
+  return setPendingUnclaimedStreamTokens(
+    wallet,
+    [...existing, ...normalizeAddressList(tokens)],
+    chainId,
+  );
+}
+
+/** Drop token addresses from the pending-unclaimed cache. */
+export function removePendingUnclaimedStreamTokens(
+  wallet: Address,
+  tokens: readonly string[],
+  chainId?: number,
+): Address[] {
+  const drop = new Set(normalizeAddressList(tokens).map((a) => a.toLowerCase()));
+  if (drop.size === 0) {
+    return getPendingUnclaimedStreamTokens(wallet, chainId);
+  }
+  const remaining = getPendingUnclaimedStreamTokens(wallet, chainId).filter(
+    (a) => !drop.has(a.toLowerCase()),
+  );
+  return setPendingUnclaimedStreamTokens(wallet, remaining, chainId);
+}
+
+/**
+ * True when claimRewards still holds a non-zero rewardsOwed bucket and/or a
+ * non-zero PENNYSent snapshot (will finalize into rewardsOwed on next process).
+ */
+export async function hasPendingHarvesterRewards(
+  wallet: Address,
+  token: Address,
+): Promise<boolean> {
+  const harvester = getHarvesterAddress();
+  if (!harvester) return false;
+  try {
+    const address = normalizePayTokenAddress(token);
+    const claimTuple = (await getPublicClient().readContract({
+      address: harvester,
+      abi: harvesterABI,
+      functionName: "claimRewards",
+      args: [wallet, address],
+    })) as readonly [bigint, bigint, bigint];
+    const rewardsOwed = claimTuple?.[1] ?? 0n;
+    const pennySent = claimTuple?.[2] ?? 0n;
+    return rewardsOwed > 0n || pennySent > 0n;
+  } catch (err) {
+    console.error("hasPendingHarvesterRewards failed", token, err);
+    return false;
+  }
+}
+
+/**
+ * After a subscription list change: for each token dropped from the prior list,
+ * if the user still has unclaimed rewards, cache that stream address so the
+ * claim UI keeps showing it until claimed.
+ *
+ * Prefer calling **after** a successful subscribeToToken (rewardsOwed is then
+ * finalized and PENNYSent is zeroed for left-out tokens).
+ */
+export async function cacheLeftOutStreamsWithPendingRewards(options: {
+  wallet: Address;
+  priorSubscriptions: readonly string[];
+  nextSubscriptions: readonly string[];
+  chainId?: number;
+}): Promise<Address[]> {
+  const leftOut = addressesLeftOut(
+    options.priorSubscriptions,
+    options.nextSubscriptions,
+  );
+  if (leftOut.length === 0) return [];
+
+  const withPending: Address[] = [];
+  await Promise.all(
+    leftOut.map(async (token) => {
+      const pending = await hasPendingHarvesterRewards(options.wallet, token);
+      if (pending) withPending.push(token);
+    }),
+  );
+
+  if (withPending.length === 0) return [];
+
+  addPendingUnclaimedStreamTokens(options.wallet, withPending, options.chainId);
+  return withPending;
+}
+
+/**
+ * Drop cached pending tokens that are active subscriptions again, or whose
+ * on-chain rewardsOwed/PENNYSent buckets are already zero.
+ */
+export async function prunePendingUnclaimedStreamTokens(options: {
+  wallet: Address;
+  activeSubscriptions?: readonly string[];
+  /** When set, only evaluate these cached tokens (e.g. just-claimed list). */
+  onlyTokens?: readonly string[];
+  chainId?: number;
+}): Promise<Address[]> {
+  const cached = getPendingUnclaimedStreamTokens(options.wallet, options.chainId);
+  if (cached.length === 0) return [];
+
+  const activeKeys = new Set(
+    normalizeAddressList(options.activeSubscriptions ?? []).map((a) =>
+      a.toLowerCase(),
+    ),
+  );
+  const onlyKeys =
+    options.onlyTokens != null
+      ? new Set(normalizeAddressList(options.onlyTokens).map((a) => a.toLowerCase()))
+      : null;
+
+  const toRemove: Address[] = [];
+  const toCheck: Address[] = [];
+
+  for (const token of cached) {
+    const key = token.toLowerCase();
+    if (onlyKeys && !onlyKeys.has(key)) continue;
+    if (activeKeys.has(key)) {
+      toRemove.push(token);
+      continue;
+    }
+    toCheck.push(token);
+  }
+
+  await Promise.all(
+    toCheck.map(async (token) => {
+      const stillPending = await hasPendingHarvesterRewards(options.wallet, token);
+      if (!stillPending) toRemove.push(token);
+    }),
+  );
+
+  if (toRemove.length) {
+    removePendingUnclaimedStreamTokens(options.wallet, toRemove, options.chainId);
+  }
+  return getPendingUnclaimedStreamTokens(options.wallet, options.chainId);
+}
+
+/**
  * Plan wallet steps for a farm deposit.
  * - needsApproval only when on-chain allowance < deposit (extra pre-approval is fine)
  * - needsSubscribe when prior list is empty OR selected list differs from on-chain
@@ -3230,6 +3478,23 @@ export const useHarvesterFarm = () => {
         transactionHash: subResult.transactionHash,
       });
       didSubscribe = true;
+
+      // Left-out streams may still hold finalized rewardsOwed — keep them claimable
+      try {
+        const retained = await cacheLeftOutStreamsWithPendingRewards({
+          wallet: options.wallet,
+          priorSubscriptions: freshSubs.tokens,
+          nextSubscriptions: newTokens,
+        });
+        if (retained.length > 0) {
+          options.onStep?.(
+            "subscribing",
+            `Kept ${retained.length} previous stream${retained.length === 1 ? "" : "s"} with unclaimed rewards in claim list…`,
+          );
+        }
+      } catch (err) {
+        console.error("cacheLeftOutStreamsWithPendingRewards (farm) failed", err);
+      }
     }
 
     // 3) Deposit always
@@ -3259,11 +3524,15 @@ export const useHarvesterFarm = () => {
   /**
    * Update reward streams only (subscribeToToken) — no deposit.
    * Used by the animated subscription button outside of farm flow.
+   * Caches any left-out streams that still have unclaimed rewards so the claim
+   * list keeps them until the user harvests.
    */
   const updateSubscriptions = async (options: {
     tokens: Address[];
     nftId: bigint;
     maxStreams: number;
+    /** Connected wallet — used to cache left-out unclaimed streams */
+    wallet?: Address;
     onStep?: (step: HarvesterFarmStep, detail?: string) => void;
   }) => {
     if (options.tokens.length === 0) {
@@ -3281,6 +3550,17 @@ export const useHarvesterFarm = () => {
       throw new Error(`Max ${options.maxStreams} reward stream(s) for your pass`);
     }
 
+    // Snapshot prior list before replace so we can retain unclaimed left-outs
+    let priorTokens: Address[] = [];
+    if (options.wallet) {
+      try {
+        const prior = await fetchUserSubscriptions(options.wallet);
+        priorTokens = prior.tokens;
+      } catch (err) {
+        console.error("updateSubscriptions: prior subscriptions read failed", err);
+      }
+    }
+
     options.onStep?.(
       "subscribing",
       `Confirm subscription list (NFT tokenId ${nftTokenId.toString()})…`,
@@ -3292,6 +3572,26 @@ export const useHarvesterFarm = () => {
       chain: getThirdwebNetwork(),
       transactionHash: subResult.transactionHash,
     });
+
+    if (options.wallet && priorTokens.length > 0) {
+      try {
+        const retained = await cacheLeftOutStreamsWithPendingRewards({
+          wallet: options.wallet,
+          priorSubscriptions: priorTokens,
+          nextSubscriptions: newTokens,
+        });
+        if (retained.length > 0) {
+          options.onStep?.(
+            "idle",
+            `Subscriptions updated · ${retained.length} previous stream${retained.length === 1 ? "" : "s"} kept for claim`,
+          );
+          return subResult;
+        }
+      } catch (err) {
+        console.error("cacheLeftOutStreamsWithPendingRewards (manage) failed", err);
+      }
+    }
+
     options.onStep?.("idle", "Subscriptions updated");
     return subResult;
   };
@@ -3321,9 +3621,11 @@ export const useHarvesterFarm = () => {
   /**
    * Claim rewards for selected pay-token addresses via Harvester.claim(address[]).
    * Contract skips tokens still under per-token claim timelock or with zero rewards.
+   * After success, prunes retained left-out streams that are now fully claimed.
    */
   const farmClaim = async (options: {
     tokens: Address[];
+    wallet?: Address;
     onStep?: (step: "checking" | "claiming" | "idle", detail?: string) => void;
   }) => {
     if (!getHarvesterAddress()) {
@@ -3344,6 +3646,18 @@ export const useHarvesterFarm = () => {
       chain: getThirdwebNetwork(),
       transactionHash: result.transactionHash,
     });
+
+    if (options.wallet) {
+      try {
+        await prunePendingUnclaimedStreamTokens({
+          wallet: options.wallet,
+          onlyTokens: tokens,
+        });
+      } catch (err) {
+        console.error("prunePendingUnclaimedStreamTokens after claim failed", err);
+      }
+    }
+
     options.onStep?.("idle", "Claim complete");
     return result;
   };
@@ -3469,6 +3783,11 @@ export interface ClaimableRewardStream {
   eraMathApplied: boolean;
   /** Eras walked in this estimate [eraAtBlock, simulatedCurrentERA). */
   erasProcessed: number;
+  /**
+   * True when this stream is no longer in the live subscription list but was
+   * retained because claimRewards still has unclaimed rewardsOwed.
+   */
+  isRetainedUnsubscribed?: boolean;
 }
 
 export interface UserRewardStreamsSnapshot {
@@ -3476,7 +3795,13 @@ export interface UserRewardStreamsSnapshot {
   /** Harvester.balances[user] — gate for era math */
   stakedBalance: bigint;
   hasActiveStake: boolean;
+  /** Live on-chain getUserSubscriptions list (active streams only). */
   subscriptions: Address[];
+  /**
+   * Cached left-out stream addresses still showing in the claim list until
+   * their rewardsOwed is claimed (or cleared on-chain).
+   */
+  retainedUnsubscribed: Address[];
   globals: HarvesterRewardGlobals;
   streams: ClaimableRewardStream[];
   estimatedAt: number;
@@ -3974,9 +4299,12 @@ export async function estimateTokenClaimReward(params: {
  * Master load path for the staking page.
  *
  * 1. Always re-read balances, subscriptions, and mutable globals (tax, timeLock, …).
- * 2. Always re-read each stream’s claimRewards + tokenEconomics + meta.
- * 3. Run stored-era accrual math ONLY when balances[user] > 0 (active stake).
- * 4. Display amounts to the last token unit (full decimals).
+ * 2. Merge live subscriptions with any cached left-out tokens that still have
+ *    unclaimed rewards (subscription change retention).
+ * 3. Always re-read each stream’s claimRewards + tokenEconomics + meta.
+ * 4. Run stored-era accrual math ONLY when balances[user] > 0 (active stake).
+ * 5. Display amounts to the last token unit (full decimals).
+ * 6. Prune the pending-unclaimed cache when rewards are gone or re-subscribed.
  */
 export async function loadUserRewardStreamsSnapshot(
   wallet: Address,
@@ -3997,6 +4325,7 @@ export async function loadUserRewardStreamsSnapshot(
       stakedBalance: 0n,
       hasActiveStake: false,
       subscriptions: [],
+      retainedUnsubscribed: [],
       globals: emptyGlobals,
       streams: [],
       estimatedAt: nowSec,
@@ -4021,7 +4350,25 @@ export async function loadUserRewardStreamsSnapshot(
     }),
   ]);
 
-  const tokens = subs.tokens;
+  const activeTokens = normalizeAddressList(subs.tokens);
+  const activeKeySet = new Set(activeTokens.map((t) => t.toLowerCase()));
+
+  // Drop cached entries that are active again or already drained on-chain
+  const retainedAfterPrune = await prunePendingUnclaimedStreamTokens({
+    wallet,
+    activeSubscriptions: activeTokens,
+  });
+  const retainedUnsubscribed = retainedAfterPrune.filter(
+    (t) => !activeKeySet.has(t.toLowerCase()),
+  );
+  const retainedKeySet = new Set(retainedUnsubscribed.map((t) => t.toLowerCase()));
+
+  // Claim list = live subscriptions ∪ retained left-out streams with pending rewards
+  const tokens: Address[] = [...activeTokens];
+  for (const t of retainedUnsubscribed) {
+    if (!activeKeySet.has(t.toLowerCase())) tokens.push(t);
+  }
+
   const hasActiveStake = (stakedBalance ?? 0n) > 0n;
 
   if (!tokens.length) {
@@ -4029,7 +4376,8 @@ export async function loadUserRewardStreamsSnapshot(
       wallet,
       stakedBalance: stakedBalance ?? 0n,
       hasActiveStake,
-      subscriptions: [],
+      subscriptions: activeTokens,
+      retainedUnsubscribed: [],
       globals,
       streams: [],
       estimatedAt: nowSec,
@@ -4049,7 +4397,13 @@ export async function loadUserRewardStreamsSnapshot(
     }),
   );
 
+  const markRetained = (stream: ClaimableRewardStream): ClaimableRewardStream => ({
+    ...stream,
+    isRetainedUnsubscribed: retainedKeySet.has(stream.address.toLowerCase()),
+  });
+
   // --- Era math only with active stake (staking-time accrual) ---
+  // Retained unsubscribed streams usually have PENNYSent=0; stored rewardsOwed still shows.
   const streams: ClaimableRewardStream[] = [];
 
   if (!hasActiveStake) {
@@ -4057,19 +4411,22 @@ export async function loadUserRewardStreamsSnapshot(
     for (const bundle of bundles) {
       if (!bundle) continue;
       streams.push(
-        computeStreamEstimateFromBundle({
-          bundle,
-          globals,
-          nowSec,
-          applyEraMath: false,
-        }),
+        markRetained(
+          computeStreamEstimateFromBundle({
+            bundle,
+            globals,
+            nowSec,
+            applyEraMath: false,
+          }),
+        ),
       );
     }
     return {
       wallet,
       stakedBalance: stakedBalance ?? 0n,
       hasActiveStake: false,
-      subscriptions: tokens,
+      subscriptions: activeTokens,
+      retainedUnsubscribed,
       globals,
       streams,
       estimatedAt: nowSec,
@@ -4105,35 +4462,64 @@ export async function loadUserRewardStreamsSnapshot(
       );
 
       streams.push(
-        computeStreamEstimateFromBundle({
-          bundle,
-          globals,
-          nowSec,
-          applyEraMath: true,
-          endPeriod,
-          historicalEraRate: (era) => historical.get(era.toString()) ?? 0n,
-        }),
+        markRetained(
+          computeStreamEstimateFromBundle({
+            bundle,
+            globals,
+            nowSec,
+            applyEraMath: true,
+            endPeriod,
+            historicalEraRate: (era) => historical.get(era.toString()) ?? 0n,
+          }),
+        ),
       );
     } catch (err) {
       console.error("era math failed for stream", bundle.address, err);
       streams.push(
-        computeStreamEstimateFromBundle({
-          bundle,
-          globals,
-          nowSec,
-          applyEraMath: false,
-        }),
+        markRetained(
+          computeStreamEstimateFromBundle({
+            bundle,
+            globals,
+            nowSec,
+            applyEraMath: false,
+          }),
+        ),
       );
     }
   }
+
+  // Final safety prune: retained rows with zero claimable + zero stored bucket
+  const drainedRetained = streams
+    .filter(
+      (s) =>
+        s.isRetainedUnsubscribed &&
+        s.claimableAmount <= 0n &&
+        s.rewardsOwedRaw <= 0n &&
+        s.pennySent <= 0n,
+    )
+    .map((s) => s.address);
+  if (drainedRetained.length) {
+    removePendingUnclaimedStreamTokens(wallet, drainedRetained);
+  }
+  const finalStreams = streams.filter(
+    (s) =>
+      !s.isRetainedUnsubscribed ||
+      s.claimableAmount > 0n ||
+      s.rewardsOwedRaw > 0n ||
+      s.pennySent > 0n,
+  );
+  const finalRetained = finalStreams
+    .filter((s) => s.isRetainedUnsubscribed)
+    .map((s) => s.address);
 
   return {
     wallet,
     stakedBalance: stakedBalance ?? 0n,
     hasActiveStake: true,
-    subscriptions: tokens,
+    subscriptions: activeTokens,
+    retainedUnsubscribed: finalRetained,
     globals,
-    streams,
+    streams: finalStreams,
     estimatedAt: nowSec,
     computationMode: "full_era_math",
   };

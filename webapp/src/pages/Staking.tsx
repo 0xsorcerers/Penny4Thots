@@ -1171,6 +1171,7 @@ export default function Staking() {
       try {
         await farmClaim({
           tokens,
+          wallet: account.address as Address,
           onStep: (step) => {
             if (step === "idle") setClaimStep("idle");
             else setClaimStep("claiming");
@@ -1638,20 +1639,32 @@ export default function Staking() {
       setFarmStep("subscribing");
       setFarmStatus("Confirm subscription list in your wallet…");
       toast.loading("Confirm subscriptions…", { id: "farm-subscribe" });
+      let statusDetail = "";
       await updateSubscriptions({
         tokens: selectedStreams,
         nftId: subscribeNftId,
         maxStreams,
+        wallet: account.address as Address,
         onStep: (step, detail) => {
           setFarmStep(step);
-          if (detail) setFarmStatus(detail);
+          if (detail) {
+            setFarmStatus(detail);
+            if (step === "idle") statusDetail = detail;
+          }
         },
       });
+      const keptPrior = /kept for claim/i.test(statusDetail);
       toast.success("Reward streams updated", {
         id: "farm-subscribe",
-        description: `${selectedStreams.length} stream(s) active`,
+        description: keptPrior
+          ? `${selectedStreams.length} stream(s) active · prior unclaimed streams stay in claim list`
+          : `${selectedStreams.length} stream(s) active`,
       });
-      setFarmStatus(`Subscribed to ${selectedStreams.length} stream(s)`);
+      setFarmStatus(
+        keptPrior
+          ? statusDetail
+          : `Subscribed to ${selectedStreams.length} stream(s)`,
+      );
       setSubDialogOpen(false);
       void refreshFarmStats();
       void refreshClaimables();
@@ -2282,6 +2295,11 @@ export default function Staking() {
                   <button
                     key={r.address}
                     type="button"
+                    title={
+                      r.isRetainedUnsubscribed
+                        ? "Prior subscription — claim remaining rewards"
+                        : undefined
+                    }
                     onClick={() => setSelectedRewardAddress(r.address)}
                     className={cn(
                       "rounded-full px-2.5 py-1 font-jetbrains text-xs font-semibold transition",
@@ -2290,9 +2308,16 @@ export default function Staking() {
                         ? "bg-gradient-to-r text-white shadow-md " +
                             STREAM_CHIP_COLORS[i % STREAM_CHIP_COLORS.length]
                         : "theme-chip-secondary hover:opacity-90",
+                      r.isRetainedUnsubscribed &&
+                        !(
+                          selectedRewardAddress &&
+                          normalizeAddr(selectedRewardAddress) === normalizeAddr(r.address)
+                        ) &&
+                        "ring-1 ring-amber-500/50",
                     )}
                   >
                     {r.claimableDisplay} {r.symbol}
+                    {r.isRetainedUnsubscribed ? " · claim" : ""}
                   </button>
                 ))
               )}
@@ -2519,14 +2544,21 @@ export default function Staking() {
                               <li key={r.address}>
                                 <button
                                   type="button"
-                                  className="flex w-full items-center justify-between px-3 py-2 text-left font-sora text-sm text-foreground hover:bg-muted/50"
+                                  className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left font-sora text-sm text-foreground hover:bg-muted/50"
                                   onClick={() => {
                                     setSelectedRewardAddress(r.address);
                                     setShowRewardPicker(false);
                                   }}
                                 >
-                                  <span className="font-medium">{r.symbol}</span>
-                                  <span className="font-jetbrains text-success">
+                                  <span className="min-w-0 font-medium">
+                                    {r.symbol}
+                                    {r.isRetainedUnsubscribed ? (
+                                      <span className="ml-1.5 font-sora text-[10px] font-semibold text-amber-600 dark:text-amber-400">
+                                        prior
+                                      </span>
+                                    ) : null}
+                                  </span>
+                                  <span className="shrink-0 font-jetbrains text-success">
                                     {r.claimableDisplay}
                                   </span>
                                 </button>
@@ -2540,8 +2572,16 @@ export default function Staking() {
                       {claimableStreams.length === 0
                         ? "Subscribe while farming to unlock streams"
                         : rewardSnapshot?.hasActiveStake
-                          ? `${claimableStreams.length} stream${claimableStreams.length === 1 ? "" : "s"} · era math (active stake)`
-                          : `${claimableStreams.length} stream${claimableStreams.length === 1 ? "" : "s"} · stake to accrue eras`}
+                          ? `${claimableStreams.length} stream${claimableStreams.length === 1 ? "" : "s"} · era math (active stake)${
+                              (rewardSnapshot?.retainedUnsubscribed?.length ?? 0) > 0
+                                ? ` · ${rewardSnapshot!.retainedUnsubscribed.length} prior to claim`
+                                : ""
+                            }`
+                          : `${claimableStreams.length} stream${claimableStreams.length === 1 ? "" : "s"} · stake to accrue eras${
+                              (rewardSnapshot?.retainedUnsubscribed?.length ?? 0) > 0
+                                ? ` · ${rewardSnapshot!.retainedUnsubscribed.length} prior to claim`
+                                : ""
+                            }`}
                     </p>
                   </div>
 
@@ -2604,7 +2644,8 @@ export default function Staking() {
             <DialogDescription className="font-sora text-sm text-muted-foreground">
               Choose which reward streams to harvest. Amounts are estimated with the same
               era math the Harvester runs on claim — final on-chain accounting settles at
-              transaction time.
+              transaction time. Streams you left after a subscription change stay here
+              until their unclaimed rewards are harvested.
             </DialogDescription>
           </DialogHeader>
 
@@ -2622,6 +2663,8 @@ export default function Staking() {
                         checked
                           ? "border-primary/50 bg-primary/10"
                           : "border-border/50 theme-surface hover:border-border",
+                        stream.isRetainedUnsubscribed &&
+                          "border-amber-500/40 bg-amber-500/5",
                       )}
                     >
                       <Checkbox
@@ -2648,6 +2691,11 @@ export default function Staking() {
                             est.
                           </span>
                         </p>
+                        {stream.isRetainedUnsubscribed ? (
+                          <p className="mt-0.5 font-sora text-[10px] font-medium text-amber-700 dark:text-amber-400">
+                            Prior subscription · claim remaining rewards
+                          </p>
+                        ) : null}
                         {stream.eraMathApplied && stream.erasProcessed > 0 ? (
                           <p className="mt-0.5 font-sora text-[10px] text-muted-foreground">
                             {stream.erasProcessed} era
@@ -3535,7 +3583,7 @@ export default function Staking() {
                         <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
                         <span>
                           Since reward streams differ from your on-chain list — a{" "}
-                          <strong>subscribeToToken</strong> confirmation is included before deposit.
+                          <strong>subscribeToStream</strong> confirmation is included before deposit.
                         </span>
                       </p>
                     )}
