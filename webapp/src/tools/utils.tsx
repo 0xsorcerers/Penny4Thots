@@ -12,11 +12,14 @@ import {
   isAddress,
   type Address,
   type Abi,
+  type AbiFunction,
+  type AbiParameter,
 } from "viem";
 import { sepolia as viemSepolia } from "viem/chains";
 import { ReactElement } from "react";
 import penny4thots from "../abi/penny4thots.json";
 import erc20 from "../abi/ERC20.json";
+import erc721 from "../abi/ERC721.json";
 import proofOfAccessAbiJson from "../abi/proofOfAccess.json";
 import harvesterAbiJson from "../abi/Harvester.json";
 import { hasLiveHarvester, hasLiveProofOfAccess } from "./networkData";
@@ -26,8 +29,37 @@ import { getTokenName } from "./whitelisted";
 
 const contractABI = penny4thots.abi as Abi;
 const erc20ABI = erc20.abi as Abi;
+const erc721ABI = erc721.abi as Abi;
 const proofOfAccessABI = proofOfAccessAbiJson.abi as Abi;
 const harvesterABI = harvesterAbiJson.abi as Abi;
+
+/**
+ * transferFrom function ABI object from webapp/src/abi/ERC721.json.
+ * Used to gift / push PoA NFTs from the connected wallet.
+ */
+const erc721TransferFromAbi: AbiFunction = (() => {
+  const item = (erc721.abi as Abi).find(
+    (entry): entry is AbiFunction =>
+      entry.type === "function" &&
+      "name" in entry &&
+      entry.name === "transferFrom",
+  );
+  if (!item) {
+    throw new Error("transferFrom not found in ERC721.json abi");
+  }
+  return item;
+})();
+
+/** Human-readable signature built from the ERC721.json transferFrom fragment */
+const erc721TransferFromSignature = (() => {
+  const inputs = (erc721TransferFromAbi.inputs ?? [])
+    .map((input: AbiParameter) => {
+      const name = "name" in input && input.name ? ` ${input.name}` : "";
+      return `${input.type}${name}`;
+    })
+    .join(", ");
+  return `function ${erc721TransferFromAbi.name}(${inputs})` as const;
+})();
 
 // ============================================================================
 // ERC20 Token Functions (for token-based voting)
@@ -1976,6 +2008,88 @@ export const useProofOfAccessMint = () => {
   };
 
   return { mintTier, isPending, error };
+};
+
+// ============================================================================
+// ProofOfAccess NFT gift (ERC-721 transferFrom via ERC721.json)
+// ============================================================================
+
+/**
+ * ProofOfAccess address wired with the standard ERC-721 ABI
+ * (webapp/src/abi/ERC721.json) for transfer / ownership calls.
+ */
+export const getProofOfAccessErc721Contract = () => {
+  const address = getProofOfAccessAddress();
+  if (!address) throw new Error("ProofOfAccess not deployed on this network");
+  return getContract({
+    client,
+    chain: getThirdwebNetwork(),
+    address,
+    abi: erc721ABI,
+  });
+};
+
+/**
+ * Prepare ERC-721 transferFrom on the live ProofOfAccess address.
+ * Method ABI comes from ERC721.json (not ProofOfAccess-specific ABI).
+ * Caller must own the token (or be approved); wallet signs the tx.
+ */
+export const prepareProofOfAccessTransferFrom = (
+  from: Address,
+  to: Address,
+  tokenId: bigint,
+) => {
+  return prepareContractCall({
+    contract: getProofOfAccessErc721Contract(),
+    // Signature is derived from ERC721.json transferFrom (see erc721TransferFromAbi)
+    method: erc721TransferFromSignature,
+    params: [from, to, tokenId],
+  });
+};
+
+/**
+ * Hook: gift a ProofOfAccess NFT to any wallet via ERC-721 transferFrom.
+ * Uses ERC721.json transferFrom against the PoA contract address.
+ * Requires the connected wallet to own the tokenId (msg.sender = from).
+ */
+export const useProofOfAccessGift = () => {
+  const { mutateAsync: sendTx, isPending, error } = useSendTransaction();
+
+  const giftNft = async (params: {
+    from: Address;
+    to: string;
+    tokenId: bigint;
+  }) => {
+    const toRaw = params.to.trim();
+    if (!isAddress(toRaw)) {
+      throw new Error("Enter a valid wallet address (0x…)");
+    }
+
+    const from = getAddress(params.from);
+    const to = getAddress(toRaw);
+
+    if (to === ZERO_ADDRESS) {
+      throw new Error("Cannot gift to the zero address");
+    }
+    if (to.toLowerCase() === from.toLowerCase()) {
+      throw new Error("Cannot gift an NFT to your own wallet");
+    }
+    if (params.tokenId < 0n) {
+      throw new Error("Invalid NFT token id");
+    }
+
+    const transferTx = prepareProofOfAccessTransferFrom(from, to, params.tokenId);
+    const result = await sendTx(transferTx);
+    await waitForReceipt({
+      client,
+      chain: getThirdwebNetwork(),
+      transactionHash: result.transactionHash,
+    });
+
+    return { ...result, to };
+  };
+
+  return { giftNft, isPending, error };
 };
 
 /**

@@ -23,6 +23,7 @@ import {
   Plus,
   X,
   Radio,
+  Gift,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useActiveAccount } from "thirdweb/react";
@@ -95,6 +96,7 @@ import {
   fromTokenSmallestUnit,
   toTokenSmallestUnit,
   useHarvesterFarm,
+  useProofOfAccessGift,
   useProofOfAccessMint,
   type ClaimableRewardStream,
   type HarvesterClaimDisplay,
@@ -389,6 +391,7 @@ export default function Staking() {
   const poaLive = hasLiveProofOfAccess(selectedNetwork);
   const harvesterLive = hasLiveHarvester(selectedNetwork);
   const { mintTier, isPending: isMinting } = useProofOfAccessMint();
+  const { giftNft, isPending: isGifting } = useProofOfAccessGift();
   const {
     farmDeposit,
     updateSubscriptions,
@@ -465,6 +468,11 @@ export default function Staking() {
   const [loadingNfts, setLoadingNfts] = useState(false);
   const [selectedNft, setSelectedNft] = useState<ProofOfAccessPlayer | null>(null);
   const [nftDialogOpen, setNftDialogOpen] = useState(false);
+
+  // Gift NFT (ERC-721 transferFrom)
+  const [giftDialogOpen, setGiftDialogOpen] = useState(false);
+  const [giftRecipient, setGiftRecipient] = useState("");
+  const [giftStep, setGiftStep] = useState<"idle" | "sending">("idle");
 
   const tier = useMemo(() => getTier(tierId), [tierId]);
   const pennyDecimals =
@@ -1192,6 +1200,90 @@ export default function Staking() {
       description: `Token #${selectedNft.ID.toString()} · up to ${Number(selectedNft.LISTS)} revenue streams`,
     });
   }, [selectedNft, isAlreadyDesignated, handleTierChange]);
+
+  const openGiftDialog = useCallback(() => {
+    if (!selectedNft) return;
+    if (isAlreadyDesignated(selectedNft)) {
+      toast.error("Switch off this tier first", {
+        description: "You can’t gift the NFT that’s currently active for farming.",
+      });
+      return;
+    }
+    if (!account) {
+      toast.error("Connect your wallet to gift an NFT");
+      return;
+    }
+    if (!poaLive) {
+      toast.error("Proof of Access is not live on this network yet");
+      return;
+    }
+    setGiftRecipient("");
+    setGiftStep("idle");
+    setGiftDialogOpen(true);
+  }, [selectedNft, isAlreadyDesignated, account, poaLive]);
+
+  /** ERC-721 transferFrom: send selected PoA NFT to any wallet the user enters */
+  const confirmGiftNft = useCallback(async () => {
+    if (!account) {
+      toast.error("Connect your wallet to gift an NFT");
+      return;
+    }
+    if (!selectedNft) {
+      toast.error("No NFT selected");
+      return;
+    }
+    if (isAlreadyDesignated(selectedNft)) {
+      toast.error("This NFT is your active tier — choose another tier before gifting it.");
+      return;
+    }
+
+    const recipient = giftRecipient.trim();
+    if (!isValidAddress(recipient)) {
+      toast.error("Enter a valid wallet address", {
+        description: "Addresses look like 0x followed by 40 hex characters.",
+      });
+      return;
+    }
+    if (normalizeAddr(recipient) === normalizeAddr(account.address)) {
+      toast.error("Cannot gift to your own wallet");
+      return;
+    }
+
+    const nftTier = getTierByContractName(selectedNft.TIER);
+    const tokenId = selectedNft.ID;
+
+    try {
+      setGiftStep("sending");
+      toast.loading("Confirm gift in your wallet…", {
+        id: "gift-poa",
+        description: `transferFrom → Token #${tokenId.toString()}`,
+      });
+
+      const result = await giftNft({
+        from: account.address as Address,
+        to: recipient,
+        tokenId,
+      });
+
+      const shortTo = `${result.to.slice(0, 6)}…${result.to.slice(-4)}`;
+      toast.success(`Gifted ${nftTier.title}`, {
+        id: "gift-poa",
+        description: `Token #${tokenId.toString()} sent to ${shortTo}`,
+      });
+
+      setGiftDialogOpen(false);
+      setGiftRecipient("");
+      setNftDialogOpen(false);
+      setSelectedNft(null);
+      // Basket refresh re-resolves designated tier (highest remaining, or standard if empty)
+      void refreshOwnedNfts();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Gift failed";
+      toast.error(message, { id: "gift-poa" });
+    } finally {
+      setGiftStep("idle");
+    }
+  }, [account, selectedNft, isAlreadyDesignated, giftRecipient, giftNft, refreshOwnedNfts]);
 
   const toggleStream = useCallback(
     (address: Address) => {
@@ -2793,28 +2885,47 @@ export default function Staking() {
                   </div>
                 </div>
 
-                <DialogFooter className="sm:justify-stretch">
+                <DialogFooter className="flex-col gap-2 sm:flex-row sm:justify-stretch">
                   {(() => {
                     const already = isAlreadyDesignated(selectedNft);
                     const blocked = selectedNft.BLACKLIST;
+                    const giftDisabled =
+                      already || !account || !poaLive || isGifting;
                     return (
-                      <Button
-                        type="button"
-                        disabled={already || blocked}
-                        className={cn(
-                          "w-full rounded-xl font-orbitron text-sm font-bold tracking-wide",
-                          already || blocked
-                            ? "cursor-not-allowed bg-muted text-muted-foreground opacity-60 hover:bg-muted"
-                            : "bg-primary text-primary-foreground hover:opacity-90",
-                        )}
-                        onClick={switchToNftTier}
-                      >
-                        {blocked
-                          ? "Blacklisted"
-                          : already
-                            ? "You're already on this Tier"
-                            : "Choose this Tier"}
-                      </Button>
+                      <>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          disabled={giftDisabled}
+                          className={cn(
+                            "w-full rounded-xl font-orbitron text-sm font-bold tracking-wide sm:flex-1",
+                            already || !account || !poaLive
+                              ? "cursor-not-allowed border-border/40 bg-muted text-muted-foreground opacity-60 hover:bg-muted"
+                              : "border-border/60",
+                          )}
+                          onClick={openGiftDialog}
+                        >
+                          <Gift className="mr-2 h-4 w-4" />
+                          {already ? "Can't gift this NFT" : "Gift this NFT"}
+                        </Button>
+                        <Button
+                          type="button"
+                          disabled={already || blocked}
+                          className={cn(
+                            "w-full rounded-xl font-orbitron text-sm font-bold tracking-wide sm:flex-1",
+                            already || blocked
+                              ? "cursor-not-allowed bg-muted text-muted-foreground opacity-60 hover:bg-muted"
+                              : "bg-primary text-primary-foreground hover:opacity-90",
+                          )}
+                          onClick={switchToNftTier}
+                        >
+                          {blocked
+                            ? "Blacklisted"
+                            : already
+                              ? "You're already on this Tier"
+                              : "Choose this Tier"}
+                        </Button>
+                      </>
                     );
                   })()}
                 </DialogFooter>
@@ -2829,6 +2940,124 @@ export default function Staking() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Gift NFT — transferFrom to any address */}
+      <AlertDialog
+        open={giftDialogOpen}
+        onOpenChange={(open) => {
+          if (isGifting || giftStep === "sending") return;
+          setGiftDialogOpen(open);
+          if (!open) {
+            setGiftRecipient("");
+            setGiftStep("idle");
+          }
+        }}
+      >
+        <AlertDialogContent className="max-w-md border-border/60 theme-surface-elevated font-sora">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="font-cinzel text-xl">
+              Gift this NFT
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-3 text-left text-sm text-muted-foreground">
+                {selectedNft ? (
+                  <>
+                    <p>
+                      Send{" "}
+                      <span className="font-semibold text-foreground">
+                        {getTierByContractName(selectedNft.TIER).title}
+                      </span>{" "}
+                      token{" "}
+                      <span className="font-jetbrains font-semibold text-foreground">
+                        #{selectedNft.ID.toString()}
+                      </span>{" "}
+                      to another wallet via ERC-721{" "}
+                      <span className="font-jetbrains text-xs">transferFrom</span>.
+                      This cannot be undone from the app.
+                    </p>
+                    <div className="space-y-1.5">
+                      <label
+                        htmlFor="gift-recipient"
+                        className="font-sora text-[10px] font-semibold uppercase tracking-wide text-muted-foreground"
+                      >
+                        Recipient address
+                      </label>
+                      <Input
+                        id="gift-recipient"
+                        value={giftRecipient}
+                        onChange={(e) => setGiftRecipient(e.target.value)}
+                        placeholder="0x…"
+                        disabled={isGifting || giftStep === "sending"}
+                        spellCheck={false}
+                        autoComplete="off"
+                        className="font-jetbrains text-sm"
+                      />
+                      {giftRecipient.trim().length > 0 &&
+                        !isValidAddress(giftRecipient) && (
+                          <p className="text-xs text-destructive">
+                            Enter a valid 0x address (40 hex characters).
+                          </p>
+                        )}
+                      {isValidAddress(giftRecipient) &&
+                        account &&
+                        normalizeAddr(giftRecipient) ===
+                          normalizeAddr(account.address) && (
+                          <p className="text-xs text-destructive">
+                            That is your own wallet — pick a different address.
+                          </p>
+                        )}
+                    </div>
+                    {designatedNftId !== null &&
+                      designatedNftId === selectedNft.ID && (
+                        <p className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-2.5 py-2 text-xs text-amber-700 dark:text-amber-300">
+                          This is your designated tier pass. After gifting, the app
+                          will switch to your highest remaining NFT, or standard
+                          access (1 stream) if the basket is empty.
+                        </p>
+                      )}
+                  </>
+                ) : (
+                  <p>No NFT selected.</p>
+                )}
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isGifting || giftStep === "sending"}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              disabled={
+                !selectedNft ||
+                !account ||
+                !poaLive ||
+                isGifting ||
+                giftStep === "sending" ||
+                !isValidAddress(giftRecipient) ||
+                (account != null &&
+                  normalizeAddr(giftRecipient) === normalizeAddr(account.address))
+              }
+              onClick={(e) => {
+                e.preventDefault();
+                void confirmGiftNft();
+              }}
+              className="bg-primary font-orbitron text-sm font-bold tracking-wide text-primary-foreground"
+            >
+              {isGifting || giftStep === "sending" ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Sending…
+                </>
+              ) : (
+                <>
+                  <Gift className="mr-2 h-4 w-4" />
+                  Confirm gift
+                </>
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Mint confirmation — gas + PENNY approval transparency */}
       <AlertDialog
@@ -3236,7 +3465,7 @@ export default function Staking() {
                       <p className="flex items-start gap-2 font-sora text-foreground">
                         <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
                         <span>
-                          Reward streams differ from your on-chain list — a{" "}
+                          Since reward streams differ from your on-chain list — a{" "}
                           <strong>subscribeToToken</strong> confirmation is included before deposit.
                         </span>
                       </p>

@@ -12,6 +12,7 @@ const sepoliaWhitelist: WhitelistConfig = {
   token: [
     //cryptocurrencies
     "Ethereum", "Penny4Thots", "Trump", "PennyUSD", "Musk", "Euros", "Yuan", "Rubles", "Korean Won", "Yen", "Rupees",
+    "USD Circle",
     
     //stocks
     "Tesla", "Apple", "Microsoft", "Coinbase", "Google",
@@ -37,6 +38,7 @@ const sepoliaWhitelist: WhitelistConfig = {
     "0x9608c510f40f80aef7e71e29af8428e714489430" as Address,
 
     "0x4896DE7Fc291edE3fD11073fC4Ea2974dD6dB6Cb" as Address,
+    "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238" as Address,
 
     //stocks
     "0xe7BBD4E79F0258B6b941edbb45dF5AE8080b9A8b" as Address,
@@ -57,6 +59,7 @@ const sepoliaWhitelist: WhitelistConfig = {
   type: [
     //cryptocurrencies
     "crypto","crypto", "crypto", "crypto", "crypto", "crypto", "crypto", "crypto", "crypto", "crypto", "crypto",
+    "crypto",
 
     //stocks
     "stock", "stock", "stock", "stock", "stock",
