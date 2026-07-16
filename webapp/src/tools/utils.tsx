@@ -2400,6 +2400,9 @@ export async function fetchHarvesterUserClaimsCount(wallet: Address): Promise<nu
  * Read a slice of Harvester claim history.
  * Contract: getUserClaims(user, _start, _finish) where _finish is the batch length
  * (not an exclusive end index), max 200, and _start + _finish <= total.
+ *
+ * Entries keep storage order (index 0 in the array = on-chain index `start`).
+ * Empty / zero-timestamp slots are kept so callers can map back to storage indices.
  */
 export async function fetchHarvesterUserClaims(
   wallet: Address,
@@ -2427,13 +2430,11 @@ export async function fetchHarvesterUserClaims(
       amount: bigint;
     }>;
 
-    return (raw ?? [])
-      .map((claim) => ({
-        timestamp: Number(claim.timestamp),
-        token: claim.token as Address,
-        amount: claim.amount.toString(),
-      }))
-      .filter((claim) => claim.timestamp > 0);
+    return (raw ?? []).map((claim) => ({
+      timestamp: Number(claim.timestamp),
+      token: claim.token as Address,
+      amount: claim.amount.toString(),
+    }));
   } catch (err) {
     console.error("fetchHarvesterUserClaims failed", err);
     return [];
@@ -2441,7 +2442,7 @@ export async function fetchHarvesterUserClaims(
 }
 
 /**
- * Map a UI page (0 = newest) to storage start index + batch size.
+ * Map a UI page (0 = newest) to storage start index + length.
  * History is stored oldest-first at index 0.
  */
 export function harvesterClaimsPageRange(
@@ -2458,49 +2459,89 @@ export function harvesterClaimsPageRange(
 }
 
 /**
- * Fetch one page of claims (newest first within the page) and enrich each row
- * with token name / symbol / decimals for display.
+ * Map a UI page to the on-chain getUserClaims window (≤ maxBatch) that covers it.
+ *
+ * - If total ≤ maxBatch (200): one call loads the entire history.
+ * - If total > maxBatch: batches are aligned from the newest end so "Older"
+ *   stays inside the same RPC window for many UI pages before the next call.
  */
-export async function fetchHarvesterClaimsPage(
-  wallet: Address,
+export function harvesterClaimsBatchRangeForPage(
+  total: number,
   page: number,
   pageSize: number = HARVESTER_CLAIMS_PAGE_SIZE,
-  totalOverride?: number,
-): Promise<{
+  maxBatch: number = HARVESTER_CLAIMS_MAX_BATCH,
+): { start: number; count: number } {
+  if (total <= 0 || maxBatch <= 0) return { start: 0, count: 0 };
+
+  if (total <= maxBatch) {
+    return { start: 0, count: total };
+  }
+
+  const { start: pageStart, count: pageLen } = harvesterClaimsPageRange(
+    total,
+    page,
+    pageSize,
+  );
+  if (pageLen === 0) return { start: 0, count: 0 };
+
+  // Align batches from the newest end: batch 0 = [total-200, total), batch 1 = previous 200, …
+  const batchFromEnd = Math.floor((total - 1 - pageStart) / maxBatch);
+  const batchEndExclusive = total - batchFromEnd * maxBatch;
+  const batchStart = Math.max(0, batchEndExclusive - maxBatch);
+  return { start: batchStart, count: batchEndExclusive - batchStart };
+}
+
+/** In-memory cache of enriched claims keyed by on-chain storage index. */
+export type HarvesterClaimsCache = {
+  wallet: string;
   total: number;
-  page: number;
-  pageSize: number;
-  pageCount: number;
-  claims: HarvesterClaimDisplay[];
-}> {
-  const total =
-    typeof totalOverride === "number" && totalOverride >= 0
-      ? totalOverride
-      : await fetchHarvesterUserClaimsCount(wallet);
+  byIndex: Map<number, HarvesterClaimDisplay>;
+};
 
-  if (total === 0) {
-    return { total: 0, page: 0, pageSize, pageCount: 0, claims: [] };
+export function createHarvesterClaimsCache(
+  wallet: Address,
+  total: number,
+): HarvesterClaimsCache {
+  return {
+    wallet: wallet.toLowerCase(),
+    total: Math.max(0, Math.floor(total)),
+    byIndex: new Map(),
+  };
+}
+
+export function isHarvesterClaimsRangeLoaded(
+  cache: HarvesterClaimsCache,
+  start: number,
+  count: number,
+): boolean {
+  if (count <= 0) return true;
+  for (let i = start; i < start + count; i++) {
+    if (!cache.byIndex.has(i)) return false;
   }
+  return true;
+}
 
-  const pageCount = Math.max(1, Math.ceil(total / pageSize));
-  const safePage = Math.min(Math.max(0, page), pageCount - 1);
-  const { start, count } = harvesterClaimsPageRange(total, safePage, pageSize);
-  if (count === 0) {
-    return { total, page: safePage, pageSize, pageCount, claims: [] };
-  }
-
-  const batch = await fetchHarvesterUserClaims(wallet, start, count);
-  // Storage is oldest→newest; reverse so the page shows newest first (chronological desc).
-  const ordered = [...batch].reverse();
+/**
+ * Enrich raw claim rows with ERC20 / native display metadata.
+ * Zero-timestamp rows are dropped (empty slots).
+ */
+export async function enrichHarvesterClaims(
+  records: HarvesterClaimRecord[],
+): Promise<HarvesterClaimDisplay[]> {
+  const valid = records.filter((c) => c.timestamp > 0);
+  if (valid.length === 0) return [];
 
   const uniqueTokens = [
-    ...new Set(ordered.map((c) => c.token.toLowerCase())),
+    ...new Set(valid.map((c) => c.token.toLowerCase())),
   ] as string[];
 
-  const metaByToken = new Map<string, { name: string; symbol: string; decimals: number }>();
+  const metaByToken = new Map<
+    string,
+    { name: string; symbol: string; decimals: number }
+  >();
   await Promise.all(
     uniqueTokens.map(async (key) => {
-      const addr = ordered.find((c) => c.token.toLowerCase() === key)?.token;
+      const addr = valid.find((c) => c.token.toLowerCase() === key)?.token;
       if (!addr) return;
       try {
         const meta = await readRewardTokenMeta(addr);
@@ -2512,7 +2553,7 @@ export async function fetchHarvesterClaimsPage(
     }),
   );
 
-  const claims: HarvesterClaimDisplay[] = ordered.map((claim) => {
+  return valid.map((claim) => {
     const meta = metaByToken.get(claim.token.toLowerCase()) ?? {
       name: "Unknown",
       symbol: "???",
@@ -2532,8 +2573,209 @@ export async function fetchHarvesterClaimsPage(
       displayAmount: formatTokenAmountThousands(amountBi, meta.decimals),
     };
   });
+}
 
-  return { total, page: safePage, pageSize, pageCount, claims };
+/**
+ * Fetch one on-chain batch (≤200), enrich, and merge into the cache by storage index.
+ * Returns how many new indices were written.
+ */
+export async function loadHarvesterClaimsBatchIntoCache(
+  wallet: Address,
+  cache: HarvesterClaimsCache,
+  start: number,
+  count: number,
+): Promise<number> {
+  const safeStart = Math.max(0, Math.floor(start));
+  const safeCount = Math.min(
+    HARVESTER_CLAIMS_MAX_BATCH,
+    Math.max(0, Math.floor(count)),
+  );
+  if (safeCount === 0) return 0;
+
+  // Skip RPC when this whole window is already cached.
+  if (isHarvesterClaimsRangeLoaded(cache, safeStart, safeCount)) {
+    return 0;
+  }
+
+  const raw = await fetchHarvesterUserClaims(wallet, safeStart, safeCount);
+
+  // Keep storage indices stable; empty slots are marked so we never re-fetch them.
+  const nonEmpty: { storageIndex: number; claim: HarvesterClaimRecord }[] = [];
+  let written = 0;
+  for (let i = 0; i < raw.length; i++) {
+    const claim = raw[i];
+    const storageIndex = safeStart + i;
+    if (!claim || claim.timestamp <= 0) {
+      cache.byIndex.set(storageIndex, {
+        timestamp: 0,
+        token: (claim?.token ??
+          "0x0000000000000000000000000000000000000000") as Address,
+        amount: "0",
+        name: "",
+        symbol: "",
+        decimals: 18,
+        displayAmount: "0",
+      });
+      written += 1;
+      continue;
+    }
+    nonEmpty.push({ storageIndex, claim });
+  }
+
+  const enriched = await enrichHarvesterClaims(nonEmpty.map((x) => x.claim));
+  for (let j = 0; j < nonEmpty.length; j++) {
+    const row = enriched[j];
+    if (!row) continue;
+    cache.byIndex.set(nonEmpty[j].storageIndex, row);
+    written += 1;
+  }
+  return written;
+}
+
+/**
+ * Slice a UI page (newest first) from a populated cache. Empty slots are omitted.
+ */
+export function sliceHarvesterClaimsPageFromCache(
+  cache: HarvesterClaimsCache,
+  page: number,
+  pageSize: number = HARVESTER_CLAIMS_PAGE_SIZE,
+): HarvesterClaimDisplay[] {
+  const { start, count } = harvesterClaimsPageRange(cache.total, page, pageSize);
+  if (count === 0) return [];
+  const rows: HarvesterClaimDisplay[] = [];
+  for (let i = start; i < start + count; i++) {
+    const row = cache.byIndex.get(i);
+    if (row && row.timestamp > 0) rows.push(row);
+  }
+  // Storage is oldest→newest; reverse for newest-first UI.
+  return rows.reverse();
+}
+
+/**
+ * Ensure the cache holds the on-chain batch covering `page`, then return that page.
+ * Makes at most one getUserClaims RPC when the needed batch is missing;
+ * subsequent pages inside the same ≤200 window are free.
+ */
+export async function ensureHarvesterClaimsPage(
+  wallet: Address,
+  cache: HarvesterClaimsCache,
+  page: number,
+  pageSize: number = HARVESTER_CLAIMS_PAGE_SIZE,
+): Promise<{
+  total: number;
+  page: number;
+  pageSize: number;
+  pageCount: number;
+  claims: HarvesterClaimDisplay[];
+  fetched: boolean;
+}> {
+  const total = cache.total;
+  if (total === 0) {
+    return { total: 0, page: 0, pageSize, pageCount: 0, claims: [], fetched: false };
+  }
+
+  const pageCount = Math.max(1, Math.ceil(total / pageSize));
+  const safePage = Math.min(Math.max(0, page), pageCount - 1);
+  const { start: pageStart, count: pageLen } = harvesterClaimsPageRange(
+    total,
+    safePage,
+    pageSize,
+  );
+
+  if (pageLen === 0) {
+    return {
+      total,
+      page: safePage,
+      pageSize,
+      pageCount,
+      claims: [],
+      fetched: false,
+    };
+  }
+
+  let fetched = false;
+  if (!isHarvesterClaimsRangeLoaded(cache, pageStart, pageLen)) {
+    const batch = harvesterClaimsBatchRangeForPage(
+      total,
+      safePage,
+      pageSize,
+      HARVESTER_CLAIMS_MAX_BATCH,
+    );
+    const written = await loadHarvesterClaimsBatchIntoCache(
+      wallet,
+      cache,
+      batch.start,
+      batch.count,
+    );
+    fetched = written > 0 || batch.count > 0;
+  }
+
+  return {
+    total,
+    page: safePage,
+    pageSize,
+    pageCount,
+    claims: sliceHarvesterClaimsPageFromCache(cache, safePage, pageSize),
+    fetched,
+  };
+}
+
+/**
+ * Fetch one page of claims (newest first within the page) and enrich each row
+ * with token name / symbol / decimals for display.
+ *
+ * Uses a one-shot cache so a single ≤200 getUserClaims covers many UI pages
+ * when total history is small, or one aligned batch when it is large.
+ */
+export async function fetchHarvesterClaimsPage(
+  wallet: Address,
+  page: number,
+  pageSize: number = HARVESTER_CLAIMS_PAGE_SIZE,
+  totalOverride?: number,
+  cache?: HarvesterClaimsCache | null,
+): Promise<{
+  total: number;
+  page: number;
+  pageSize: number;
+  pageCount: number;
+  claims: HarvesterClaimDisplay[];
+  cache: HarvesterClaimsCache;
+  fetched: boolean;
+}> {
+  const total =
+    typeof totalOverride === "number" && totalOverride >= 0
+      ? totalOverride
+      : await fetchHarvesterUserClaimsCount(wallet);
+
+  const walletKey = wallet.toLowerCase();
+  let activeCache = cache ?? null;
+  if (
+    !activeCache ||
+    activeCache.wallet !== walletKey ||
+    activeCache.total !== total
+  ) {
+    activeCache = createHarvesterClaimsCache(wallet, total);
+  }
+
+  if (total === 0) {
+    return {
+      total: 0,
+      page: 0,
+      pageSize,
+      pageCount: 0,
+      claims: [],
+      cache: activeCache,
+      fetched: false,
+    };
+  }
+
+  const result = await ensureHarvesterClaimsPage(
+    wallet,
+    activeCache,
+    page,
+    pageSize,
+  );
+  return { ...result, cache: activeCache };
 }
 
 export interface HarvesterDepositReadiness {

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft,
@@ -77,7 +77,8 @@ import {
   Connector,
   checkHarvesterDepositReadiness,
   checkProofOfAccessMintReadiness,
-  fetchHarvesterClaimsPage,
+  createHarvesterClaimsCache,
+  ensureHarvesterClaimsPage,
   fetchHarvesterFarmStats,
   fetchHarvesterUserClaimsCount,
   fetchProofOfAccessMintConfig,
@@ -89,7 +90,10 @@ import {
   formatDurationCountdown,
   formatEther,
   getPlayerOwners,
+  harvesterClaimsPageRange,
+  HARVESTER_CLAIMS_MAX_BATCH,
   HARVESTER_CLAIMS_PAGE_SIZE,
+  isHarvesterClaimsRangeLoaded,
   loadUserRewardStreamsSnapshot,
   planFarmDepositSteps,
   resolveMaxRewardStreams,
@@ -100,6 +104,7 @@ import {
   useProofOfAccessMint,
   type ClaimableRewardStream,
   type HarvesterClaimDisplay,
+  type HarvesterClaimsCache,
   type HarvesterDepositReadiness,
   type HarvesterFarmStep,
   type HarvesterWithdrawTimelock,
@@ -438,6 +443,7 @@ export default function Staking() {
   const [claimStep, setClaimStep] = useState<"idle" | "claiming">("idle");
 
   // Harvested claim history (Harvester.userTotalClaimHistory + getUserClaims)
+  // Cache holds up to 200-entry on-chain batches so Older/Newer is local until the next batch.
   const [harvestedCount, setHarvestedCount] = useState<number | null>(null);
   const [loadingHarvestedCount, setLoadingHarvestedCount] = useState(false);
   const [claimHistoryOpen, setClaimHistoryOpen] = useState(false);
@@ -445,6 +451,9 @@ export default function Staking() {
   const [claimHistoryPageCount, setClaimHistoryPageCount] = useState(0);
   const [claimHistoryRows, setClaimHistoryRows] = useState<HarvesterClaimDisplay[]>([]);
   const [loadingClaimHistory, setLoadingClaimHistory] = useState(false);
+  const claimHistoryCacheRef = useRef<HarvesterClaimsCache | null>(null);
+  const harvestedCountRef = useRef<number | null>(null);
+  harvestedCountRef.current = harvestedCount;
 
   // Subscription dialog
   const [subDialogOpen, setSubDialogOpen] = useState(false);
@@ -645,25 +654,75 @@ export default function Staking() {
   }, [account?.address, harvesterLive]);
 
   /**
-   * Load one page of claim history via getUserClaims(start, batchSize).
-   * Batches only the entries needed for the current page (max page size on screen).
+   * Resolve a claim-history UI page from the local batch cache when possible.
+   * userTotalClaimHistory tells us how many entries exist; getUserClaims only
+   * runs when the needed ≤200 batch is missing (or forceRefresh is set).
    */
   const refreshClaimHistoryPage = useCallback(
-    async (page: number, totalHint?: number | null) => {
+    async (
+      page: number,
+      options?: { totalHint?: number | null; forceRefresh?: boolean },
+    ) => {
       if (!account?.address || !harvesterLive) {
+        claimHistoryCacheRef.current = null;
         setClaimHistoryRows([]);
         setClaimHistoryPageCount(0);
         setHarvestedCount(null);
         return;
       }
-      setLoadingClaimHistory(true);
+
+      const wallet = account.address as Address;
+      const forceRefresh = options?.forceRefresh === true;
+      const knownTotal = harvestedCountRef.current;
+
       try {
-        const result = await fetchHarvesterClaimsPage(
-          account.address as Address,
-          page,
+        let total: number;
+        if (forceRefresh) {
+          setLoadingClaimHistory(true);
+          total = await fetchHarvesterUserClaimsCount(wallet);
+        } else if (typeof options?.totalHint === "number" && options.totalHint >= 0) {
+          total = options.totalHint;
+        } else if (typeof knownTotal === "number" && knownTotal >= 0) {
+          total = knownTotal;
+        } else {
+          setLoadingClaimHistory(true);
+          total = await fetchHarvesterUserClaimsCount(wallet);
+        }
+
+        const walletKey = wallet.toLowerCase();
+        let cache = claimHistoryCacheRef.current;
+        if (
+          forceRefresh ||
+          !cache ||
+          cache.wallet !== walletKey ||
+          cache.total !== total
+        ) {
+          cache = createHarvesterClaimsCache(wallet, total);
+          claimHistoryCacheRef.current = cache;
+        }
+
+        const pageCount = total === 0 ? 0 : Math.max(1, Math.ceil(total / HARVESTER_CLAIMS_PAGE_SIZE));
+        const safePage =
+          pageCount === 0 ? 0 : Math.min(Math.max(0, page), pageCount - 1);
+        const { start, count } = harvesterClaimsPageRange(
+          total,
+          safePage,
           HARVESTER_CLAIMS_PAGE_SIZE,
-          typeof totalHint === "number" ? totalHint : undefined,
         );
+        const needsFetch =
+          total > 0 &&
+          count > 0 &&
+          !isHarvesterClaimsRangeLoaded(cache, start, count);
+
+        if (needsFetch) setLoadingClaimHistory(true);
+
+        const result = await ensureHarvesterClaimsPage(
+          wallet,
+          cache,
+          safePage,
+          HARVESTER_CLAIMS_PAGE_SIZE,
+        );
+        claimHistoryCacheRef.current = cache;
         setHarvestedCount(result.total);
         setClaimHistoryPage(result.page);
         setClaimHistoryPageCount(result.pageCount);
@@ -767,7 +826,13 @@ export default function Staking() {
     void refreshHarvestedCount();
   }, [refreshHarvestedCount, selectedNetwork.chainId]);
 
-  // While claim-history dialog is open, load only the page batch needed for the screen
+  // Drop claim-history batch cache when wallet or network changes
+  useEffect(() => {
+    claimHistoryCacheRef.current = null;
+  }, [account?.address, selectedNetwork.chainId]);
+
+  // While claim-history dialog is open, serve pages from the ≤200 batch cache;
+  // only missing batches trigger getUserClaims.
   useEffect(() => {
     if (!claimHistoryOpen) return;
     void refreshClaimHistoryPage(claimHistoryPage);
@@ -1121,10 +1186,11 @@ export default function Staking() {
           refreshBalances(),
           refreshHarvestedCount(),
         ]);
-        // New claims land at the end of history — show newest page
+        // New claims land at the end of history — drop cache and show newest page
+        claimHistoryCacheRef.current = null;
         setClaimHistoryPage(0);
         if (claimHistoryOpen) {
-          await refreshClaimHistoryPage(0);
+          await refreshClaimHistoryPage(0, { forceRefresh: true });
         }
       } catch (err) {
         console.error("claim failed", err);
@@ -2078,7 +2144,7 @@ export default function Staking() {
                   title={
                     needsStreamSubscription
                       ? "Subscribe to a reward stream (required)"
-                      : "Reward stream subscriptions"
+                      : "Access your reward stream subscriptions"
                   }
                   onClick={() => {
                     void openSubscriptionDialog("manage");
@@ -2666,8 +2732,9 @@ export default function Staking() {
           <DialogHeader>
             <DialogTitle className="font-cinzel text-xl">Claim history</DialogTitle>
             <DialogDescription className="font-sora text-sm text-muted-foreground">
-              Your harvest claims on this network, newest first. Loaded in pages of{" "}
-              {HARVESTER_CLAIMS_PAGE_SIZE} from the Harvester contract.
+              Your harvest claims on this network, newest first. Shown{" "}
+              {HARVESTER_CLAIMS_PAGE_SIZE} at a time; chain reads load up to{" "}
+              {HARVESTER_CLAIMS_MAX_BATCH} claims per call so paging stays fast.
             </DialogDescription>
           </DialogHeader>
 
@@ -2756,7 +2823,9 @@ export default function Staking() {
               size="sm"
               disabled={loadingClaimHistory}
               onClick={() => {
-                void refreshClaimHistoryPage(claimHistoryPage);
+                void refreshClaimHistoryPage(claimHistoryPage, {
+                  forceRefresh: true,
+                });
               }}
             >
               {loadingClaimHistory ? (
