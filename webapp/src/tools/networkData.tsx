@@ -2,13 +2,6 @@ import { type Address } from "viem";
 
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000" as Address;
 
-/**
- * Stand-in when ProofOfAccess / Harvester are not deployed yet.
- * Zero address unlocks Farm UI only; mint/stake need a non-zero live deploy.
- */
-export const DUMMY_PROOF_OF_ACCESS = ZERO_ADDRESS;
-export const DUMMY_HARVESTER = ZERO_ADDRESS;
-
 export interface NetworkConfig {
   name: string;
   chainId: number;
@@ -152,12 +145,12 @@ const robinhood: NetworkConfig = {
   symbol: 'ETH',
   contract_address: '0x5081f537929bAD504b7813B40Cc215344078451A' as Address, //0x24C89D67d1C8B569fFe564b8493C0fbD1f55d7F7
   penny_address: '0x6924315c4bf46e4b43c980fbd98c87914eca787e',
-  proof_of_access: '0x0000000000000000000000000000000000000000' as Address,
-  harvester: '0x0000000000000000000000000000000000000000' as Address,
+  proof_of_access: '0xb395e4483c155245D56d131B561A3d6FcF0Eb6fb' as Address,
+  harvester: '0xC186D2EEF776846c8f7F06618AFE6117AD9b9A1d' as Address,
 };
 
 // Sepolia included for steady ProofOfAccess / Harvester testing once addresses are set
-const chains: NetworkConfig[] = [sepolia, robinhood, litvm]; // , scroll, manta, opbnb, base, bnb, hashkey, monad, 
+const chains: NetworkConfig[] = [robinhood, litvm]; // , scroll, manta, opbnb, base, bnb, hashkey, monad, 
 
 function normalizeAddr(addr: string): string {
   return addr.trim().toLowerCase();
@@ -189,8 +182,8 @@ export function hasValidPennyEntry(network: Pick<NetworkConfig, "penny_address">
 }
 
 /**
- * True when ProofOfAccess is configured (zero stand-in or live) — Farm UI presence.
- * Zero address counts as a configured stand-in so Farm stays available pre-deploy.
+ * True when ProofOfAccess is configured (zero stand-in or live).
+ * Prefer hasLiveProofOfAccess for features that need a real deploy.
  */
 export function hasValidProofOfAccess(network: Pick<NetworkConfig, "proof_of_access"> | null | undefined): boolean {
   if (!network?.proof_of_access) return false;
@@ -213,13 +206,14 @@ export function hasLiveHarvester(network: Pick<NetworkConfig, "harvester"> | nul
 }
 
 /**
- * Farm / stake UI (profile menu + /staking) when proof_of_access is set
- * (zero stand-in unlocks UI; non-zero unlocks mint).
+ * Farm / stake UI (profile menu + /staking) only when both ProofOfAccess
+ * and Harvester have real (non-zero) deploy addresses — both are required
+ * for mint + farm functionality.
  */
 export function canAccessFarm(
-  network: Pick<NetworkConfig, "proof_of_access"> | null | undefined,
+  network: Pick<NetworkConfig, "proof_of_access" | "harvester"> | null | undefined,
 ): boolean {
-  return hasValidProofOfAccess(network);
+  return hasLiveProofOfAccess(network) && hasLiveHarvester(network);
 }
 
 export { chains, ZERO_ADDRESS };

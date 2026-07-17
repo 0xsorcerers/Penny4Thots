@@ -1,6 +1,8 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Search, X, Sparkles, Loader2, RotateCcw, ChevronLeft, ChevronRight } from "lucide-react";
+import { Plus, Search, X, Sparkles, Loader2, RotateCcw, ChevronLeft, ChevronRight, Copy, Check } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 import type { Market } from "@/types/market";
 import { MarketCard } from "./MarketCard";
 import { Button } from "@/components/ui/button";
@@ -11,6 +13,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useMarketStore } from "@/store/marketStore";
 import { useLanguageStore } from "@/store/languageStore";
+import { useNetworkStore } from "@/store/networkStore";
+import { canAccessFarm } from "@/tools/networkData";
 import { t } from "@/tools/languages";
 
 const SEARCH_DEBOUNCE_MS = 3000;
@@ -54,14 +58,71 @@ export function MarketGrid({
   networkSymbol = "Native",
   pennyAddress = "",
 }: MarketGridProps) {
+  const navigate = useNavigate();
+  const selectedNetwork = useNetworkStore((state) => state.selectedNetwork);
+  const farmAvailable = canAccessFarm(selectedNetwork);
   const [selectedFilter, setSelectedFilter] = useState<MarketFilter>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isTagsModalOpen, setIsTagsModalOpen] = useState(false);
   const [selectedTagFilter, setSelectedTagFilter] = useState<string | null>(null);
+  const [didCopyPenny, setDidCopyPenny] = useState(false);
+  /** "Stake now?" pops in briefly, then hides until the PENNY address is clicked again. */
+  const [stakeCtaVisible, setStakeCtaVisible] = useState(false);
+  const stakeCtaHideTimerRef = useRef<number | null>(null);
   const languageTagsByMarketId = useMarketStore((state) => state.languageTagsByMarketId);
   const selectedLanguage = useLanguageStore((state) => state.selectedLanguage);
+
+  const STAKE_CTA_VISIBLE_MS = 10_000;
+
+  const revealStakeCta = () => {
+    if (!farmAvailable || !pennyAddress) return;
+    if (stakeCtaHideTimerRef.current != null) {
+      window.clearTimeout(stakeCtaHideTimerRef.current);
+      stakeCtaHideTimerRef.current = null;
+    }
+    setStakeCtaVisible(true);
+    stakeCtaHideTimerRef.current = window.setTimeout(() => {
+      setStakeCtaVisible(false);
+      stakeCtaHideTimerRef.current = null;
+    }, STAKE_CTA_VISIBLE_MS);
+  };
+
+  // First load (and when farm becomes available on this network): show for 10s, then hide.
+  useEffect(() => {
+    if (!farmAvailable || !pennyAddress) {
+      setStakeCtaVisible(false);
+      if (stakeCtaHideTimerRef.current != null) {
+        window.clearTimeout(stakeCtaHideTimerRef.current);
+        stakeCtaHideTimerRef.current = null;
+      }
+      return;
+    }
+    revealStakeCta();
+    return () => {
+      if (stakeCtaHideTimerRef.current != null) {
+        window.clearTimeout(stakeCtaHideTimerRef.current);
+        stakeCtaHideTimerRef.current = null;
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- only re-run when network / address eligibility changes
+  }, [farmAvailable, pennyAddress, selectedNetwork.chainId]);
+
+  const handleCopyPennyAddress = async () => {
+    if (!pennyAddress) return;
+    // Re-show the stake CTA for another 10s whenever the address is clicked
+    revealStakeCta();
+    try {
+      await navigator.clipboard.writeText(pennyAddress);
+      toast.success("PENNY address copied");
+      setDidCopyPenny(true);
+      window.setTimeout(() => setDidCopyPenny(false), 1500);
+    } catch (error) {
+      console.error("Failed to copy PENNY address:", error);
+      toast.error("Failed to copy address");
+    }
+  };
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -332,9 +393,66 @@ export function MarketGrid({
                   })}
             </p>
             {pennyAddress && (
-              <div className="mt-2 flex items-center gap-2 rounded-lg border border-border/40 bg-card/35 px-3 py-2 backdrop-blur-sm">
-                <span className="font-outfit text-xs font-semibold theme-text-accent">PENNY:</span>
-                <span className="font-mono text-xs theme-text-support break-all">{pennyAddress}</span>
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleCopyPennyAddress}
+                  title="Copy PENNY address"
+                  className="group flex max-w-full items-center gap-2 rounded-lg border border-border/40 bg-card/35 px-3 py-2 text-left backdrop-blur-sm transition-all hover:border-amber-400/50 hover:bg-card/55 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/60"
+                >
+                  <span className="shrink-0 font-outfit text-xs font-semibold theme-text-accent">PENNY:</span>
+                  <span className="font-mono text-xs theme-text-support break-all underline-offset-2 group-hover:underline">
+                    {pennyAddress}
+                  </span>
+                  {didCopyPenny ? (
+                    <Check className="h-3.5 w-3.5 shrink-0 text-emerald-500" />
+                  ) : (
+                    <Copy className="h-3.5 w-3.5 shrink-0 text-muted-foreground opacity-70 group-hover:opacity-100" />
+                  )}
+                </button>
+
+                <AnimatePresence mode="wait">
+                  {farmAvailable && stakeCtaVisible && (
+                    <motion.button
+                      key="stake-now-cta"
+                      type="button"
+                      onClick={() => navigate("/staking")}
+                      title="Go to Farm / Staking"
+                      initial={{ opacity: 0, scale: 0.85, y: 6 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.9, y: -4 }}
+                      whileHover={{ scale: 1.06 }}
+                      whileTap={{ scale: 0.96 }}
+                      transition={{ type: "spring", stiffness: 420, damping: 18 }}
+                      className="relative shrink-0 overflow-hidden rounded-full border border-amber-400/40 bg-gradient-to-br from-amber-950/40 via-yellow-900/30 to-amber-800/40 px-4 py-1.5 shadow-[0_0_18px_rgba(251,191,36,0.25)] backdrop-blur-sm"
+                    >
+                      <span
+                        className="pointer-events-none absolute inset-0 animate-shimmer-sweep opacity-70"
+                        style={{
+                          background:
+                            "linear-gradient(110deg, transparent 20%, rgba(255,215,0,0.35) 45%, rgba(255,236,150,0.55) 50%, rgba(255,215,0,0.35) 55%, transparent 80%)",
+                          backgroundSize: "200% 100%",
+                        }}
+                        aria-hidden
+                      />
+                      <span
+                        className="relative font-cursive text-xl leading-none tracking-wide sm:text-2xl"
+                        style={{
+                          backgroundImage:
+                            "linear-gradient(120deg, #b8860b 0%, #ffd700 28%, #fff3b0 48%, #ffd700 68%, #daa520 100%)",
+                          backgroundSize: "200% auto",
+                          WebkitBackgroundClip: "text",
+                          backgroundClip: "text",
+                          color: "transparent",
+                          animation: "shimmer-sweep 4s ease-in-out infinite",
+                          textShadow: "0 0 12px rgba(255, 200, 50, 0.35)",
+                        }}
+                      >
+                        Stake now?
+                      </span>
+                    </motion.button>
+                  )}
+                </AnimatePresence>
               </div>
             )}
           </div>

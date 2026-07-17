@@ -100,6 +100,7 @@ export default {
         sora: ["Sora", "system-ui", "sans-serif"],
         jetbrains: ["JetBrains Mono", "Space Mono", "monospace"],
         orbitron: ["Orbitron", "Syne", "sans-serif"],
+        cursive: ["Great Vibes", "cursive"],
       },
       keyframes: {
         "accordion-down": {

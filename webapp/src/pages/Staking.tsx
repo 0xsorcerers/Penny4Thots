@@ -782,7 +782,7 @@ export default function Staking() {
   useEffect(() => {
     if (!canAccessStaking) {
       toast.error("Farm unavailable on this network", {
-        description: "Switch to a chain with a deployed ProofOfAccess contract.",
+        description: "Switch to a chain with live ProofOfAccess and Harvester contracts.",
       });
       navigate("/app", { replace: true });
     }
@@ -1828,7 +1828,7 @@ export default function Staking() {
           <ShieldAlert className="h-10 w-10 text-amber-500" />
           <p className="font-cinzel text-xl font-semibold text-foreground">Farm locked</p>
           <p className="max-w-sm text-sm text-muted-foreground">
-            This network has no ProofOfAccess contract. Redirecting to markets…
+            This network needs live ProofOfAccess and Harvester contracts. Redirecting to markets…
           </p>
         </div>
       </div>
