@@ -18,6 +18,8 @@ export interface StakingTier {
   /** Public asset paths under /staking/tiers/{id}-{slug}/ */
   art: {
     nft: string;
+    /** Seamless loop video of the mint-section character (under /mint/) */
+    nftVideo: string;
     farm: string;
     withdraw: string;
     harvest: string;
@@ -26,6 +28,7 @@ export interface StakingTier {
 
 const tierArt = (id: number, slug: string) => ({
   nft: `/staking/tiers/${id}-${slug}/nft.jpg`,
+  nftVideo: `/mint/${id}-${slug}.mp4`,
   farm: `/staking/tiers/${id}-${slug}/farm.jpg`,
   withdraw: `/staking/tiers/${id}-${slug}/withdraw.jpg`,
   harvest: `/staking/tiers/${id}-${slug}/harvest.jpg`,

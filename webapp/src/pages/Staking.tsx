@@ -308,6 +308,15 @@ function TierCarousel({
   const prev = () => onChange(((tierId + STAKING_TIERS.length - 1) % STAKING_TIERS.length) as TierId);
   const next = () => onChange(((tierId + 1) % STAKING_TIERS.length) as TierId);
 
+  const playLoopVideo = useCallback((el: HTMLVideoElement | null) => {
+    if (!el) return;
+    el.muted = true;
+    el.defaultMuted = true;
+    void el.play().catch(() => {
+      /* autoplay may be blocked until interaction; poster still shows */
+    });
+  }, []);
+
   return (
     <div className="relative">
       <div
@@ -315,17 +324,36 @@ function TierCarousel({
         style={{ boxShadow: `0 0 28px ${tier.glow}` }}
       >
         <AnimatePresence mode="wait">
-          <motion.img
+          <motion.div
             key={tier.id}
-            src={tier.art.nft}
-            alt={`${tier.title} NFT`}
             initial={{ opacity: 0, x: 24, scale: 0.96 }}
             animate={{ opacity: 1, x: 0, scale: 1 }}
             exit={{ opacity: 0, x: -24, scale: 0.96 }}
             transition={{ duration: 0.35 }}
-            className="aspect-square w-full object-cover object-top lg:aspect-[5/4] xl:aspect-square"
-            draggable={false}
-          />
+            className="relative aspect-square w-full lg:aspect-[5/4] xl:aspect-square"
+          >
+            {/* Static poster while video loads / as accessible fallback */}
+            <img
+              src={tier.art.nft}
+              alt={`${tier.title} NFT`}
+              className="absolute inset-0 h-full w-full object-cover object-top"
+              draggable={false}
+            />
+            <video
+              src={tier.art.nftVideo}
+              poster={tier.art.nft}
+              autoPlay
+              loop
+              muted
+              playsInline
+              preload="auto"
+              onLoadedData={(e) => playLoopVideo(e.currentTarget)}
+              onCanPlay={(e) => playLoopVideo(e.currentTarget)}
+              ref={playLoopVideo}
+              aria-label={`${tier.title} animated character`}
+              className="absolute inset-0 h-full w-full object-cover object-top"
+            />
+          </motion.div>
         </AnimatePresence>
 
         <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent px-2 pb-1.5 pt-8 lg:pb-1 lg:pt-6">
