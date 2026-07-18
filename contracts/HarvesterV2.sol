@@ -65,7 +65,7 @@ contract Harvester is Ownable, ReentrancyGuard {
     uint256 public eralength = 86400;
     uint256 public immutable startTime;
     uint256 public numberOfParticipants = 0;
-    uint256 public Duration = 86400;
+    uint256 public Duration = 604800;
     uint256 public timeLock = 86400;
     uint256 public TotalPENNYSent = 1;
     uint256 public tax = 0;
@@ -382,6 +382,16 @@ contract Harvester is Ownable, ReentrancyGuard {
             contract_balance = address(this).balance;
         } else {
             contract_balance = IERC20(_payToken).balanceOf(address(this));
+            
+            // --- NEW: PENNY PRINCIPAL PROTECTION ---
+            // If the reward token IS the staking token, we must exclude user deposits from the yield calculation.
+            if (_payToken == address(PENNYToken)) {
+                if (contract_balance > TotalPENNYSent) {
+                    contract_balance -= TotalPENNYSent;
+                } else {
+                    contract_balance = 0;
+                }
+            }
         }
 
         if (contract_balance > tEco.allRewardsOwed) {            
