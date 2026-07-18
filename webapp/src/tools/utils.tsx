@@ -22,7 +22,7 @@ import erc20 from "../abi/ERC20.json";
 import erc721 from "../abi/ERC721.json";
 import proofOfAccessAbiJson from "../abi/proofOfAccess.json";
 import harvesterAbiJson from "../abi/Harvester.json";
-import { hasLiveHarvester, hasLiveProofOfAccess } from "./networkData";
+import { hasLegacyHarvester, hasLiveHarvester, hasLiveProofOfAccess } from "./networkData";
 import { getCurrentNetwork } from "../store/networkStore";
 import { NETWORK_THEMES } from "./networkTheme";
 import { getTokenName } from "./whitelisted";
@@ -31,7 +31,29 @@ const contractABI = penny4thots.abi as Abi;
 const erc20ABI = erc20.abi as Abi;
 const erc721ABI = erc721.abi as Abi;
 const proofOfAccessABI = proofOfAccessAbiJson.abi as Abi;
+/** Full Harvester interface — used for live and legacy deploys alike */
 const harvesterABI = harvesterAbiJson.abi as Abi;
+
+/**
+ * Resolve a single function fragment from Harvester.json by name.
+ * Deposit / withdraw / claim / subscribe all encode from these fragments
+ * so live and legacy contracts share the exact same ABI encoding.
+ */
+function getHarvesterAbiFunction(name: string): AbiFunction {
+  const item = harvesterABI.find(
+    (entry): entry is AbiFunction =>
+      entry.type === "function" && "name" in entry && entry.name === name,
+  );
+  if (!item) {
+    throw new Error(`${name} not found in Harvester.json abi`);
+  }
+  return item;
+}
+
+const harvesterWithdrawAbi = getHarvesterAbiFunction("withdraw");
+const harvesterClaimAbi = getHarvesterAbiFunction("claim");
+const harvesterDepositAbi = getHarvesterAbiFunction("deposit");
+const harvesterSubscribeToTokenAbi = getHarvesterAbiFunction("subscribeToToken");
 
 /**
  * transferFrom function ABI object from webapp/src/abi/ERC721.json.
@@ -2224,6 +2246,17 @@ export function getHarvesterAddress(): Address | null {
   return network.harvester;
 }
 
+/** Previous Harvester still holding stakes during an upgrade (if configured). */
+export function getLegacyHarvesterAddress(): Address | null {
+  const network = getCurrentNetwork();
+  if (!hasLegacyHarvester(network) || !network.legacyHarvester) return null;
+  return network.legacyHarvester;
+}
+
+/**
+ * Live Harvester thirdweb contract — always includes Harvester.json ABI so
+ * deposit / withdraw / claim encode without free-form method strings.
+ */
 export const getHarvesterContract = () => {
   const address = getHarvesterAddress();
   if (!address) throw new Error("Harvester not deployed on this network");
@@ -2231,8 +2264,22 @@ export const getHarvesterContract = () => {
     client,
     chain: getThirdwebNetwork(),
     address,
+    abi: harvesterABI,
   });
 };
+
+/**
+ * Harvester contract at an explicit address (live or legacy).
+ * Same Harvester.json ABI for both deploys.
+ */
+export function getHarvesterContractAt(address: Address) {
+  return getContract({
+    client,
+    chain: getThirdwebNetwork(),
+    address,
+    abi: harvesterABI,
+  });
+}
 
 export interface HarvesterUserSubscriptions {
   tokens: Address[];
@@ -2242,9 +2289,13 @@ export interface HarvesterUserSubscriptions {
 /**
  * Read active reward streams for a wallet via Harvester.getUserSubscriptions.
  * Returns [] when the user has never farmed / has no streams.
+ * Pass `harvesterOverride` to read a legacy deploy instead of the live farm.
  */
-export async function fetchUserSubscriptions(wallet: Address): Promise<HarvesterUserSubscriptions> {
-  const harvester = getHarvesterAddress();
+export async function fetchUserSubscriptions(
+  wallet: Address,
+  harvesterOverride?: Address | null,
+): Promise<HarvesterUserSubscriptions> {
+  const harvester = harvesterOverride ?? getHarvesterAddress();
   if (!harvester) return { tokens: [], count: 0 };
 
   const client_ = getPublicClient();
@@ -3008,29 +3059,40 @@ export function buildSubscribeToTokenArgs(
 }
 
 /**
- * Prepare Harvester.subscribeToToken.
- * @param tokens reward stream token contract addresses
- * @param nftTokenId minted PoA NFT tokenId (Player.ID / ERC721 tokenId), or 0n for standard
+ * Prepare Harvester.subscribeToToken from Harvester.json ABI.
+ * Optional `harvesterAddress` targets live or legacy deploy (same ABI).
  */
 export const prepareSubscribeToToken = (
   tokens: readonly string[],
   nftTokenId: bigint | number | string,
+  harvesterAddress?: Address | null,
 ) => {
   const { newTokens, nftTokenId: nft } = buildSubscribeToTokenArgs(tokens, nftTokenId);
+  const contract = harvesterAddress
+    ? getHarvesterContractAt(harvesterAddress)
+    : getHarvesterContract();
 
-  // Human-readable signature without storage keywords — matches Harvester ABI:
-  // subscribeToToken(address[] _newTokens, uint256 _nft)
   return prepareContractCall({
-    contract: getHarvesterContract(),
-    method: "function subscribeToToken(address[] _newTokens, uint256 _nft) external",
+    contract,
+    method: harvesterSubscribeToTokenAbi,
     params: [newTokens, nft],
   });
 };
 
-export const prepareHarvesterDeposit = (amount: bigint) => {
+/**
+ * Prepare Harvester.deposit(uint256) from Harvester.json ABI.
+ * Optional `harvesterAddress` targets live or legacy deploy (same ABI).
+ */
+export const prepareHarvesterDeposit = (
+  amount: bigint,
+  harvesterAddress?: Address | null,
+) => {
+  const contract = harvesterAddress
+    ? getHarvesterContractAt(harvesterAddress)
+    : getHarvesterContract();
   return prepareContractCall({
-    contract: getHarvesterContract(),
-    method: "function deposit(uint256 _amount) public",
+    contract,
+    method: harvesterDepositAbi,
     params: [amount],
   });
 };
@@ -3077,13 +3139,96 @@ export function addressesLeftOut(
 
 const PENDING_UNCLAIMED_STREAMS_KEY_PREFIX = "p4t:pendingUnclaimedStreams";
 
+/**
+ * Pending left-out streams keyed by chain + live harvester + wallet so a
+ * contract upgrade never reuses the former deploy's list.
+ */
 function pendingUnclaimedStreamsStorageKey(
+  wallet: Address,
+  chainId?: number,
+  harvester?: Address | null,
+): string {
+  const chain = chainId ?? getCurrentNetwork().chainId;
+  const w = getAddress(wallet).toLowerCase();
+  const h = (harvester ?? getHarvesterAddress() ?? "none").toString().toLowerCase();
+  return `${PENDING_UNCLAIMED_STREAMS_KEY_PREFIX}:${chain}:${h}:${w}`;
+}
+
+/** Pre-upgrade key: p4t:pendingUnclaimedStreams:{chain}:{wallet} */
+function pendingUnclaimedStreamsLegacyFormatKey(
   wallet: Address,
   chainId?: number,
 ): string {
   const chain = chainId ?? getCurrentNetwork().chainId;
   const w = getAddress(wallet).toLowerCase();
   return `${PENDING_UNCLAIMED_STREAMS_KEY_PREFIX}:${chain}:${w}`;
+}
+
+/**
+ * Wipe client caches that may still hold data from a former Harvester deploy.
+ * Call on every staking page load.
+ */
+export function clearFormerHarvesterClientCaches(options?: {
+  wallet?: Address | null;
+  chainId?: number;
+}): number {
+  if (typeof localStorage === "undefined") return 0;
+
+  const chain = options?.chainId ?? getCurrentNetwork().chainId;
+  const chainPrefix = `${PENDING_UNCLAIMED_STREAMS_KEY_PREFIX}:${chain}:`;
+  const legacyHarvester = getLegacyHarvesterAddress()?.toLowerCase() ?? null;
+  const wallet = options?.wallet
+    ? getAddress(options.wallet).toLowerCase()
+    : null;
+
+  let removed = 0;
+  const keysToRemove: string[] = [];
+
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (!key || !key.startsWith(chainPrefix)) continue;
+
+      const rest = key.slice(chainPrefix.length);
+      const parts = rest.split(":");
+
+      // Old format: {wallet} only
+      if (parts.length === 1) {
+        if (!wallet || parts[0].toLowerCase() === wallet) keysToRemove.push(key);
+        continue;
+      }
+
+      // New format: {harvester}:{wallet}
+      if (parts.length >= 2) {
+        const harvesterPart = parts[0].toLowerCase();
+        const walletPart = parts[parts.length - 1].toLowerCase();
+        if (legacyHarvester && harvesterPart === legacyHarvester) {
+          if (!wallet || walletPart === wallet) keysToRemove.push(key);
+        }
+      }
+    }
+
+    if (wallet) {
+      const w = wallet as Address;
+      keysToRemove.push(pendingUnclaimedStreamsLegacyFormatKey(w, chain));
+      if (legacyHarvester) {
+        keysToRemove.push(
+          pendingUnclaimedStreamsStorageKey(w, chain, legacyHarvester as Address),
+        );
+      }
+    }
+
+    for (const key of new Set(keysToRemove)) {
+      if (localStorage.getItem(key) !== null) {
+        localStorage.removeItem(key);
+        removed += 1;
+      }
+    }
+  } catch (err) {
+    console.error("clearFormerHarvesterClientCaches failed", err);
+  }
+
+  return removed;
 }
 
 function normalizeAddressList(tokens: readonly string[]): Address[] {
@@ -3117,10 +3262,13 @@ function normalizeAddressList(tokens: readonly string[]): Address[] {
 export function getPendingUnclaimedStreamTokens(
   wallet: Address,
   chainId?: number,
+  harvester?: Address | null,
 ): Address[] {
   if (typeof localStorage === "undefined") return [];
   try {
-    const raw = localStorage.getItem(pendingUnclaimedStreamsStorageKey(wallet, chainId));
+    const raw = localStorage.getItem(
+      pendingUnclaimedStreamsStorageKey(wallet, chainId, harvester),
+    );
     if (!raw) return [];
     const parsed = JSON.parse(raw) as unknown;
     if (!Array.isArray(parsed)) return [];
@@ -3134,11 +3282,12 @@ export function setPendingUnclaimedStreamTokens(
   wallet: Address,
   tokens: readonly string[],
   chainId?: number,
+  harvester?: Address | null,
 ): Address[] {
   const normalized = normalizeAddressList(tokens);
   if (typeof localStorage === "undefined") return normalized;
   try {
-    const key = pendingUnclaimedStreamsStorageKey(wallet, chainId);
+    const key = pendingUnclaimedStreamsStorageKey(wallet, chainId, harvester);
     if (normalized.length === 0) {
       localStorage.removeItem(key);
     } else {
@@ -3598,16 +3747,20 @@ export const useHarvesterFarm = () => {
 
   /**
    * Full unstake via Harvester.withdraw() — only after entryMap + timeLock.
+   * Pass `harvester` to target a legacy deploy (same Harvester.json ABI).
    */
   const farmWithdraw = async (options?: {
+    /** Explicit Harvester address (defaults to live network.harvester) */
+    harvester?: Address | null;
     onStep?: (step: "checking" | "withdrawing" | "idle", detail?: string) => void;
   }) => {
-    if (!getHarvesterAddress()) {
+    const target = options?.harvester ?? getHarvesterAddress();
+    if (!target) {
       throw new Error("Harvester not deployed on this network yet");
     }
     options?.onStep?.("checking", "Checking withdraw timelock…");
     options?.onStep?.("withdrawing", "Confirm withdraw in your wallet…");
-    const tx = prepareHarvesterWithdraw();
+    const tx = prepareHarvesterWithdraw(target);
     const result = await sendTx(tx);
     await waitForReceipt({
       client,
@@ -3620,15 +3773,18 @@ export const useHarvesterFarm = () => {
 
   /**
    * Claim rewards for selected pay-token addresses via Harvester.claim(address[]).
-   * Contract skips tokens still under per-token claim timelock or with zero rewards.
-   * After success, prunes retained left-out streams that are now fully claimed.
+   * Pass `harvester` to target a legacy deploy (same Harvester.json ABI).
+   * Live-farm pending-stream cache is not pruned when claiming on legacy.
    */
   const farmClaim = async (options: {
     tokens: Address[];
     wallet?: Address;
+    /** Explicit Harvester address (defaults to live network.harvester) */
+    harvester?: Address | null;
     onStep?: (step: "checking" | "claiming" | "idle", detail?: string) => void;
   }) => {
-    if (!getHarvesterAddress()) {
+    const target = options.harvester ?? getHarvesterAddress();
+    if (!target) {
       throw new Error("Harvester not deployed on this network yet");
     }
     const tokens = normalizeRewardTokenAddresses(options.tokens);
@@ -3639,7 +3795,7 @@ export const useHarvesterFarm = () => {
       "claiming",
       `Claiming ${tokens.length} reward stream${tokens.length === 1 ? "" : "s"}…`,
     );
-    const tx = prepareHarvesterClaim(tokens);
+    const tx = prepareHarvesterClaim(tokens, target);
     const result = await sendTx(tx);
     await waitForReceipt({
       client,
@@ -3647,7 +3803,13 @@ export const useHarvesterFarm = () => {
       transactionHash: result.transactionHash,
     });
 
-    if (options.wallet) {
+    const legacy = getLegacyHarvesterAddress();
+    const isLegacyTarget =
+      !!options.harvester &&
+      !!legacy &&
+      options.harvester.toLowerCase() === legacy.toLowerCase();
+
+    if (options.wallet && !isLegacyTarget) {
       try {
         await prunePendingUnclaimedStreamTokens({
           wallet: options.wallet,
@@ -3685,9 +3847,13 @@ export interface HarvesterWithdrawTimelock {
 /**
  * Read entryMap + timeLock for withdraw UI countdown.
  * Unlock when block.timestamp > entryMap + timeLock (contract: onlyAfterTimelock).
+ * Pass `harvesterOverride` to inspect a legacy deploy.
  */
-export async function fetchWithdrawTimelock(wallet: Address): Promise<HarvesterWithdrawTimelock> {
-  const harvester = getHarvesterAddress();
+export async function fetchWithdrawTimelock(
+  wallet: Address,
+  harvesterOverride?: Address | null,
+): Promise<HarvesterWithdrawTimelock> {
+  const harvester = harvesterOverride ?? getHarvesterAddress();
   const empty: HarvesterWithdrawTimelock = {
     entryTimestamp: 0,
     timeLockSeconds: 0,
@@ -4305,11 +4471,20 @@ export async function estimateTokenClaimReward(params: {
  * 4. Run stored-era accrual math ONLY when balances[user] > 0 (active stake).
  * 5. Display amounts to the last token unit (full decimals).
  * 6. Prune the pending-unclaimed cache when rewards are gone or re-subscribed.
+ *
+ * Options:
+ * - `harvester`: read a specific deploy (e.g. legacy) instead of live network.harvester
+ * - `skipPendingCache`: do not merge/prune localStorage left-out streams (use for legacy)
  */
 export async function loadUserRewardStreamsSnapshot(
   wallet: Address,
+  options?: {
+    harvester?: Address | null;
+    skipPendingCache?: boolean;
+  },
 ): Promise<UserRewardStreamsSnapshot> {
-  const harvester = getHarvesterAddress();
+  const harvester = options?.harvester ?? getHarvesterAddress();
+  const skipPendingCache = options?.skipPendingCache === true;
   const nowSec = Math.floor(Date.now() / 1000);
   const emptyGlobals: HarvesterRewardGlobals = {
     eralength: 86400n,
@@ -4343,7 +4518,7 @@ export async function loadUserRewardStreamsSnapshot(
       functionName: "balances",
       args: [wallet],
     }) as Promise<bigint>,
-    fetchUserSubscriptions(wallet),
+    fetchUserSubscriptions(wallet, harvester),
     fetchHarvesterRewardGlobals(harvester).catch((err) => {
       console.error("fetchHarvesterRewardGlobals failed", err);
       return emptyGlobals;
@@ -4353,11 +4528,13 @@ export async function loadUserRewardStreamsSnapshot(
   const activeTokens = normalizeAddressList(subs.tokens);
   const activeKeySet = new Set(activeTokens.map((t) => t.toLowerCase()));
 
-  // Drop cached entries that are active again or already drained on-chain
-  const retainedAfterPrune = await prunePendingUnclaimedStreamTokens({
-    wallet,
-    activeSubscriptions: activeTokens,
-  });
+  // Live farm only — never touch pending cache when reading a legacy deploy
+  const retainedAfterPrune = skipPendingCache
+    ? ([] as Address[])
+    : await prunePendingUnclaimedStreamTokens({
+        wallet,
+        activeSubscriptions: activeTokens,
+      });
   const retainedUnsubscribed = retainedAfterPrune.filter(
     (t) => !activeKeySet.has(t.toLowerCase()),
   );
@@ -4538,22 +4715,118 @@ export async function fetchClaimableRewardStreams(
   return snapshot.streams;
 }
 
-export const prepareHarvesterWithdraw = () => {
+/**
+ * Prepare Harvester.withdraw() from Harvester.json ABI (empty inputs).
+ * Pass `harvesterAddress` for legacy deploy; same ABI as live.
+ */
+export const prepareHarvesterWithdraw = (harvesterAddress?: Address | null) => {
+  const contract = harvesterAddress
+    ? getHarvesterContractAt(harvesterAddress)
+    : getHarvesterContract();
   return prepareContractCall({
-    contract: getHarvesterContract(),
-    method: "function withdraw() public",
+    contract,
+    method: harvesterWithdrawAbi,
     params: [],
   });
 };
 
-export const prepareHarvesterClaim = (payTokens: readonly string[]) => {
+/**
+ * Prepare Harvester.claim(address[]) from Harvester.json ABI.
+ * Pass `harvesterAddress` for legacy deploy; same ABI as live.
+ */
+export const prepareHarvesterClaim = (
+  payTokens: readonly string[],
+  harvesterAddress?: Address | null,
+) => {
   const tokens = normalizeRewardTokenAddresses(payTokens);
+  const contract = harvesterAddress
+    ? getHarvesterContractAt(harvesterAddress)
+    : getHarvesterContract();
   return prepareContractCall({
-    contract: getHarvesterContract(),
-    method: "function claim(address[] _payTokens) public",
+    contract,
+    method: harvesterClaimAbi,
     params: [tokens],
   });
 };
+
+export interface LegacyHarvesterMigrationStatus {
+  harvester: Address;
+  stakedBalance: bigint;
+  withdrawLock: HarvesterWithdrawTimelock;
+  streams: ClaimableRewardStream[];
+  pendingClaimStreams: ClaimableRewardStream[];
+  hasStake: boolean;
+  hasPendingClaims: boolean;
+  /** True when stake or pending rewards remain on the legacy deploy */
+  isBlocked: boolean;
+  isCleared: boolean;
+}
+
+/**
+ * Full migration check against the legacy Harvester:
+ * stake (balances) + claimable reward streams + withdraw timelock.
+ * Gate UI should only render after this resolves with isBlocked === true
+ * (never show a loading flash for zero-balance wallets).
+ * Returns null when no legacy address is configured.
+ */
+export async function loadLegacyHarvesterMigrationStatus(
+  wallet: Address,
+): Promise<LegacyHarvesterMigrationStatus | null> {
+  const harvester = getLegacyHarvesterAddress();
+  if (!harvester) return null;
+
+  try {
+    const [withdrawLock, snapshot] = await Promise.all([
+      fetchWithdrawTimelock(wallet, harvester),
+      loadUserRewardStreamsSnapshot(wallet, {
+        harvester,
+        skipPendingCache: true,
+      }),
+    ]);
+
+    const stakedBalance = snapshot.stakedBalance ?? withdrawLock.stakedBalance ?? 0n;
+    const pendingClaimStreams = snapshot.streams.filter(
+      (s) => s.claimableAmount > 0n || s.rewardsOwedRaw > 0n || s.estimatedRewardsOwedRaw > 0n,
+    );
+    const hasStake = stakedBalance > 0n;
+    const hasPendingClaims = pendingClaimStreams.length > 0;
+    const isBlocked = hasStake || hasPendingClaims;
+
+    return {
+      harvester,
+      stakedBalance,
+      withdrawLock,
+      streams: snapshot.streams,
+      pendingClaimStreams,
+      hasStake,
+      hasPendingClaims,
+      isBlocked,
+      isCleared: !isBlocked,
+    };
+  } catch (err) {
+    console.error("loadLegacyHarvesterMigrationStatus failed", err);
+    // Fail open: no confirmed legacy position → do not block the user
+    return {
+      harvester,
+      stakedBalance: 0n,
+      withdrawLock: {
+        entryTimestamp: 0,
+        timeLockSeconds: 0,
+        unlockAt: 0,
+        canWithdraw: false,
+        stakedBalance: 0n,
+        remainingSeconds: 0,
+        deployed: false,
+      },
+      streams: [],
+      pendingClaimStreams: [],
+      hasStake: false,
+      hasPendingClaims: false,
+      isBlocked: false,
+      isCleared: true,
+    };
+  }
+}
 
 /** Human-readable countdown for withdraw / claim locks. */
 export function formatDurationCountdown(totalSeconds: number): string {

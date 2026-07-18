@@ -15,6 +15,11 @@ export interface NetworkConfig {
   proof_of_access: Address;
   /** Harvester V2 — zero until live deploy */
   harvester: Address;
+  /**
+   * Previous Harvester still holding user stakes during an upgrade.
+   * When set, staking freezes until users withdraw + claim on this address.
+   */
+  legacyHarvester?: Address;
 }
 
 const sepolia: NetworkConfig = {
@@ -146,7 +151,10 @@ const robinhood: NetworkConfig = {
   contract_address: '0x5081f537929bAD504b7813B40Cc215344078451A' as Address, //0x24C89D67d1C8B569fFe564b8493C0fbD1f55d7F7
   penny_address: '0x6924315c4bf46e4b43c980fbd98c87914eca787e',
   proof_of_access: '0xb395e4483c155245D56d131B561A3d6FcF0Eb6fb' as Address,
-  harvester: '0xC186D2EEF776846c8f7F06618AFE6117AD9b9A1d' as Address,
+  // Upgraded live Harvester (deposit / farm here after migration)
+  harvester: '0xdC65F975Cc22EbbEC5DcB3De555619BBf0Fc7e45' as Address,
+  // Former Harvester — in-app withdraw + claim via same Harvester.json ABI
+  legacyHarvester: '0xC186D2EEF776846c8f7F06618AFE6117AD9b9A1d' as Address,
 };
 
 // Sepolia included for steady ProofOfAccess / Harvester testing once addresses are set
@@ -203,6 +211,15 @@ export function hasLiveProofOfAccess(network: Pick<NetworkConfig, "proof_of_acce
  */
 export function hasLiveHarvester(network: Pick<NetworkConfig, "harvester"> | null | undefined): boolean {
   return isNonZeroAddress(network?.harvester);
+}
+
+/**
+ * True when a previous Harvester is configured for migration checks (non-zero).
+ */
+export function hasLegacyHarvester(
+  network: Pick<NetworkConfig, "legacyHarvester"> | null | undefined,
+): boolean {
+  return isNonZeroAddress(network?.legacyHarvester);
 }
 
 /**
