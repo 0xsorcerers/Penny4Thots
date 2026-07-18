@@ -382,9 +382,6 @@ contract Harvester is Ownable, ReentrancyGuard {
             contract_balance = address(this).balance;
         } else {
             contract_balance = IERC20(_payToken).balanceOf(address(this));
-            
-            // --- NEW: PENNY PRINCIPAL PROTECTION ---
-            // If the reward token IS the staking token, we must exclude user deposits from the yield calculation.
             if (_payToken == address(PENNYToken)) {
                 if (contract_balance > TotalPENNYSent) {
                     contract_balance -= TotalPENNYSent;
