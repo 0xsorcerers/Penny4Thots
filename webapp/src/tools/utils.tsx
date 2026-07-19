@@ -4751,22 +4751,18 @@ export const prepareHarvesterClaim = (
 
 export interface LegacyHarvesterMigrationStatus {
   harvester: Address;
-  stakedBalance: bigint;
-  withdrawLock: HarvesterWithdrawTimelock;
   streams: ClaimableRewardStream[];
   pendingClaimStreams: ClaimableRewardStream[];
-  hasStake: boolean;
   hasPendingClaims: boolean;
-  /** True when stake or pending rewards remain on the legacy deploy */
+  /** True when pending rewards remain on the legacy deploy (claim-only gate) */
   isBlocked: boolean;
   isCleared: boolean;
 }
 
 /**
- * Full migration check against the legacy Harvester:
- * stake (balances) + claimable reward streams + withdraw timelock.
+ * Migration check against the legacy Harvester: claimable reward streams only.
  * Gate UI should only render after this resolves with isBlocked === true
- * (never show a loading flash for zero-balance wallets).
+ * (never show a loading flash for wallets with nothing to claim).
  * Returns null when no legacy address is configured.
  */
 export async function loadLegacyHarvesterMigrationStatus(
@@ -4776,51 +4772,32 @@ export async function loadLegacyHarvesterMigrationStatus(
   if (!harvester) return null;
 
   try {
-    const [withdrawLock, snapshot] = await Promise.all([
-      fetchWithdrawTimelock(wallet, harvester),
-      loadUserRewardStreamsSnapshot(wallet, {
-        harvester,
-        skipPendingCache: true,
-      }),
-    ]);
+    const snapshot = await loadUserRewardStreamsSnapshot(wallet, {
+      harvester,
+      skipPendingCache: true,
+    });
 
-    const stakedBalance = snapshot.stakedBalance ?? withdrawLock.stakedBalance ?? 0n;
     const pendingClaimStreams = snapshot.streams.filter(
       (s) => s.claimableAmount > 0n || s.rewardsOwedRaw > 0n || s.estimatedRewardsOwedRaw > 0n,
     );
-    const hasStake = stakedBalance > 0n;
     const hasPendingClaims = pendingClaimStreams.length > 0;
-    const isBlocked = hasStake || hasPendingClaims;
+    const isBlocked = hasPendingClaims;
 
     return {
       harvester,
-      stakedBalance,
-      withdrawLock,
       streams: snapshot.streams,
       pendingClaimStreams,
-      hasStake,
       hasPendingClaims,
       isBlocked,
       isCleared: !isBlocked,
     };
   } catch (err) {
     console.error("loadLegacyHarvesterMigrationStatus failed", err);
-    // Fail open: no confirmed legacy position → do not block the user
+    // Fail open: no confirmed pending rewards → do not block the user
     return {
       harvester,
-      stakedBalance: 0n,
-      withdrawLock: {
-        entryTimestamp: 0,
-        timeLockSeconds: 0,
-        unlockAt: 0,
-        canWithdraw: false,
-        stakedBalance: 0n,
-        remainingSeconds: 0,
-        deployed: false,
-      },
       streams: [],
       pendingClaimStreams: [],
-      hasStake: false,
       hasPendingClaims: false,
       isBlocked: false,
       isCleared: true,

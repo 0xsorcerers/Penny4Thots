@@ -516,18 +516,14 @@ export default function Staking() {
   const [giftRecipient, setGiftRecipient] = useState("");
   const [giftStep, setGiftStep] = useState<"idle" | "sending">("idle");
 
-  // Legacy Harvester migration gate — in-app withdraw + claim (same Harvester.json ABI)
+  // Legacy Harvester migration gate — claim pending rewards only (same Harvester.json ABI)
   const legacyHarvesterLive = hasLegacyHarvester(selectedNetwork);
   const [legacyStatus, setLegacyStatus] = useState<LegacyHarvesterMigrationStatus | null>(null);
   const [loadingLegacyStatus, setLoadingLegacyStatus] = useState(false);
-  const [legacyWithdrawStep, setLegacyWithdrawStep] = useState<"idle" | "checking" | "withdrawing">(
-    "idle",
-  );
   const [legacyClaimStep, setLegacyClaimStep] = useState<"idle" | "claiming">("idle");
-  const [legacyWithdrawCountdown, setLegacyWithdrawCountdown] = useState(0);
   /**
    * Never show while loading / unknown. Only freeze after on-chain confirmation
-   * of stake and/or pending rewards on the legacy Harvester.
+   * of pending rewards on the legacy Harvester.
    */
   const legacyGateActive =
     legacyHarvesterLive &&
@@ -575,25 +571,22 @@ export default function Staking() {
   }, [account?.address]);
 
   /**
-   * Full legacy status: stake + claimables + withdraw lock on the old Harvester.
+   * Legacy status: pending claimables on the old Harvester only.
    * Gate stays hidden until status is known (no loading flash).
    */
   const refreshLegacyMigrationStatus = useCallback(async () => {
     if (!account?.address || !legacyHarvesterLive) {
       setLegacyStatus(null);
-      setLegacyWithdrawCountdown(0);
       return;
     }
     setLoadingLegacyStatus(true);
     try {
       const status = await loadLegacyHarvesterMigrationStatus(account.address as Address);
       setLegacyStatus(status);
-      setLegacyWithdrawCountdown(status?.withdrawLock.remainingSeconds ?? 0);
     } catch (err) {
       console.error("refreshLegacyMigrationStatus failed", err);
-      // Do not block on error — only confirmed legacy positions gate the UI
+      // Do not block on error — only confirmed pending rewards gate the UI
       setLegacyStatus(null);
-      setLegacyWithdrawCountdown(0);
     } finally {
       setLoadingLegacyStatus(false);
     }
@@ -875,27 +868,10 @@ export default function Staking() {
     setClaimHistoryPageCount(0);
   }, [account?.address, selectedNetwork.chainId]);
 
-  // Legacy Harvester migration gate (stake + rewards on previous deploy)
+  // Legacy Harvester migration gate (pending rewards on previous deploy)
   useEffect(() => {
     void refreshLegacyMigrationStatus();
   }, [refreshLegacyMigrationStatus, selectedNetwork.chainId]);
-
-  // Tick legacy withdraw countdown while gate is active
-  useEffect(() => {
-    if (!legacyStatus?.hasStake || !legacyStatus.withdrawLock.unlockAt) {
-      setLegacyWithdrawCountdown(0);
-      return;
-    }
-    const unlockAt = legacyStatus.withdrawLock.unlockAt;
-    const tick = () => {
-      const now = Math.floor(Date.now() / 1000);
-      const remaining = now <= unlockAt ? unlockAt - now + 1 : 0;
-      setLegacyWithdrawCountdown(remaining);
-    };
-    tick();
-    const id = window.setInterval(tick, 1000);
-    return () => window.clearInterval(id);
-  }, [legacyStatus?.hasStake, legacyStatus?.withdrawLock.unlockAt]);
 
   // Load owned NFTs when wallet or network changes
   useEffect(() => {
@@ -1233,74 +1209,10 @@ export default function Staking() {
     refreshClaimables,
   ]);
 
-  const legacyCanWithdraw =
-    !!legacyStatus?.hasStake &&
-    (legacyStatus.withdrawLock.canWithdraw ||
-      (legacyStatus.withdrawLock.unlockAt > 0 && legacyWithdrawCountdown <= 0));
-
-  /** Withdraw all PENNY from the legacy Harvester — same Harvester.json ABI as live. */
-  const handleLegacyWithdraw = useCallback(async () => {
-    if (!account || !legacyStatus?.harvester) {
-      toast.error("Connect your wallet");
-      return;
-    }
-    if (!legacyStatus.hasStake) {
-      toast.message("No legacy stake", {
-        description: "Your deposit on the old contract is already zero.",
-      });
-      return;
-    }
-    if (!legacyCanWithdraw) {
-      toast.error("Withdraw still locked", {
-        description:
-          legacyWithdrawCountdown > 0
-            ? `Wait ${formatDurationCountdown(legacyWithdrawCountdown)} before withdrawing.`
-            : "Legacy withdraw is not available yet.",
-      });
-      return;
-    }
-
-    setLegacyWithdrawStep("checking");
-    try {
-      await farmWithdraw({
-        harvester: legacyStatus.harvester,
-        onStep: (step) => {
-          setLegacyWithdrawStep(step === "idle" ? "idle" : step);
-        },
-      });
-      toast.success("Legacy withdraw complete", {
-        description: "Your PENNY was returned from the old staking contract.",
-      });
-      await Promise.all([refreshLegacyMigrationStatus(), refreshBalances()]);
-    } catch (err) {
-      console.error("legacy withdraw failed", err);
-      const msg = err instanceof Error ? err.message : "Legacy withdraw failed";
-      toast.error("Legacy withdraw failed", { description: msg });
-    } finally {
-      setLegacyWithdrawStep("idle");
-    }
-  }, [
-    account,
-    legacyStatus,
-    legacyCanWithdraw,
-    legacyWithdrawCountdown,
-    farmWithdraw,
-    refreshLegacyMigrationStatus,
-    refreshBalances,
-  ]);
-
-  /** Claim all pending rewards on the legacy Harvester — only after deposit is withdrawn. */
+  /** Claim all pending rewards on the legacy Harvester. */
   const handleLegacyClaimAll = useCallback(async () => {
     if (!account || !legacyStatus?.harvester) {
       toast.error("Connect your wallet");
-      return;
-    }
-    // Enforced order: withdraw deposit (step 1) before claim (step 2)
-    if (legacyStatus.hasStake) {
-      toast.error("Withdraw first", {
-        description:
-          "Withdraw your PENNY deposit from the legacy farm before claiming rewards.",
-      });
       return;
     }
     const tokens = legacyStatus.pendingClaimStreams
@@ -2042,7 +1954,7 @@ export default function Staking() {
       </div>
 
       {/*
-        In-app legacy withdraw + claim (same Harvester.json ABI).
+        In-app legacy claim only (same Harvester.json ABI).
         Only after status is confirmed blocked — never while loading / for clear wallets.
       */}
       {legacyGateActive && legacyStatus && (() => {
@@ -2051,7 +1963,6 @@ export default function Staking() {
         ).length;
         const legacyBusy =
           loadingLegacyStatus ||
-          legacyWithdrawStep !== "idle" ||
           legacyClaimStep !== "idle" ||
           isFarming;
 
@@ -2081,73 +1992,35 @@ export default function Staking() {
                     className="text-sm leading-relaxed text-muted-foreground"
                   >
                     We upgraded our staking contract and will relegate the old one in a few hours.
-                    Complete the steps in order:{" "}
-                    <span className="font-medium text-foreground">withdraw your deposit first</span>
-                    , then claim any pending rewards to unlock the new farm.
+                    Please{" "}
+                    <span className="font-medium text-foreground">claim your pending rewards</span>
+                    {" "}from the old farm to unlock the new one.
                   </p>
                 </div>
               </div>
 
-              <div className="grid gap-2 sm:grid-cols-2">
-                <div
-                  className={cn(
-                    "rounded-xl border px-3 py-2.5",
-                    legacyStatus.hasStake
-                      ? "border-amber-500/40 bg-amber-500/10"
-                      : "border-success/30 bg-success/10",
-                  )}
-                >
-                  <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-                    Step 1 · Withdraw deposit
+              <div
+                className={cn(
+                  "rounded-xl border px-3 py-2.5",
+                  legacyStatus.hasPendingClaims
+                    ? "border-amber-500/40 bg-amber-500/10"
+                    : "border-success/30 bg-success/10",
+                )}
+              >
+                <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                  Claim pending rewards
+                </p>
+                <p className="mt-0.5 font-jetbrains text-sm font-semibold text-foreground">
+                  {legacyStatus.hasPendingClaims
+                    ? `${legacyStatus.pendingClaimStreams.length} stream${legacyStatus.pendingClaimStreams.length === 1 ? "" : "s"} pending`
+                    : "Complete"}
+                </p>
+                {!legacyStatus.hasPendingClaims && (
+                  <p className="mt-1 flex items-center gap-1 text-[11px] font-medium text-success">
+                    <CheckCircle2 className="h-3.5 w-3.5" />
+                    Rewards claimed
                   </p>
-                  <p className="mt-0.5 font-jetbrains text-sm font-semibold text-foreground">
-                    {legacyStatus.hasStake
-                      ? `${formatPennyDisplay(legacyStatus.stakedBalance, pennyDecimals)} PENNY`
-                      : "Complete"}
-                  </p>
-                  {legacyStatus.hasStake && legacyWithdrawCountdown > 0 && (
-                    <p className="mt-1 font-jetbrains text-[11px] text-amber-700 dark:text-amber-300">
-                      Unlocks in {formatDurationCountdown(legacyWithdrawCountdown)}
-                    </p>
-                  )}
-                  {!legacyStatus.hasStake && (
-                    <p className="mt-1 flex items-center gap-1 text-[11px] font-medium text-success">
-                      <CheckCircle2 className="h-3.5 w-3.5" />
-                      Deposit withdrawn
-                    </p>
-                  )}
-                </div>
-                <div
-                  className={cn(
-                    "rounded-xl border px-3 py-2.5",
-                    legacyStatus.hasStake
-                      ? "border-border/50 bg-muted/20 opacity-80"
-                      : legacyStatus.hasPendingClaims
-                        ? "border-amber-500/40 bg-amber-500/10"
-                        : "border-success/30 bg-success/10",
-                  )}
-                >
-                  <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-                    Step 2 · Claim rewards
-                  </p>
-                  <p className="mt-0.5 font-jetbrains text-sm font-semibold text-foreground">
-                    {legacyStatus.hasStake
-                      ? "Locked until withdraw"
-                      : legacyStatus.hasPendingClaims
-                        ? `${legacyStatus.pendingClaimStreams.length} stream${legacyStatus.pendingClaimStreams.length === 1 ? "" : "s"} pending`
-                        : "Complete"}
-                  </p>
-                  {legacyStatus.hasStake ? (
-                    <p className="mt-1 text-[11px] text-muted-foreground">
-                      Finish step 1 first
-                    </p>
-                  ) : !legacyStatus.hasPendingClaims ? (
-                    <p className="mt-1 flex items-center gap-1 text-[11px] font-medium text-success">
-                      <CheckCircle2 className="h-3.5 w-3.5" />
-                      Rewards claimed
-                    </p>
-                  ) : null}
-                </div>
+                )}
               </div>
 
               {legacyStatus.pendingClaimStreams.length > 0 && (
@@ -2180,41 +2053,6 @@ export default function Staking() {
                   className="h-11 w-full rounded-xl bg-amber-600 text-white hover:bg-amber-700 disabled:opacity-60"
                   disabled={
                     legacyBusy ||
-                    !legacyStatus.hasStake ||
-                    !legacyCanWithdraw ||
-                    legacyWithdrawStep !== "idle"
-                  }
-                  onClick={() => void handleLegacyWithdraw()}
-                >
-                  {legacyWithdrawStep !== "idle" ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Confirm withdraw in wallet…
-                    </>
-                  ) : !legacyStatus.hasStake ? (
-                    <>
-                      <CheckCircle2 className="h-4 w-4" />
-                      Deposit already withdrawn
-                    </>
-                  ) : legacyWithdrawCountdown > 0 ? (
-                    <>
-                      <AlertTriangle className="h-4 w-4" />
-                      Withdraw locked · {formatDurationCountdown(legacyWithdrawCountdown)}
-                    </>
-                  ) : (
-                    <>
-                      <Wallet className="h-4 w-4" />
-                      Withdraw deposit from legacy farm
-                    </>
-                  )}
-                </Button>
-
-                <Button
-                  variant="outline"
-                  className="h-11 w-full rounded-xl border-amber-500/40 hover:bg-amber-500/10"
-                  disabled={
-                    legacyBusy ||
-                    legacyStatus.hasStake ||
                     legacyPendingClaimableCount === 0 ||
                     legacyClaimStep !== "idle"
                   }
@@ -2224,11 +2062,6 @@ export default function Staking() {
                     <>
                       <Loader2 className="h-4 w-4 animate-spin" />
                       Confirm claim in wallet…
-                    </>
-                  ) : legacyStatus.hasStake ? (
-                    <>
-                      <AlertTriangle className="h-4 w-4" />
-                      Withdraw deposit first
                     </>
                   ) : !legacyStatus.hasPendingClaims ? (
                     <>
@@ -2267,8 +2100,8 @@ export default function Staking() {
               </div>
 
               <p className="text-center text-[11px] leading-relaxed text-muted-foreground">
-                Order matters: withdraw first, then claim. This screen unlocks when both are done so
-                you can restake on the new contract for enhanced rewards.
+                This screen unlocks once your pending rewards are claimed so you can farm on the new
+                contract for enhanced rewards.
               </p>
             </div>
           </div>

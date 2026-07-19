@@ -152,7 +152,7 @@ const robinhood: NetworkConfig = {
   penny_address: '0x6924315c4bf46e4b43c980fbd98c87914eca787e',
   proof_of_access: '0xb395e4483c155245D56d131B561A3d6FcF0Eb6fb' as Address,
   // Upgraded live Harvester (deposit / farm here after migration)
-  harvester: '0xdC65F975Cc22EbbEC5DcB3De555619BBf0Fc7e45' as Address,
+  harvester: '0xd19251458426F89b41646Ca9e21424c60f800552' as Address,
   // Former Harvester — in-app withdraw + claim via same Harvester.json ABI
   legacyHarvester: '0xC186D2EEF776846c8f7F06618AFE6117AD9b9A1d' as Address,
 };
