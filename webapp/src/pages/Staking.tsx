@@ -68,6 +68,7 @@ import {
   type TierId,
 } from "@/tools/stakingTiers";
 import {
+  getTokenName,
   getWhitelistedTokensByCategory,
   resolveRewardTokenLabel,
   shortTokenLabel,
@@ -106,6 +107,7 @@ import {
   useHarvesterFarm,
   useProofOfAccessGift,
   useProofOfAccessMint,
+  validateErc20Token,
   type ClaimableRewardStream,
   type HarvesterClaimDisplay,
   type HarvesterClaimsCache,
@@ -494,6 +496,24 @@ export default function Staking() {
   const [selectedStreams, setSelectedStreams] = useState<Address[]>([]);
   const [streamSearch, setStreamSearch] = useState("");
   const [customTokenInput, setCustomTokenInput] = useState("");
+  /** On-chain ERC20 names for non-whitelisted stream addresses (keyed lowercased). */
+  const [customStreamLabels, setCustomStreamLabels] = useState<Record<string, string>>({});
+  const customStreamLabelsRef = useRef<Record<string, string>>({});
+  customStreamLabelsRef.current = customStreamLabels;
+  const [validatingCustomToken, setValidatingCustomToken] = useState(false);
+  /**
+   * Debounced ERC-20 lookup when the stream search box contains a 0x address.
+   * Shows a clickable token-name row after validation (2s bounce).
+   */
+  const [searchAddressHit, setSearchAddressHit] = useState<{
+    address: Address;
+    name: string;
+    symbol: string;
+  } | null>(null);
+  const [searchAddressStatus, setSearchAddressStatus] = useState<
+    "idle" | "waiting" | "loading" | "ready" | "invalid"
+  >("idle");
+  const searchAddressLookupGen = useRef(0);
   const [maxStreams, setMaxStreams] = useState(1);
   /** Token id of designated basket NFT for Harvester subscribe limits (0 = standard / no NFT) */
   const [designatedNftId, setDesignatedNftId] = useState<bigint | null>(null);
@@ -541,6 +561,53 @@ export default function Staking() {
 
   const whitelistByCategory = useMemo(
     () => getWhitelistedTokensByCategory(selectedNetwork.chainId),
+    [selectedNetwork.chainId],
+  );
+
+  /** Prefer whitelist name, then cached ERC20 name for custom streams, then short address. */
+  const streamLabel = useCallback(
+    (addr: Address) => {
+      const key = normalizeAddr(addr);
+      const whitelisted = getTokenName(selectedNetwork.chainId, addr);
+      if (whitelisted) return whitelisted;
+      if (customStreamLabels[key]) return customStreamLabels[key];
+      return resolveRewardTokenLabel(selectedNetwork.chainId, addr);
+    },
+    [customStreamLabels, selectedNetwork.chainId],
+  );
+
+  /**
+   * Cache ERC20 names for addresses not on the official whitelist (readable chips).
+   * Reads the labels ref so this callback stays stable (avoids refresh loops).
+   */
+  const resolveCustomStreamLabels = useCallback(
+    async (addresses: Address[]) => {
+      const chainId = selectedNetwork.chainId;
+      const cached = customStreamLabelsRef.current;
+      const unknown = addresses.filter(
+        (a) => !getTokenName(chainId, a) && !cached[normalizeAddr(a)],
+      );
+      if (unknown.length === 0) return;
+
+      const results = await Promise.allSettled(
+        unknown.map(async (addr) => {
+          const meta = await validateErc20Token(addr);
+          return { key: normalizeAddr(addr), name: meta.name };
+        }),
+      );
+
+      setCustomStreamLabels((prev) => {
+        let changed = false;
+        const next = { ...prev };
+        for (const r of results) {
+          if (r.status === "fulfilled" && !next[r.value.key]) {
+            next[r.value.key] = r.value.name;
+            changed = true;
+          }
+        }
+        return changed ? next : prev;
+      });
+    },
     [selectedNetwork.chainId],
   );
 
@@ -627,6 +694,7 @@ export default function Staking() {
         setTotalFarmPennySent(stats.totalFarmPennySent);
         setCurrentFarmBalance(stats.stakedBalance);
         setLiveSubscriptions(stats.subscriptions);
+        void resolveCustomStreamLabels(stats.subscriptions);
       } else {
         // Global TotalPENNYSent does not require a wallet
         const total = await fetchTotalPennySent();
@@ -642,7 +710,7 @@ export default function Staking() {
     } finally {
       setLoadingFarmStats(false);
     }
-  }, [account?.address, harvesterLive]);
+  }, [account?.address, harvesterLive, resolveCustomStreamLabels]);
 
   /** entryMap + timeLock for withdraw countdown / button lock. */
   const refreshWithdrawLock = useCallback(async () => {
@@ -687,6 +755,20 @@ export default function Staking() {
       if (snapshot.subscriptions.length) {
         setLiveSubscriptions(snapshot.subscriptions);
       }
+      // Prefer names already loaded with claimable streams; fill gaps via ERC20 reads
+      if (snapshot.streams.length) {
+        setCustomStreamLabels((prev) => {
+          const next = { ...prev };
+          for (const s of snapshot.streams) {
+            if (!getTokenName(selectedNetwork.chainId, s.address) && s.name) {
+              next[normalizeAddr(s.address)] = s.name;
+            }
+          }
+          return next;
+        });
+      } else if (snapshot.subscriptions.length) {
+        void resolveCustomStreamLabels(snapshot.subscriptions);
+      }
       setSelectedRewardAddress((prev) => {
         if (
           prev &&
@@ -703,7 +785,12 @@ export default function Staking() {
     } finally {
       setLoadingClaimables(false);
     }
-  }, [account?.address, harvesterLive]);
+  }, [
+    account?.address,
+    harvesterLive,
+    resolveCustomStreamLabels,
+    selectedNetwork.chainId,
+  ]);
 
   /** Total harvest claims — Harvester.userTotalClaimHistory (claims count). */
   const refreshHarvestedCount = useCallback(async () => {
@@ -973,6 +1060,8 @@ export default function Staking() {
     const { maxStreams: max, nftId } = resolveMaxRewardStreams(ownedNfts, designatedNftId);
     setMaxStreams(max);
     setSubscribeNftId(nftId);
+    // Clamp selection if tier/pass now allows fewer streams (avoids on-chain errors)
+    setSelectedStreams((prev) => (prev.length > max ? prev.slice(0, max) : prev));
   }, [ownedNfts, designatedNftId]);
 
   /** True until the user has at least one Harvester reward stream */
@@ -1089,6 +1178,74 @@ export default function Staking() {
     }
     return result;
   }, [whitelistByCategory, streamSearch]);
+
+  /**
+   * When search looks like a contract address, wait 2s then validate ERC-20
+   * (name + symbol + decimals) and surface a clickable token-name result.
+   */
+  useEffect(() => {
+    const raw = streamSearch.trim();
+    if (!isValidAddress(raw)) {
+      searchAddressLookupGen.current += 1;
+      setSearchAddressHit(null);
+      setSearchAddressStatus("idle");
+      return;
+    }
+
+    const addr = raw as Address;
+    const key = normalizeAddr(addr);
+    const gen = ++searchAddressLookupGen.current;
+
+    // Whitelist / already-known labels: still bounce 2s so typing a full address feels consistent
+    const knownName =
+      getTokenName(selectedNetwork.chainId, addr) ||
+      customStreamLabelsRef.current[key] ||
+      null;
+
+    setSearchAddressHit(null);
+    setSearchAddressStatus("waiting");
+
+    const timer = window.setTimeout(() => {
+      if (searchAddressLookupGen.current !== gen) return;
+
+      if (knownName) {
+        setSearchAddressHit({
+          address: addr,
+          name: knownName,
+          symbol: "",
+        });
+        setSearchAddressStatus("ready");
+        return;
+      }
+
+      setSearchAddressStatus("loading");
+      void (async () => {
+        try {
+          const meta = await validateErc20Token(addr);
+          if (searchAddressLookupGen.current !== gen) return;
+          setCustomStreamLabels((prev) => ({
+            ...prev,
+            [key]: meta.name,
+          }));
+          setSearchAddressHit({
+            address: addr,
+            name: meta.name,
+            symbol: meta.symbol,
+          });
+          setSearchAddressStatus("ready");
+        } catch (err) {
+          console.error("Search address ERC20 check failed:", err);
+          if (searchAddressLookupGen.current !== gen) return;
+          setSearchAddressHit(null);
+          setSearchAddressStatus("invalid");
+        }
+      })();
+    }, 2000);
+
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [streamSearch, selectedNetwork.chainId]);
 
   const nativeDisplay =
     !account
@@ -1484,39 +1641,182 @@ export default function Staking() {
     }
   }, [account, selectedNft, isAlreadyDesignated, giftRecipient, giftNft, refreshOwnedNfts]);
 
-  const toggleStream = useCallback(
-    (address: Address) => {
-      setSelectedStreams((prev) => {
-        const exists = prev.some((a) => normalizeAddr(a) === normalizeAddr(address));
-        if (exists) {
-          return prev.filter((a) => normalizeAddr(a) !== normalizeAddr(address));
-        }
-        if (prev.length >= maxStreams) {
-          toast.error(`Max ${maxStreams} stream${maxStreams === 1 ? "" : "s"}`, {
-            description:
-              ownedNfts.filter((n) => !n.BLACKLIST).length === 0
-                ? "Standard access (no NFT) — you can pick only 1 reward stream."
-                : "Your designated NFT unlocks this many revenue streams.",
-          });
-          return prev;
-        }
-        return [...prev, address];
-      });
-    },
-    [maxStreams, ownedNfts.length],
+  const streamLimitDescription = useMemo(() => {
+    const hasPass = ownedNfts.some((n) => !n.BLACKLIST);
+    return hasPass
+      ? "Your designated NFT unlocks this many revenue streams."
+      : "Standard access (no NFT) — you can pick only 1 reward stream.";
+  }, [ownedNfts]);
+
+  const notifyStreamLimit = useCallback(() => {
+    toast.error(`Max ${maxStreams} stream${maxStreams === 1 ? "" : "s"}`, {
+      description: streamLimitDescription,
+    });
+  }, [maxStreams, streamLimitDescription]);
+
+  const isStreamSelected = useCallback(
+    (address: Address) =>
+      selectedStreams.some((a) => normalizeAddr(a) === normalizeAddr(address)),
+    [selectedStreams],
   );
 
-  const addCustomToken = useCallback(() => {
+  const canAddMoreStreams = selectedStreams.length < maxStreams;
+
+  /**
+   * Add a stream only if under the tier cap. Never exceeds maxStreams.
+   * Outcome is computed inside the state updater so async races stay safe.
+   */
+  const tryAddStream = useCallback(
+    (address: Address): "added" | "already" | "limit" => {
+      const key = normalizeAddr(address);
+      let outcome: "added" | "already" | "limit" = "limit";
+      setSelectedStreams((prev) => {
+        if (prev.some((a) => normalizeAddr(a) === key)) {
+          outcome = "already";
+          return prev;
+        }
+        if (prev.length >= maxStreams) {
+          outcome = "limit";
+          return prev;
+        }
+        outcome = "added";
+        return [...prev, address];
+      });
+      if (outcome === "limit") {
+        notifyStreamLimit();
+      }
+      return outcome;
+    },
+    [maxStreams, notifyStreamLimit],
+  );
+
+  const removeStream = useCallback((address: Address) => {
+    const key = normalizeAddr(address);
+    setSelectedStreams((prev) => prev.filter((a) => normalizeAddr(a) !== key));
+  }, []);
+
+  /** Checkbox / chip toggle — remove if selected, else add within tier limit. */
+  const toggleStream = useCallback(
+    (address: Address) => {
+      if (isStreamSelected(address)) {
+        removeStream(address);
+        return;
+      }
+      tryAddStream(address);
+    },
+    [isStreamSelected, removeStream, tryAddStream],
+  );
+
+  /**
+   * Shared path for custom address Add + search-hit click.
+   * Respects tier stream caps before any success messaging.
+   */
+  const addStreamWithLabel = useCallback(
+    (
+      address: Address,
+      label?: { name: string; symbol?: string },
+    ): "added" | "already" | "limit" => {
+      const key = normalizeAddr(address);
+      if (label?.name && !getTokenName(selectedNetwork.chainId, address)) {
+        setCustomStreamLabels((prev) => ({ ...prev, [key]: label.name }));
+      }
+      const result = tryAddStream(address);
+      if (result === "added") {
+        toast.success(`Added ${label?.name || streamLabel(address)}`, {
+          description: label?.symbol
+            ? `Symbol: ${label.symbol} · ${selectedStreams.length + 1}/${maxStreams} streams`
+            : `${selectedStreams.length + 1}/${maxStreams} streams`,
+        });
+      } else if (result === "already") {
+        toast.message("Already on your list", {
+          description: label?.name || streamLabel(address),
+        });
+      }
+      // "limit" already toasts via tryAddStream
+      return result;
+    },
+    [
+      tryAddStream,
+      selectedNetwork.chainId,
+      streamLabel,
+      selectedStreams.length,
+      maxStreams,
+    ],
+  );
+
+  const addCustomToken = useCallback(async () => {
     const raw = customTokenInput.trim();
     if (!isValidAddress(raw)) {
       toast.error("Enter a valid token contract address (0x…)");
       return;
     }
     const addr = raw as Address;
-    toggleStream(addr);
-    setCustomTokenInput("");
-    setStreamSearch("");
-  }, [customTokenInput, toggleStream]);
+    const key = normalizeAddr(addr);
+
+    // Cap first — avoid chain reads / false "Added" toasts when list is full
+    if (!isStreamSelected(addr) && !canAddMoreStreams) {
+      notifyStreamLimit();
+      return;
+    }
+    if (isStreamSelected(addr)) {
+      toast.message("Already on your list", {
+        description: streamLabel(addr),
+      });
+      setCustomTokenInput("");
+      return;
+    }
+
+    // Already whitelisted — add within cap (no chain read needed)
+    const whitelistName = getTokenName(selectedNetwork.chainId, addr);
+    if (whitelistName) {
+      addStreamWithLabel(addr, { name: whitelistName });
+      setCustomTokenInput("");
+      setStreamSearch("");
+      return;
+    }
+
+    // Already validated earlier this session
+    if (customStreamLabels[key]) {
+      addStreamWithLabel(addr, { name: customStreamLabels[key] });
+      setCustomTokenInput("");
+      setStreamSearch("");
+      return;
+    }
+
+    setValidatingCustomToken(true);
+    try {
+      // Same ERC20 gate as market create: name + symbol + decimals must exist
+      const meta = await validateErc20Token(addr);
+      // Re-check cap after async gap (user may have filled slots meanwhile)
+      if (selectedStreams.length >= maxStreams && !isStreamSelected(addr)) {
+        setCustomStreamLabels((prev) => ({ ...prev, [key]: meta.name }));
+        notifyStreamLimit();
+        return;
+      }
+      addStreamWithLabel(addr, { name: meta.name, symbol: meta.symbol });
+      setCustomTokenInput("");
+      setStreamSearch("");
+    } catch (err) {
+      console.error("Custom stream ERC20 check failed:", err);
+      toast.error("Not a valid ERC-20 token", {
+        description:
+          "Contract must expose name(), symbol(), and decimals() — same check as creating a market.",
+      });
+    } finally {
+      setValidatingCustomToken(false);
+    }
+  }, [
+    customStreamLabels,
+    customTokenInput,
+    selectedNetwork.chainId,
+    isStreamSelected,
+    canAddMoreStreams,
+    notifyStreamLimit,
+    streamLabel,
+    addStreamWithLabel,
+    selectedStreams.length,
+    maxStreams,
+  ]);
 
   const openSubscriptionDialog = useCallback(
     async (mode: "farm" | "manage") => {
@@ -1535,6 +1835,9 @@ export default function Staking() {
       setSubDialogMode(mode);
       setStreamSearch("");
       setCustomTokenInput("");
+      setSearchAddressHit(null);
+      setSearchAddressStatus("idle");
+      searchAddressLookupGen.current += 1;
       setSubDialogOpen(true);
       setFarmStatus(
         mode === "farm"
@@ -1542,16 +1845,31 @@ export default function Staking() {
           : "Update your reward stream subscriptions…",
       );
 
-      // Seed selection from on-chain subscriptions
+      // Seed selection from on-chain subscriptions (clamp to current tier cap)
       try {
+        const { maxStreams: streamCap } = resolveMaxRewardStreams(
+          ownedNfts,
+          designatedNftId,
+        );
         const subs = await fetchUserSubscriptions(account.address as Address);
-        setSelectedStreams(subs.tokens.length ? [...subs.tokens] : []);
+        const tokens = subs.tokens.length ? [...subs.tokens] : [];
+        const capped =
+          tokens.length > streamCap ? tokens.slice(0, streamCap) : tokens;
+        setSelectedStreams(capped);
         setLiveSubscriptions(subs.tokens);
+        // Resolve readable names for any custom (non-whitelist) streams already on-chain
+        void resolveCustomStreamLabels(tokens);
+        if (tokens.length > streamCap) {
+          toast.message(`Showing ${streamCap} of ${tokens.length} streams`, {
+            description:
+              "Your current pass allows fewer streams — trim the list before confirming.",
+          });
+        }
       } catch {
         setSelectedStreams([]);
       }
     },
-    [account, harvesterLive],
+    [account, harvesterLive, resolveCustomStreamLabels, ownedNfts, designatedNftId],
   );
 
   /** Stake Now → readiness check + subscription dialog */
@@ -2330,8 +2648,8 @@ export default function Staking() {
                             key={addr}
                             className="flex items-center justify-between rounded-lg border border-border/40 bg-background/50 px-2.5 py-1.5 font-jetbrains text-xs font-semibold text-foreground"
                           >
-                            <span className="truncate pr-2">
-                              {resolveRewardTokenLabel(selectedNetwork.chainId, addr)}
+                            <span className="truncate pr-2" title={addr}>
+                              {streamLabel(addr)}
                             </span>
                             <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-success" />
                           </li>
@@ -3666,6 +3984,9 @@ export default function Staking() {
           if (!open) {
             setStreamSearch("");
             setCustomTokenInput("");
+            setSearchAddressHit(null);
+            setSearchAddressStatus("idle");
+            searchAddressLookupGen.current += 1;
             if (subDialogMode === "farm" && farmStep === "idle") {
               setFarmStatus("Ready to farm PENNY");
             }
@@ -3692,33 +4013,152 @@ export default function Staking() {
           <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 py-3 sm:px-5">
             {/* Search + custom address */}
             <div className="space-y-2">
-              <div className="relative">
-                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  value={streamSearch}
-                  onChange={(e) => setStreamSearch(e.target.value)}
-                  placeholder="Search name or paste 0x address…"
-                  className="h-10 rounded-xl border-border/50 pl-9 font-sora text-sm"
-                />
+              <div className="space-y-1.5">
+                <div className="relative">
+                  <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    value={streamSearch}
+                    onChange={(e) => setStreamSearch(e.target.value)}
+                    placeholder="Search name or paste 0x address…"
+                    className="h-10 rounded-xl border-border/50 pl-9 font-sora text-sm"
+                  />
+                  {(searchAddressStatus === "waiting" ||
+                    searchAddressStatus === "loading") && (
+                    <Loader2 className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-muted-foreground" />
+                  )}
+                </div>
+                {/* Debounced address → ERC-20 name result (click to add) */}
+                {searchAddressStatus === "waiting" && (
+                  <p className="px-1 font-sora text-[11px] text-muted-foreground">
+                    Address detected — checking token in a moment…
+                  </p>
+                )}
+                {searchAddressStatus === "loading" && (
+                  <p className="flex items-center gap-1.5 px-1 font-sora text-[11px] text-muted-foreground">
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                    Reading name, symbol & decimals…
+                  </p>
+                )}
+                {searchAddressStatus === "invalid" && (
+                  <p className="px-1 font-sora text-[11px] text-destructive">
+                    Not a valid ERC-20 — needs name(), symbol(), and decimals().
+                  </p>
+                )}
+                {searchAddressStatus === "ready" && searchAddressHit && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const hit = searchAddressHit;
+                      const already = isStreamSelected(hit.address);
+                      if (already) {
+                        removeStream(hit.address);
+                        setStreamSearch("");
+                        setSearchAddressHit(null);
+                        setSearchAddressStatus("idle");
+                        searchAddressLookupGen.current += 1;
+                        return;
+                      }
+                      if (!canAddMoreStreams) {
+                        notifyStreamLimit();
+                        return;
+                      }
+                      const result = addStreamWithLabel(hit.address, {
+                        name: hit.name,
+                        symbol: hit.symbol,
+                      });
+                      if (result === "added" || result === "already") {
+                        setStreamSearch("");
+                        setSearchAddressHit(null);
+                        setSearchAddressStatus("idle");
+                        searchAddressLookupGen.current += 1;
+                      }
+                    }}
+                    className={cn(
+                      "flex w-full items-center gap-2.5 rounded-xl border px-3 py-2.5 text-left transition",
+                      isStreamSelected(searchAddressHit.address)
+                        ? "border-primary/50 bg-primary/10"
+                        : !canAddMoreStreams
+                          ? "border-border/50 bg-muted/30 opacity-80"
+                          : "border-primary/30 bg-primary/5 hover:bg-primary/10",
+                    )}
+                  >
+                    <Plus
+                      className={cn(
+                        "h-4 w-4 shrink-0",
+                        isStreamSelected(searchAddressHit.address) || canAddMoreStreams
+                          ? "text-primary"
+                          : "text-muted-foreground",
+                      )}
+                    />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate font-sora text-sm font-semibold text-foreground">
+                        {searchAddressHit.name}
+                        {searchAddressHit.symbol ? (
+                          <span className="ml-1.5 font-jetbrains text-[11px] font-normal text-muted-foreground">
+                            {searchAddressHit.symbol}
+                          </span>
+                        ) : null}
+                      </p>
+                      <p className="truncate font-jetbrains text-[10px] text-muted-foreground">
+                        {shortTokenLabel(searchAddressHit.address)}
+                        {isStreamSelected(searchAddressHit.address)
+                          ? " · on your list · click to remove"
+                          : !canAddMoreStreams
+                            ? ` · list full (${maxStreams}/${maxStreams}) · remove one first`
+                            : " · click to add"}
+                      </p>
+                    </div>
+                  </button>
+                )}
               </div>
               <div className="flex gap-1.5">
                 <Input
                   value={customTokenInput}
                   onChange={(e) => setCustomTokenInput(e.target.value)}
-                  placeholder="Custom token contract address"
+                  placeholder={
+                    canAddMoreStreams
+                      ? "Custom token contract address"
+                      : `List full (${maxStreams}/${maxStreams}) — remove a stream first`
+                  }
                   className="h-9 flex-1 rounded-xl border-border/50 font-jetbrains text-xs"
+                  disabled={validatingCustomToken}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      void addCustomToken();
+                    }
+                  }}
                 />
                 <Button
                   type="button"
                   size="sm"
                   variant="secondary"
                   className="h-9 shrink-0 rounded-xl"
-                  onClick={addCustomToken}
+                  onClick={() => void addCustomToken()}
+                  disabled={
+                    validatingCustomToken ||
+                    !customTokenInput.trim() ||
+                    (!canAddMoreStreams &&
+                      !(
+                        isValidAddress(customTokenInput.trim()) &&
+                        isStreamSelected(customTokenInput.trim() as Address)
+                      ))
+                  }
                 >
-                  <Plus className="h-4 w-4" />
-                  Add
+                  {validatingCustomToken ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Plus className="h-4 w-4" />
+                  )}
+                  {validatingCustomToken ? "Checking…" : "Add"}
                 </Button>
               </div>
+              {!canAddMoreStreams && (
+                <p className="px-0.5 font-sora text-[11px] text-amber-700 dark:text-amber-400">
+                  Stream limit reached ({selectedStreams.length}/{maxStreams}). Remove a
+                  stream before adding another.
+                </p>
+              )}
             </div>
 
             {/* Selection chips */}
@@ -3751,9 +4191,7 @@ export default function Staking() {
                       className="inline-flex max-w-full items-center gap-1 rounded-full border border-primary/40 bg-primary/10 px-2.5 py-1 font-sora text-[11px] font-semibold text-foreground transition hover:bg-destructive/15"
                       title={addr}
                     >
-                      <span className="truncate">
-                        {resolveRewardTokenLabel(selectedNetwork.chainId, addr)}
-                      </span>
+                      <span className="truncate">{streamLabel(addr)}</span>
                       <X className="h-3 w-3 shrink-0 opacity-70" />
                     </button>
                   ))}
@@ -3762,9 +4200,7 @@ export default function Staking() {
               {liveSubscriptions.length > 0 && (
                 <p className="mt-2 font-sora text-[10px] text-muted-foreground">
                   On-chain now:{" "}
-                  {liveSubscriptions
-                    .map((a) => resolveRewardTokenLabel(selectedNetwork.chainId, a))
-                    .join(", ")}
+                  {liveSubscriptions.map((a) => streamLabel(a)).join(", ")}
                 </p>
               )}
             </div>
@@ -3933,6 +4369,7 @@ export default function Staking() {
                               >
                                 <Checkbox
                                   checked={checked}
+                                  disabled={!checked && !canAddMoreStreams}
                                   onCheckedChange={() => toggleStream(token.address)}
                                 />
                                 <div className="min-w-0 flex-1">
@@ -3956,11 +4393,12 @@ export default function Staking() {
                     </div>
                   );
                 })}
-                {Object.keys(filteredCategories).length === 0 && (
+                {Object.keys(filteredCategories).length === 0 &&
+                  searchAddressStatus === "idle" && (
                   <p className="px-2 py-6 text-center font-sora text-xs text-muted-foreground">
                     {streamSearch.trim()
-                      ? "No whitelist match — paste a custom 0x address above."
-                      : "No whitelisted tokens on this network yet. Paste a custom address."}
+                      ? "No whitelist match — paste a 0x address in search to look up a custom token."
+                      : "No whitelisted tokens on this network yet. Paste a custom address in search."}
                   </p>
                 )}
               </div>

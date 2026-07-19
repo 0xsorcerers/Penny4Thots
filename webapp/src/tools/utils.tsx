@@ -1165,16 +1165,31 @@ export const readTokenDecimals = async (tokenAddress: Address): Promise<number> 
 };
 
 /**
+ * Read the token symbol (throws if the contract has no ERC20 symbol()).
+ */
+export const readTokenSymbolStrict = async (tokenAddress: Address): Promise<string> => {
+  if (isZeroAddress(tokenAddress) || !tokenAddress) {
+    const network = getCurrentNetwork();
+    return network.symbol || "ETH";
+  }
+  const result = await getPublicClient().readContract({
+    address: tokenAddress,
+    abi: erc20ABI,
+    functionName: "symbol",
+  });
+  const symbol = String(result ?? "").trim();
+  if (!symbol) {
+    throw new Error(`Token at ${tokenAddress} has empty symbol()`);
+  }
+  return symbol;
+};
+
+/**
  * Read the token symbol
  */
 export const readTokenSymbol = async (tokenAddress: Address): Promise<string> => {
   try {
-    const result = await getPublicClient().readContract({
-      address: tokenAddress,
-      abi: erc20ABI,
-      functionName: "symbol",
-    });
-    return result as string;
+    return await readTokenSymbolStrict(tokenAddress);
   } catch (err) {
     console.error('Error reading token symbol:', err);
     return 'TOKEN';
@@ -1182,18 +1197,32 @@ export const readTokenSymbol = async (tokenAddress: Address): Promise<string> =>
 };
 
 /**
+ * Read the ERC20 token name() (throws if missing / empty).
+ */
+export const readTokenNameStrict = async (tokenAddress: Address): Promise<string> => {
+  if (isZeroAddress(tokenAddress) || !tokenAddress) {
+    const network = getCurrentNetwork();
+    const whitelistName = getTokenName(network.chainId, ZERO_ADDRESS);
+    return whitelistName || `Native ${network.symbol}`;
+  }
+  const result = await getPublicClient().readContract({
+    address: tokenAddress,
+    abi: erc20ABI,
+    functionName: "name",
+  });
+  const name = String(result ?? "").trim();
+  if (!name) {
+    throw new Error(`Token at ${tokenAddress} has empty name()`);
+  }
+  return name;
+};
+
+/**
  * Read the ERC20 token name() for display (e.g. custom reward stream addresses).
  */
 export const readTokenName = async (tokenAddress: Address): Promise<string> => {
   try {
-    if (tokenAddress === ZERO_ADDRESS) return "Native";
-    const result = await getPublicClient().readContract({
-      address: tokenAddress,
-      abi: erc20ABI,
-      functionName: "name",
-    });
-    const name = String(result ?? "").trim();
-    return name || "Unknown token";
+    return await readTokenNameStrict(tokenAddress);
   } catch (err) {
     console.error("Error reading token name:", err);
     return "Unknown token";
@@ -1203,10 +1232,38 @@ export const readTokenName = async (tokenAddress: Address): Promise<string> => {
 export interface Erc20TokenMeta {
   name: string;
   symbol: string;
+  decimals: number;
 }
 
+/**
+ * Strict ERC20 check used when adding custom reward streams (same idea as
+ * market create: contract must expose name, symbol, and decimals).
+ * Throws if any required field is missing or unreadable.
+ */
+export const validateErc20Token = async (
+  tokenAddress: Address,
+): Promise<Erc20TokenMeta> => {
+  if (isZeroAddress(tokenAddress) || !tokenAddress) {
+    const network = getCurrentNetwork();
+    const whitelistName = getTokenName(network.chainId, ZERO_ADDRESS);
+    return {
+      name: whitelistName || `Native ${network.symbol}`,
+      symbol: network.symbol || "ETH",
+      decimals: 18,
+    };
+  }
+  const [name, symbol, decimals] = await Promise.all([
+    readTokenNameStrict(tokenAddress),
+    readTokenSymbolStrict(tokenAddress),
+    readTokenDecimalsStrict(tokenAddress),
+  ]);
+  return { name, symbol, decimals };
+};
+
 /** Parallel ERC20 name() + symbol() lookup for reward stream labels. */
-export const readTokenMeta = async (tokenAddress: Address): Promise<Erc20TokenMeta> => {
+export const readTokenMeta = async (
+  tokenAddress: Address,
+): Promise<Pick<Erc20TokenMeta, "name" | "symbol">> => {
   if (tokenAddress === ZERO_ADDRESS) {
     return { name: "Native", symbol: "ETH" };
   }
