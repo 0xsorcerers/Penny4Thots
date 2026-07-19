@@ -333,10 +333,13 @@ contract Harvester is Ownable, ReentrancyGuard {
         require(balances[msg.sender] > 0, "No PENNY."); 
         
         uint256 PENNYAmount = balances[msg.sender];
+        
+        // 1. Zero out user's balance in state
         balances[msg.sender] = 0;
         TotalPENNYSent -= PENNYAmount;
 
-        uint256 sent = transferTokens(PENNYAmount);
+        PENNYToken.safeTransfer(msg.sender, PENNYAmount);
+        
         if (numberOfParticipants > 0) {
             numberOfParticipants -= 1;
             entryMap[msg.sender] = 0; 
@@ -353,7 +356,8 @@ contract Harvester is Ownable, ReentrancyGuard {
             _setRewards(pToken);
         }
 
-        emit Withdraw(msg.sender, sent);
+        // 3. Emit the event with the correct withdrawn amount
+        emit Withdraw(msg.sender, PENNYAmount);
     }
 
     // ==========================================
@@ -493,9 +497,12 @@ contract Harvester is Ownable, ReentrancyGuard {
         tax = _values[0];
         developTax = _values[1]; 
         MAX_BATCH_SIZE = _values[2];
-        timeLock = _values[3];
+        eralength = _values[3];
+        Duration = _values[4];
+        timeLock = _values[5];
     }
     
+    //safely transfer and concisely register tokens to this contract.
     function transferTokens(uint256 _cost) internal returns (uint256) {
         uint256 before = PENNYToken.balanceOf(address(this));
         PENNYToken.safeTransferFrom(msg.sender, address(this), _cost);
