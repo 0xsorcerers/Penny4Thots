@@ -1993,8 +1993,8 @@ export default function Staking() {
                   >
                     We upgraded our staking contract and will relegate the old one in a few hours.
                     Please{" "}
-                    <span className="font-medium text-foreground">claim your pending rewards</span>
-                    {" "}from the old farm to unlock the new one.
+                    <span className="font-medium text-foreground">claim your pending rewards + initial deposit</span>
+                    {" "}from the old farm to unlock the new one. 
                   </p>
                 </div>
               </div>
